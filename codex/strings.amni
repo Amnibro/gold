@@ -1,0 +1,6 @@
+fn str_reverse(s byte[:]) byte[>..] { var out byte[>..] = []; var i = s.len; while i > 0 { i -= 1; out.push(s[i]); } out }
+fn str_is_palindrome(s byte[:]) bool { var i = 0; var j = s.len - 1; var ok = true; while i < j { if s[i] != s[j] { ok = false; break; } i += 1; j -= 1; } ok }
+fn str_count_char(s byte[:], c byte) int { var cnt = 0; for b in s { if b == c { cnt += 1; } } cnt }
+fn str_to_upper(s byte[:]) byte[>..] { var out byte[>..] = []; for b in s { out.push(if b >= 'a' && b <= 'z' { b - 32 } else { b }); } out }
+fn str_to_lower(s byte[:]) byte[>..] { var out byte[>..] = []; for b in s { out.push(if b >= 'A' && b <= 'Z' { b + 32 } else { b }); } out }
+fn str_contains(s byte[:], sub byte[:]) bool { if sub.len == 0 { true } else if sub.len > s.len { false } else { var found = false; for i in 0..(s.len - sub.len + 1) { if s[i..(i + sub.len)] == sub { found = true; break; } } found } }

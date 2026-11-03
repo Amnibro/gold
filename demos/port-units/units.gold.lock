@@ -1,0 +1,144 @@
+=== 513b370f94bc2fca
+import os;
+var SYS byte[>..];
+var SYS_READY bool = false;
+fn ensure_sys() {
+	if SYS_READY { return; }
+	SYS_READY = true;
+	SYS.append("us");
+	var buf byte[>..] = [];
+	if read_file("amnicad.sys", buf) {
+		if trim(buf) == "si" {
+			SYS.clear();
+			SYS.append("si");
+		}
+	}
+}
+=== -ed4783483eff1f6
+fn sys() const byte[:] {
+	ensure_sys();
+	SYS[..2]
+}
+=== -3f2d6e7265fe9cf8
+fn set_sys(s const byte[:]) {
+	ensure_sys();
+	SYS.clear();
+	if s == "si" { SYS.append("si"); } else { SYS.append("us"); }
+	write_file("amnicad.sys", SYS[..2]);
+}
+=== -618261a8302d694c
+let MM_PER real[2] = [25.4, 1.0];
+=== 012c8fb595217fcc
+fn doc_units(u const byte[:]) const byte[:] {
+	if u == "in" { "in" } else { "mm" }
+}
+=== 70c6f6b6e8bfec10
+fn mm_per(u const byte[:]) real {
+	if doc_units(u) == "in" { MM_PER[0] } else { MM_PER[1] }
+}
+=== -59816d3e35fd539b
+import math;
+fn nf(v real, d int = -1) byte[>..] {
+	var out byte[>..] = [];
+	if !is_finite(v) { out.append("—"); return out; }
+	var dd = d;
+	if d == -1 {
+		let a = abs(v);
+		dd = if a >= 1000.0 { 0 } else if a >= 100.0 { 1 } else if a >= 10.0 { 2 } else if a >= 1.0 { 3 } else if a >= 0.01 { 4 } else { 5 };
+	}
+	var s byte[>..] = [];
+	format_flt(s, v, dd, true);
+	var nz = false;
+	for c in s { if c >= '1' && c <= '9' { nz = true; } }
+	if !nz { out.append("0"); return out; }
+	var n = s.len;
+	var dot = false;
+	for c in s { if c == '.' { dot = true; } }
+	if dot {
+		while s[n - 1] == '0' { n -= 1; }
+		if s[n - 1] == '.' { n -= 1; }
+	}
+	var start = 0;
+	if s[0] == '-' { out.push('-'); start = 1; }
+	var end = start;
+	while end < n && s[end] != '.' { end += 1; }
+	for i in start..end {
+		if i > start && (end - i) % 3 == 0 { out.push(','); }
+		out.push(s[i]);
+	}
+	for i in end..n { out.push(s[i]); }
+	out
+}
+=== 3341154c09687fe8
+struct Unit { label const byte[:], factor real, offset real = 0.0 }
+=== 126d5661607f1bc2
+fn U(label const byte[:], factor real, offset real = 0.0) Unit {
+	Unit { label: label, factor: factor, offset: offset }
+}
+=== -39e87453b23c3b17
+fn unit_entry(q const byte[:], s const byte[:]) Unit {
+	let si = s == "si";
+	if q == "len" { return if si { U("mm", 1.0) } else { U("in", 1.0 / 25.4) }; }
+	if q == "area" { return if si { U("mm²", 1.0) } else { U("in²", 1.0 / 645.16) }; }
+	if q == "vol" { return if si { U("cm³", 1e-3) } else { U("in³", 1.0 / 16387.064) }; }
+	if q == "mass" { return if si { U("kg", 1.0) } else { U("lb", 2.2046226) }; }
+	if q == "force" { return if si { U("N", 1.0) } else { U("lbf", 0.22480894) }; }
+	if q == "press" { return if si { U("MPa", 1.0) } else { U("psi", 145.03774) }; }
+	if q == "stress" { return if si { U("MPa", 1.0) } else { U("psi", 145.03774) }; }
+	if q == "modulus" { return if si { U("GPa", 1e-3) } else { U("Msi", 1.4503774e-4) }; }
+	if q == "torque" { return if si { U("N·mm", 1.0) } else { U("lbf·in", 0.0088507458) }; }
+	if q == "temp" { return if si { U("°C", 1.0, 0.0) } else { U("°F", 1.8, 32.0) }; }
+	if q == "dtemp" { return if si { U("K", 1.0) } else { U("°F", 1.8) }; }
+	if q == "power" { return if si { U("W", 1.0) } else { U("BTU/hr", 3.4121416) }; }
+	if q == "film" { return if si { U("W/m²K", 1.0) } else { U("BTU/hr·ft²·°F", 0.17611016) }; }
+	if q == "cond" { return if si { U("W/m·K", 1.0) } else { U("BTU/hr·ft·°F", 0.57782155) }; }
+	if q == "speed" { return if si { U("m/s", 1.0) } else { U("mph", 2.2369363) }; }
+	if q == "dens" { return if si { U("kg/m³", 1.0) } else { U("lb/in³", 3.6127292e-5) }; }
+	if q == "accel" { return if si { U("m/s²", 1.0) } else { U("ft/s²", 3.2808399) }; }
+	if q == "freq" { return U("Hz", 1.0); }
+	if q == "pa" { return if si { U("Pa", 1.0) } else { U("psf", 0.020885434) }; }
+	abort("unknown quantity");
+	return U("", 1.0);
+}
+=== -65a6d26fe8c8e76c
+fn conv(q const byte[:], v real, to const byte[:]) real {
+	let e = unit_entry(q, to);
+	v * e.factor + e.offset
+}
+=== -407fb9fdd92f7b05
+fn back(q const byte[:], v real, sy const byte[:]) real {
+	let e = unit_entry(q, sy);
+	(v - e.offset) / e.factor
+}
+=== -32731c8ce90f1b47
+fn unit_of(q const byte[:], s const byte[:] = sys()) const byte[:] {
+	unit_entry(q, s).label
+}
+=== 0d494befbaf4e934
+fn to_si(q const byte[:], v real) real {
+	back(q, v, sys())
+}
+=== 24710b77f3f365aa
+fn from_si(q const byte[:], v real) real {
+	conv(q, v, sys())
+}
+=== 23da48c6eb2f6f1c
+fn one(q const byte[:], v_si real, s const byte[:] = sys(), d int = -1) byte[>..] {
+	var out byte[>..] = [];
+	out.append(nf(conv(q, v_si, s), d));
+	out.append(" ");
+	out.append(unit_entry(q, s).label);
+	out
+}
+=== -3905f1fb53a840f7
+fn dual(q const byte[:], v_si real, d int = -1) byte[>..] {
+	let is_us = sys() == "us";
+	let a const byte[:] = if is_us { "us" } else { "si" };
+	let b const byte[:] = if is_us { "si" } else { "us" };
+	var out byte[>..] = [];
+	out.append(one(q, v_si, a, d));
+	out.append(" (");
+	out.append(one(q, v_si, b, d));
+	out.append(")");
+	out
+}

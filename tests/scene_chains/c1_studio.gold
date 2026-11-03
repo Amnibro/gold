@@ -1,0 +1,9 @@
+add grassy ground 20 meters wide
+raise hill at 3 2 radius 4 height 1.5
+add box at 0 0 0.5 sized 1 1 1
+make last item gold
+add sphere at 2 0 1 radius 0.5
+make last item glass
+add point light at 2 -2 3 with 200 watts
+add camera at 6 -6 4 looking at origin
+make last camera active

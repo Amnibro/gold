@@ -1,0 +1,4414 @@
+@entry 016d5aaddee33b0d
+kind: step
+verb: add
+noun: camera
+modifier: front
+context: scene
+phrase: add a front camera {d} meters away at height {h}
+phrase: front view from {d} meters at height {h}
+slot: d real
+slot: h real
+test: d=6.0 h=1.5
+expect: => i=1 r=0.0 ok=true s="camfront" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: front1 camera 0,-6,1.5 0,0,1.5
+test: d=10.0 h=0.8 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="camfront" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: front3 camera 0,-10,0.8 0,0,0.8
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "front", "", o);
+	o.append(" camera ");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${d});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camfront");
+	out
+}
+@end
+
+@entry 0358456c48a9c4ba
+kind: step
+verb: animate
+noun: track
+modifier: location
+context: scene
+phrase: move the last item by {x} {y} {z} over {c} seconds
+phrase: slide the last item {x} {y} {z} across {c} seconds
+slot: x real
+slot: y real
+slot: z real
+slot: c real
+test: x=1.0 y=0.0 z=0.0 c=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="move" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.loc anim 0:0,0,0 2:1,0,0
+test: x=0.0 y=2.0 z=0.5 c=1.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="move" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.loc anim 0:0,0,0 1:0,2,0.5
+test: x=1.0 y=1.0 z=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".loc anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "move");
+	out
+}
+@end
+
+@entry 067647ba30224f3f
+kind: step
+verb: set
+noun: material
+modifier: chrome
+context: scene
+phrase: make the last item chrome
+phrase: mirror polish the last item
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="chrome" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:chrome
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="chrome" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:chrome
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:chrome");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "chrome");
+	out
+}
+@end
+
+@entry 09be7254e0c6d6a6
+kind: step
+verb: set
+noun: material
+modifier: skin
+context: scene
+phrase: give the last item a skin material
+phrase: make the last item look like skin
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="skin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:skin
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="skin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:skin
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:skin");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "skin");
+	out
+}
+@end
+
+@entry 0e5e14382f97014a
+kind: step
+verb: animate
+noun: track
+modifier: wobble
+context: scene
+phrase: rock the last item {a} degrees every {c} seconds
+phrase: wobble the last item by {a} degrees period {c}
+slot: a real
+slot: c real
+test: a=10.0 c=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="wobble" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.rot anim 0:0,0,-10 1:0,0,10 2:0,0,-10 loop
+test: a=5.0 c=1.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="wobble" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.rot anim 0:0,0,-5 0.5:0,0,5 1:0,0,-5 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".rot anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${a});
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "wobble");
+	out
+}
+@end
+
+@entry 0f56bf87d76d903c
+kind: step
+verb: add
+noun: shape
+modifier: wedge
+context: scene
+phrase: add a ramp at {x} {y} sized {a} {b} {c}
+phrase: place a wedge at {x} {y} of size {a} {b} {c}
+slot: x real
+slot: y real
+slot: a real
+slot: b real
+slot: c real
+test: x=0.0 y=0.0 a=2.0 b=4.0 c=1.0
+expect: => i=1 r=0.0 ok=true s="ramp" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ramp1 wedge 0,0,0.5 2,4,1
+test: x=3.0 y=0.0 a=1.0 b=2.0 c=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="ramp" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: ramp3 wedge 3,0,0.25 1,2,0.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "ramp", "", o);
+	o.append(" wedge ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(",");
+	gold_fnum(o, ${c});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ramp");
+	out
+}
+@end
+
+@entry 1cca5b1c91cb31be
+kind: step
+verb: animate
+noun: track
+modifier: elastic
+context: scene
+phrase: pop the last item in elastically over {c} seconds
+phrase: springy entrance of the last item across {c} seconds
+slot: c real
+test: c=0.6 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.scale anim elastic 0:.2 0.6:1
+test: c=1.2 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="pop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.scale anim elastic 0:.2 1.2:1
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".scale anim elastic ");
+	o.append("0");
+	o.append(":.");
+	o.append("2");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pop");
+	out
+}
+@end
+
+@entry 1dd058eb390b28dd
+kind: step
+verb: add
+noun: shape
+modifier: cone
+context: scene
+phrase: add a cone at {x} {y} height {h} radius {r}
+phrase: place a cone at {x} {y} tall {h} base radius {r}
+slot: x real
+slot: y real
+slot: h real
+slot: r real
+test: x=0.0 y=0.0 h=2.0 r=0.6
+expect: => i=1 r=0.0 ok=true s="cone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cone1 cone 0,0,0 0,0,2 r0.6
+test: x=3.0 y=-1.0 h=1.0 r=0.3 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cone3 cone 3,-1,0 3,-1,1 r0.3
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cone", "", o);
+	o.append(" cone ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cone");
+	out
+}
+@end
+
+@entry 1efba96212cd5f31
+kind: step
+verb: taper
+noun: shape
+modifier: taper
+context: scene
+phrase: taper the last item to {a}
+phrase: narrow the last item toward the top by factor {a}
+slot: a real
+test: a=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="taper" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 tp0.5
+test: a=0.2 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="taper" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 tp0.2
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("tp");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "taper");
+	out
+}
+@end
+
+@entry 1f81bb53c075cc8e
+kind: step
+verb: animate
+noun: camera
+modifier: shake
+context: scene
+phrase: shake the last camera by {a} every {c} seconds
+phrase: handheld jitter of {a} on the last camera period {c}
+slot: a real
+slot: c real
+test: a=0.02 c=0.1 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="shake" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: shot.loc anim linear 0:0,0,0 0.1:0.02,0,0.02 0.2:-0.02,0,0 0.3:0,0,0 loop
+test: a=0.05 c=0.2 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="shake" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: wide.loc anim linear 0:0,0,0 0.2:0.05,0,0.05 0.4:-0.05,0,0 0.6:0,0,0 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".loc anim linear ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c} * 2.0);
+	o.append(":-");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 3.0);
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "shake");
+	out
+}
+@end
+
+@entry 21de293b8415804c
+kind: step
+verb: add
+noun: shape
+modifier: sphere
+context: scene
+phrase: add a sphere at {x} {y} {z} radius {r}
+phrase: place a ball of radius {r} at {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+slot: r real
+test: x=0.0 y=0.0 z=1.0 r=0.5
+expect: => i=1 r=0.0 ok=true s="sphere" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ball1 sphere 0,0,1 r0.5
+test: x=2.0 y=-1.0 z=0.3 r=0.3 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="sphere" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: ball3 sphere 2,-1,0.3 r0.3
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "ball", "", o);
+	o.append(" sphere ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sphere");
+	out
+}
+@end
+
+@entry 21dec2d5af2bc0a4
+kind: step
+verb: restyle
+noun: material
+modifier: all color
+context: scene
+phrase: paint every shape rgb {cr} {cg} {cb}
+phrase: recolor all shapes to {cr} {cg} {cb}
+slot: cr int
+slot: cg int
+slot: cb int
+test: cr=240 cg=240 cb=230 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="allcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1 #f0f0e6
+expect: => doc: crate box 1,2,.5 1,1,1 #f0f0e6
+test: cr=50 cg=60 cb=70 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="allcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4 #323c46
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 #323c46
+test: cr=1 cg=2 cb=3 doc="key light point 2,-2,3 w300"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.push(' ');
+	gold_hex(o, ${cr}, ${cg}, ${cb});
+	var c = 0;
+	for k in g.dn { if gold_dshape(g, k) { gold_dappend(g, k, o); c++; } }
+	if c == 0 { gold_fail(g, "no shapes yet"); out.ok = false; return out; }
+	out.i = c;
+	out.s.clear();
+	format(out.s, "allcolor");
+	out
+}
+@end
+
+@entry 24c9fac1e6c1d2f0
+kind: step
+verb: repeat
+noun: shape
+modifier: array x
+context: scene
+phrase: repeat the last item {n} times spaced {a} along x
+phrase: row of {n} copies of the last item every {a} meters
+slot: n int
+slot: a real
+test: n=4 a=1.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="arrayx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 a4:1.5,0,0
+test: n=6 a=0.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="arrayx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 a6:0.5,0,0
+test: n=2 a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrayx");
+	out
+}
+@end
+
+@entry 26672fa849ac62c8
+kind: step
+verb: animate
+noun: light
+modifier: cone
+context: scene
+phrase: widen the last spot cone from {a} to {b} over {c} seconds
+phrase: animate the last spotlight cone from {a} to {b} across {c} seconds
+slot: a real
+slot: b real
+slot: c real
+test: a=20.0 b=60.0 c=2.0 doc="key light point 2,-2,3 w300"
+expect: => i=2 r=0.0 ok=true s="conewiden" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+expect: => doc: key.cone anim 0:20 2:60
+test: a=45.0 b=10.0 c=1.0 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=3 r=0.0 ok=true s="conewiden" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3
+expect: => doc: sun1.cone anim 0:45 1:10
+test: a=1.0 b=2.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".cone anim ");
+	o.append("0");
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "conewiden");
+	out
+}
+@end
+
+@entry 2678a494b21abc5a
+kind: step
+verb: cut
+noun: camera
+modifier: marker
+context: scene
+phrase: cut to the last camera at {a} seconds
+phrase: switch views to the last camera at {a} seconds
+slot: a real
+test: a=2.5 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="camcut" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: @markers 0:shot 2.5:shot
+test: a=1.0 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="camcut" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: @markers 0:wide 1:wide
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append("@markers ");
+	o.append("0");
+	o.append(":");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(":");
+	o.append(last);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camcut");
+	out
+}
+@end
+
+@entry 2778b3a729d3ca47
+kind: step
+verb: add
+noun: light
+modifier: area
+context: scene
+phrase: add an area light of size {b} at height {z} with {a} watts
+phrase: overhead softbox {b} meters wide at height {z} power {a}
+slot: z real
+slot: a real
+slot: b real
+test: z=4.0 a=400.0 b=2.0
+expect: => i=1 r=0.0 ok=true s="area" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: area1 light area 0,0,4 w400 sz2,2
+test: z=3.5 a=250.0 b=1.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="area" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: area3 light area 0,0,3.5 w250 sz1.5,1.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "area", "", o);
+	o.append(" light area ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" w");
+	gold_fnum(o, ${a});
+	o.append(" sz");
+	gold_fnum(o, ${b});
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "area");
+	out
+}
+@end
+
+@entry 29fda4d3d6e3641d
+kind: step
+verb: animate
+noun: light
+modifier: flicker
+context: scene
+phrase: make the last light flicker at {a} watts every {c} seconds
+phrase: flickering lamp at {a} watts period {c}
+slot: a real
+slot: c real
+test: a=300.0 c=0.1 doc="key light point 2,-2,3 w300"
+expect: => i=2 r=0.0 ok=true s="flicker" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+expect: => doc: key.power anim step 0:300 0.1:60 0.2:300 loop
+test: a=4.0 c=0.25 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=3 r=0.0 ok=true s="flicker" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3
+expect: => doc: sun1.power anim step 0:4 0.25:0.8 0.5:4 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".power anim step ");
+	o.append("0");
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(" ");
+	gold_fnum(o, ${c} * 2.0);
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "flicker");
+	out
+}
+@end
+
+@entry 2e3472f13291ce5d
+kind: step
+verb: hide
+noun: light
+modifier: last
+context: scene
+phrase: switch off the last light
+phrase: hide the last lamp
+test: doc="key light point 2,-2,3 w300"
+expect: => i=1 r=0.0 ok=true s="lightoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300 off
+test: doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=2 r=0.0 ok=true s="lightoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3 off
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("off");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lightoff");
+	out
+}
+@end
+
+@entry 2fbcbf39451a5953
+kind: step
+verb: hollow
+noun: shape
+modifier: shell
+context: scene
+phrase: hollow the last item with wall {a}
+phrase: shell the last item to thickness {a}
+slot: a real
+test: a=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="hollow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 sh0.05
+test: a=0.02 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="hollow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 sh0.02
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("sh");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "hollow");
+	out
+}
+@end
+
+@entry 30f24fbb6cbcffe0
+kind: step
+verb: remove
+noun: shape
+modifier: last
+context: scene
+phrase: remove the last item
+phrase: delete the last item from the scene
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=1 r=0.0 ok=true s="remove" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=1 r=0.0 ok=true s="remove" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	gold_ddelete(g, k);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "remove");
+	out
+}
+@end
+
+@entry 3127a2b0b9dd3c7f
+kind: step
+verb: add
+noun: camera
+modifier: side
+context: scene
+phrase: add a side camera {d} meters away at height {h}
+phrase: side view from {d} meters at height {h}
+slot: d real
+slot: h real
+test: d=6.0 h=1.5
+expect: => i=1 r=0.0 ok=true s="camside" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: side1 camera 6,0,1.5 0,0,1.5
+test: d=9.0 h=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="camside" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: side3 camera 9,0,1 0,0,1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "side", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${d});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camside");
+	out
+}
+@end
+
+@entry 316d65b7717dd7c7
+kind: step
+verb: attach
+noun: shape
+modifier: bone
+context: scene
+phrase: attach the last item to bone {w}
+phrase: parent the last item to the bone {w}
+slot: w text
+test: w="hip" doc="hip bone 0,0,1 0,0,1.4|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="attach" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: crate box 1,2,.5 1,1,1 @hip
+test: w="armL" doc="armL bone .3,0,1.3 .8,0,1|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="attach" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 @armL
+test: w="spine"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("@");
+	o.append(${w});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "attach");
+	out
+}
+@end
+
+@entry 32f9608158fa88d0
+kind: step
+verb: record
+noun: action
+modifier: named
+context: scene
+phrase: record action {w} turning the last bone by {a} degrees
+phrase: keyframe an action named {w} rotating the last bone {a} degrees
+slot: w text
+slot: a real
+test: w="wave" a=60.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="action" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: wave:hip.rot anim 0:0,0,0 1:0,0,60 2:0,0,0
+test: w="nod" a=20.0 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="action" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: nod:armL.rot anim 0:0,0,0 1:0,0,20 2:0,0,0
+test: w="idle" a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(${w});
+	o.append(":");
+	o.append(last);
+	o.append(".rot anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("1");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	o.append("2");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "action");
+	out
+}
+@end
+
+@entry 353051f18f4bfbb3
+kind: step
+verb: add
+noun: camera
+modifier: three quarter
+context: scene
+phrase: add a three quarter camera {d} meters from the origin
+phrase: hero angle camera at distance {d}
+slot: d real
+test: d=6.0
+expect: => i=1 r=0.0 ok=true s="cam34" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam1 camera 4.2,-4.2,3 0,0,0 mm35
+test: d=10.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cam34" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cam3 camera 7,-7,5 0,0,0 mm35
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cam", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${d} * 0.7);
+	o.append(",-");
+	gold_fnum(o, ${d} * 0.7);
+	o.append(",");
+	gold_fnum(o, ${d} * 0.5);
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" mm");
+	o.append("35");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cam34");
+	out
+}
+@end
+
+@entry 3a119dfff2c146bb
+kind: step
+verb: set
+noun: timeline
+modifier: sampling
+context: scene
+phrase: export animation curves as {w}
+phrase: sample gltf animation with {w} interpolation
+slot: w text
+test: w="linear"
+expect: => i=1 r=0.0 ok=true s="gltf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @gltf linear
+test: w="cubic" doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="gltf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @gltf cubic
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@gltf ");
+	o.append(${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "gltf");
+	out
+}
+@end
+
+@entry 3afd792e8fc1fb43
+kind: step
+verb: add
+noun: light
+modifier: rim
+context: scene
+phrase: add a rim light behind the scene with {a} watts
+phrase: backlight the scene at {a} watts
+slot: a real
+test: a=300.0
+expect: => i=1 r=0.0 ok=true s="rim" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rim1 light spot 0,4,3 0,0,1 w300 c40
+test: a=150.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="rim" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: rim3 light spot 0,4,3 0,0,1 w150 c40
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "rim", "", o);
+	o.append(" light spot ");
+	o.append("0");
+	o.append(",");
+	o.append("4");
+	o.append(",");
+	o.append("3");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" w");
+	gold_fnum(o, ${a});
+	o.append(" c");
+	o.append("40");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "rim");
+	out
+}
+@end
+
+@entry 3c0b12d63a805e0f
+kind: step
+verb: animate
+noun: light
+modifier: power
+context: scene
+phrase: fade the last light from {a} to {b} watts over {c} seconds
+phrase: animate the last lamp power from {a} to {b} across {c} seconds
+slot: a real
+slot: b real
+slot: c real
+test: a=300.0 b=0.0 c=2.0 doc="key light point 2,-2,3 w300"
+expect: => i=2 r=0.0 ok=true s="fade" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+expect: => doc: key.power anim 0:300 2:0
+test: a=1.0 b=5.0 c=4.0 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=3 r=0.0 ok=true s="fade" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3
+expect: => doc: sun1.power anim 0:1 4:5
+test: a=1.0 b=2.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".power anim ");
+	o.append("0");
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "fade");
+	out
+}
+@end
+
+@entry 3effd1debf6ea1b6
+kind: step
+verb: set
+noun: material
+modifier: frosted
+context: scene
+phrase: make the last item frosted glass
+phrase: frost the last item
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="frosted" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:frosted
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="frosted" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:frosted
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:frosted");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "frosted");
+	out
+}
+@end
+
+@entry 3fea5033526e18cb
+kind: step
+verb: animate
+noun: camera
+modifier: crane
+context: scene
+phrase: raise the last camera by {h} over {c} seconds
+phrase: crane the last camera up {h} meters across {c} seconds
+slot: h real
+slot: c real
+test: h=2.0 c=3.0 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="crane" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: shot.loc anim 0:0,0,0 3:0,0,2
+test: h=1.0 c=1.5 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="crane" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: wide.loc anim 0:0,0,0 1.5:0,0,1
+test: h=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".loc anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "crane");
+	out
+}
+@end
+
+@entry 4071db8a5861f789
+kind: step
+verb: add
+noun: shape
+modifier: ellipsoid
+context: scene
+phrase: add an ellipsoid at {x} {y} {z} with radii {a} {b} {c}
+phrase: stretched ball at {x} {y} {z} radii {a} {b} {c}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+slot: b real
+slot: c real
+test: x=0.0 y=0.0 z=1.0 a=0.4 b=0.4 c=0.6
+expect: => i=1 r=0.0 ok=true s="egg" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: egg1 ellipsoid 0,0,1 0.4,0.4,0.6
+test: x=1.0 y=0.0 z=0.5 a=1.0 b=0.5 c=0.3 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="egg" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: egg3 ellipsoid 1,0,0.5 1,0.5,0.3
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "egg", "", o);
+	o.append(" ellipsoid ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(",");
+	gold_fnum(o, ${c});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "egg");
+	out
+}
+@end
+
+@entry 409894656e22f3f5
+kind: step
+verb: add
+noun: shape
+modifier: capsule
+context: scene
+phrase: add a capsule at {x} {y} height {h} radius {r}
+phrase: upright pill at {x} {y} tall {h} radius {r}
+slot: x real
+slot: y real
+slot: h real
+slot: r real
+test: x=0.0 y=0.0 h=1.5 r=0.3
+expect: => i=1 r=0.0 ok=true s="pill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pill1 capsule 0,0,0.3 0,0,1.5 r0.3
+test: x=-1.0 y=0.5 h=1.0 r=0.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pill3 capsule -1,0.5,0.2 -1,0.5,1 r0.2
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "pill", "", o);
+	o.append(" capsule ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${r});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pill");
+	out
+}
+@end
+
+@entry 46b555107d018ad9
+kind: step
+verb: add
+noun: camera
+modifier: orthographic
+context: scene
+phrase: add a top down orthographic camera at height {z} showing {a} meters
+phrase: orthographic overhead view from {z} covering {a} meters
+slot: z real
+slot: a real
+test: z=10.0 a=8.0
+expect: => i=1 r=0.0 ok=true s="camortho" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: top1 camera 0,0,10 0,0,0 or8
+test: z=20.0 a=25.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="camortho" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: top3 camera 0,0,20 0,0,0 or25
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "top", "", o);
+	o.append(" camera ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" or");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camortho");
+	out
+}
+@end
+
+@entry 47bafbf63295a973
+kind: step
+verb: add
+noun: camera
+modifier: height
+context: scene
+phrase: add a camera at {x} {y} {z} looking at height {h}
+phrase: camera from {x} {y} {z} aimed at height {h}
+slot: x real
+slot: y real
+slot: z real
+slot: h real
+test: x=0.0 y=-5.0 z=1.5 h=1.0
+expect: => i=1 r=0.0 ok=true s="camh" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam1 camera 0,-5,1.5 0,0,1
+test: x=3.0 y=-3.0 z=2.0 h=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="camh" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cam3 camera 3,-3,2 0,0,0.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cam", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camh");
+	out
+}
+@end
+
+@entry 4c6ccb7f02496264
+kind: step
+verb: add
+noun: camera
+modifier: lens
+context: scene
+phrase: add a camera at {x} {y} {z} with a {a} millimeter lens
+phrase: camera at {x} {y} {z} focal length {a}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+test: x=0.0 y=-8.0 z=2.0 a=85.0
+expect: => i=1 r=0.0 ok=true s="camlens" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam1 camera 0,-8,2 0,0,0 mm85
+test: x=2.0 y=-2.0 z=1.0 a=24.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="camlens" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cam3 camera 2,-2,1 0,0,0 mm24
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cam", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" mm");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camlens");
+	out
+}
+@end
+
+@entry 4e1bafe7970719c6
+kind: step
+verb: mirror
+noun: scene
+modifier: global x
+context: scene
+phrase: mirror the whole scene across x
+phrase: make the scene symmetric left to right
+test: 
+expect: => i=1 r=0.0 ok=true s="symmetric" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @mirror x
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="symmetric" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @mirror x
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@mirror x");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "symmetric");
+	out
+}
+@end
+
+@entry 4ec4a7a0b8f26604
+kind: step
+verb: repeat
+noun: shape
+modifier: radial
+context: scene
+phrase: copy the last item {n} times around the vertical axis
+phrase: radial array of {n} copies of the last item
+slot: n int
+test: n=8 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 ra8
+test: n=6 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 ra6
+test: n=2
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("ra");
+	format(o, ${n});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "radial");
+	out
+}
+@end
+
+@entry 4ef26edcf758975d
+kind: step
+verb: add
+noun: light
+modifier: temperature
+context: scene
+phrase: add a lamp at {x} {y} {z} with color temperature {t}
+phrase: warm light at {x} {y} {z} of kelvin {t}
+slot: x real
+slot: y real
+slot: z real
+slot: t int
+test: x=1.0 y=1.0 z=2.0 t=2700
+expect: => i=1 r=0.0 ok=true s="lampk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: lamp1 light point 1,1,2 w200 k2700
+test: x=-1.0 y=0.5 z=3.0 t=6500 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="lampk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: lamp3 light point -1,0.5,3 w200 k6500
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "lamp", "", o);
+	o.append(" light point ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" w");
+	format(o, 200);
+	o.append(" k");
+	format(o, ${t});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lampk");
+	out
+}
+@end
+
+@entry 553b0aaf12fbf745
+kind: step
+verb: rotate
+noun: shape
+modifier: x
+context: scene
+phrase: tilt the last item {a} degrees around x
+phrase: lean the last item forward by {a} degrees
+slot: a real
+test: a=15.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="tilt" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 rot15,0,0
+test: a=30.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="tilt" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 rot30,0,0
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("rot");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "tilt");
+	out
+}
+@end
+
+@entry 5901c23bdb78a64e
+kind: step
+verb: add
+noun: shape
+modifier: box
+context: scene
+phrase: add a box at {x} {y} {z} sized {a} {b} {c}
+phrase: place a block at {x} {y} {z} of size {a} {b} {c}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+slot: b real
+slot: c real
+test: x=0.0 y=0.0 z=0.5 a=1.0 b=2.0 c=1.0
+expect: => i=1 r=0.0 ok=true s="box" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: box1 box 0,0,0.5 1,2,1
+test: x=-2.0 y=1.0 z=0.25 a=0.5 b=0.5 c=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="box" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: box3 box -2,1,0.25 0.5,0.5,0.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "box", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(",");
+	gold_fnum(o, ${c});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "box");
+	out
+}
+@end
+
+@entry 5d2ba172e9088012
+kind: step
+verb: set
+noun: material
+modifier: rough metal
+context: scene
+phrase: give the last item {w} material with roughness {a} metalness {b}
+phrase: last item made of {w} roughness {a} metallic {b}
+slot: w text
+slot: a real
+slot: b real
+test: w="metal" a=0.3 b=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="matrm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:metal:0.3:1
+test: w="plastic" a=0.6 b=0.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="matrm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:plastic:0.6:0
+test: w="matte" a=1.0 b=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:");
+	o.append(${w});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(":");
+	gold_fnum(o, ${b});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "matrm");
+	out
+}
+@end
+
+@entry 617be4f421452e4b
+kind: step
+verb: add
+noun: shape
+modifier: lathe
+context: scene
+phrase: turn a vase of radius {a} height {h} on a lathe
+phrase: lathe a vessel {a} wide {h} tall
+slot: a real
+slot: h real
+test: a=0.3 h=1.0
+expect: => i=1 r=0.0 ok=true s="vase" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: vase1 lathe 0,0,0 0,0 0.3,0 0.42,0.4 0.18,1 0,1 curve sh.05
+test: a=0.5 h=1.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="vase" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: vase3 lathe 0,0,0 0,0 0.5,0 0.7,0.6 0.3,1.5 0,1.5 curve sh.05
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "vase", "", o);
+	o.append(" lathe ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a} * 1.4);
+	o.append(",");
+	gold_fnum(o, ${h} * 0.4);
+	o.append(" ");
+	gold_fnum(o, ${a} * 0.6);
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" curve sh.");
+	o.append("05");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "vase");
+	out
+}
+@end
+
+@entry 62df1fb127998140
+kind: step
+verb: add
+noun: light
+modifier: colored
+context: scene
+phrase: add a colored lamp at {x} {y} {z} with rgb {cr} {cg} {cb}
+phrase: tinted light at {x} {y} {z} colored {cr} {cg} {cb}
+slot: x real
+slot: y real
+slot: z real
+slot: cr int
+slot: cg int
+slot: cb int
+test: x=1.0 y=0.0 z=2.0 cr=255 cg=128 cb=0
+expect: => i=1 r=0.0 ok=true s="lampc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: lamp1 light point 1,0,2 w200 #ff8000
+test: x=0.0 y=-1.0 z=1.5 cr=20 cg=90 cb=250 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="lampc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: lamp3 light point 0,-1,1.5 w200 #145afa
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "lamp", "", o);
+	o.append(" light point ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" w");
+	format(o, 200);
+	o.append(" ");
+	gold_hex(o, ${cr}, ${cg}, ${cb});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lampc");
+	out
+}
+@end
+
+@entry 632ac76d8ee9c74e
+kind: step
+verb: animate
+noun: track
+modifier: swing
+context: scene
+phrase: swing the last bone {a} degrees every {c} seconds
+phrase: oscillate the last bone by {a} degrees period {c}
+slot: a real
+slot: c real
+test: a=30.0 c=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="swing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: hip.rot anim 0:0,30,0 0.5:0,-30,0 1:0,30,0 loop
+test: a=40.0 c=1.2 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="swing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: armL.rot anim 0:0,40,0 0.6:0,-40,0 1.2:0,40,0 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".rot anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "swing");
+	out
+}
+@end
+
+@entry 66947ed023a0681c
+kind: step
+verb: schedule
+noun: action
+modifier: strip
+context: scene
+phrase: schedule action {w} at {a} seconds repeating {n} times
+phrase: nla strip of {w} starting at {a} looping {n} times
+slot: w text
+slot: a real
+slot: n int
+test: w="walk" a=0.0 n=3 doc="hip bone 0,0,1 0,0,1.4|walk:hip.rot anim 0:0,0,0 1:20,0,0"
+expect: => i=3 r=0.0 ok=true s="strip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: walk:hip.rot anim 0:0,0,0 1:20,0,0
+expect: => doc: strip3 strip walk at0 n3
+test: w="wave" a=1.5 n=1 doc="armL bone .3,0,1.3 .8,0,1|wave:armL.rot anim 0:0,0,0 1:0,0,40|run:armL.rot anim 0:0,0,0 .5:30,0,0"
+expect: => i=4 r=0.0 ok=true s="strip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: wave:armL.rot anim 0:0,0,0 1:0,0,40
+expect: => doc: run:armL.rot anim 0:0,0,0 .5:30,0,0
+expect: => doc: strip4 strip wave at1.5 n1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "strip", "", o);
+	o.append(" strip ");
+	o.append(${w});
+	o.append(" at");
+	gold_fnum(o, ${a});
+	o.append(" n");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "strip");
+	out
+}
+@end
+
+@entry 6ae5d424a58bfbf4
+kind: step
+verb: animate
+noun: action
+modifier: walk
+context: scene
+phrase: add a walk swing of {a} degrees on the last bone every {c} seconds
+phrase: walk cycle action swinging the last bone {a} degrees period {c}
+slot: a real
+slot: c real
+test: a=25.0 c=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="walk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: walk:hip.rot anim 0:25,0,0 0.5:-25,0,0 1:25,0,0 loop
+test: a=35.0 c=0.8 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="walk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: walk:armL.rot anim 0:35,0,0 0.4:-35,0,0 0.8:35,0,0 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append("walk:");
+	o.append(last);
+	o.append(".rot anim ");
+	o.append("0");
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":-");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "walk");
+	out
+}
+@end
+
+@entry 6f723cea25e33080
+kind: step
+verb: group
+noun: shape
+modifier: all
+context: scene
+phrase: group every shape together
+phrase: gather all shapes into a group
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="group" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: grp3 group ground,crate
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="group" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: grp3 group rock,post
+test: doc="key light point 2,-2,3 w300"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var names byte[>..] = [];
+	var c = 0;
+	for k in g.dn { if gold_dshape(g, k) { if c > 0 { names.push(','); } gold_dword(g, k, names); c++; } }
+	if c == 0 { gold_fail(g, "no shapes yet"); out.ok = false; return out; }
+	gold_dnew(g, "grp", o);
+	o.append(" group ");
+	o.append(names);
+	gold_doc(g, o);
+	out.i = c;
+	out.s.clear();
+	format(out.s, "group");
+	out
+}
+@end
+
+@entry 708cf821ca4470c6
+kind: step
+verb: add
+noun: shape
+modifier: torus
+context: scene
+phrase: add a ring at {x} {y} {z} with radius {a} thickness {r}
+phrase: place a torus at {x} {y} {z} major {a} minor {r}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+slot: r real
+test: x=0.0 y=0.0 z=1.0 a=1.0 r=0.1
+expect: => i=1 r=0.0 ok=true s="torus" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ring1 torus 0,0,1 R1 r0.1
+test: x=1.0 y=2.0 z=0.5 a=0.6 r=0.15 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="torus" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: ring3 torus 1,2,0.5 R0.6 r0.15
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "ring", "", o);
+	o.append(" torus ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" R");
+	gold_fnum(o, ${a});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "torus");
+	out
+}
+@end
+
+@entry 715e254f0b629302
+kind: step
+verb: animate
+noun: track
+modifier: pulse
+context: scene
+phrase: pulse the last item to scale {a} every {c} seconds
+phrase: heartbeat the last item up to {a} period {c}
+slot: a real
+slot: c real
+test: a=1.2 c=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pulse" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.scale anim 0:1 0.5:1.2 1:1 loop
+test: a=1.5 c=0.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="pulse" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.scale anim 0:1 0.25:1.5 0.5:1 loop
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".scale anim ");
+	o.append("0");
+	o.append(":");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("1");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pulse");
+	out
+}
+@end
+
+@entry 78f18d9011726cf2
+kind: step
+verb: animate
+noun: track
+modifier: shrink
+context: scene
+phrase: shrink the last item away over {c} seconds
+phrase: scale the last item down to nothing across {c} seconds
+slot: c real
+test: c=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="shrink" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.scale anim 0:1 0.5:0
+test: c=2.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="shrink" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.scale anim 0:1 2:0
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".scale anim ");
+	o.append("0");
+	o.append(":");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "shrink");
+	out
+}
+@end
+
+@entry 7c9fd30fc8c5dd3f
+kind: step
+verb: add
+noun: empty
+modifier: target
+context: scene
+phrase: add a target empty at {x} {y} {z}
+phrase: place a locator at {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=1.0 y=-1.0 z=1.0
+expect: => i=1 r=0.0 ok=true s="empty" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: target1 empty 1,-1,1
+test: x=0.0 y=0.0 z=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="empty" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: target3 empty 0,0,2
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "target", "", o);
+	o.append(" empty ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "empty");
+	out
+}
+@end
+
+@entry 7ee970c0c6d9e209
+kind: step
+verb: animate
+noun: camera
+modifier: orbit
+context: scene
+phrase: orbit the camera around the origin at distance {d} height {h} over {c} seconds
+phrase: turntable camera at distance {d} height {h} lasting {c} seconds
+slot: d real
+slot: h real
+slot: c real
+test: d=6.0 h=2.0 c=4.0
+expect: => i=1 r=0.0 ok=true s="orbit" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @cam anim 0:6,0,2,0,0,0 1:0,6,2,0,0,0 2:-6,0,2,0,0,0 3:0,-6,2,0,0,0 4:6,0,2,0,0,0
+test: d=8.0 h=3.0 c=8.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="orbit" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @cam anim 0:8,0,3,0,0,0 2:0,8,3,0,0,0 4:-8,0,3,0,0,0 6:0,-8,3,0,0,0 8:8,0,3,0,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@cam anim ");
+	o.append("0");
+	o.append(":");
+	gold_fnum(o, ${d});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.25);
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${d});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":-");
+	gold_fnum(o, ${d});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.75);
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${d});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${d});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "orbit");
+	out
+}
+@end
+
+@entry 7eefdc945324619d
+kind: step
+verb: animate
+noun: track
+modifier: float
+context: scene
+phrase: make the last item float {h} up every {c} seconds
+phrase: gentle hover of {h} on the last item period {c}
+slot: h real
+slot: c real
+test: h=0.1 c=3.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="float" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.loc anim 0:0,0,0 1.5:0,0,0.1 3:0,0,0 loop
+test: h=0.3 c=2.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="float" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.loc anim 0:0,0,0 1:0,0,0.3 2:0,0,0 loop
+test: h=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".loc anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "float");
+	out
+}
+@end
+
+@entry 81210fb4ec714924
+kind: step
+verb: bend
+noun: shape
+modifier: bend
+context: scene
+phrase: bend the last item {a} degrees
+phrase: curve the last item over by {a} degrees
+slot: a real
+test: a=20.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="bend" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 bn20
+test: a=45.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="bend" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 bn45
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("bn");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bend");
+	out
+}
+@end
+
+@entry 814d292d1aa46a12
+kind: step
+verb: carve
+noun: shape
+modifier: subtract
+context: scene
+phrase: carve the last item out of the shapes before it
+phrase: subtract the last item
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="carve" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 -
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="carve" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 -
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("-");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "carve");
+	out
+}
+@end
+
+@entry 815f49428acefdfb
+kind: step
+verb: set
+noun: material
+modifier: default color
+context: scene
+phrase: set the default color to rgb {cr} {cg} {cb}
+phrase: base color for the scene {cr} {cg} {cb}
+slot: cr int
+slot: cg int
+slot: cb int
+test: cr=230 cg=200 cb=160
+expect: => i=1 r=0.0 ok=true s="defcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @color #e6c8a0
+test: cr=90 cg=90 cb=100 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="defcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @color #5a5a64
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@color ");
+	gold_hex(o, ${cr}, ${cg}, ${cb});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "defcolor");
+	out
+}
+@end
+
+@entry 833b17359e3a953b
+kind: step
+verb: set
+noun: material
+modifier: glass
+context: scene
+phrase: make the last item glass
+phrase: turn the last item transparent like glass
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="glass" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:glass
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="glass" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:glass
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:glass");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "glass");
+	out
+}
+@end
+
+@entry 884ca3f0f92f3bb6
+kind: step
+verb: add
+noun: material
+modifier: noise skin
+context: scene
+phrase: add noise skin depth {a} size {b} to the last item
+phrase: roughen the last item surface by {a} at scale {b}
+slot: a real
+slot: b real
+test: a=0.02 b=0.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="noise" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 nz0.02:0.2
+test: a=0.05 b=0.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="noise" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 nz0.05:0.5
+test: a=1.0 b=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("nz");
+	gold_fnum(o, ${a});
+	o.append(":");
+	gold_fnum(o, ${b});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "noise");
+	out
+}
+@end
+
+@entry 8ae6a2e5098d5dc6
+kind: step
+verb: blend
+noun: shape
+modifier: smooth
+context: scene
+phrase: blend the last item smoothly by {a}
+phrase: melt the last item into the others by {a}
+slot: a real
+test: a=0.1 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="smooth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 ~0.1
+test: a=0.25 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="smooth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 ~0.25
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("~");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "smooth");
+	out
+}
+@end
+
+@entry 8eabeca1a03ab236
+kind: step
+verb: set
+noun: camera
+modifier: sensor
+context: scene
+phrase: set the last camera sensor width to {a}
+phrase: use a {a} millimeter sensor on the last camera
+slot: a real
+test: a=24.0 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=1 r=0.0 ok=true s="camsw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1 sw24
+test: a=36.0 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=2 r=0.0 ok=true s="camsw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24 sw36
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("sw");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camsw");
+	out
+}
+@end
+
+@entry 8f3f77ecc4d7a176
+kind: step
+verb: set
+noun: material
+modifier: emissive
+context: scene
+phrase: make the last item glow rgb {cr} {cg} {cb}
+phrase: emissive light {cr} {cg} {cb} on the last item
+slot: cr int
+slot: cg int
+slot: cb int
+test: cr=255 cg=200 cb=80 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="glow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:emissive #ffc850
+test: cr=40 cg=120 cb=255 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="glow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:emissive #2878ff
+test: cr=1 cg=2 cb=3
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:emissive ");
+	gold_hex(o, ${cr}, ${cg}, ${cb});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "glow");
+	out
+}
+@end
+
+@entry 99314d217d72a05d
+kind: step
+verb: set
+noun: timeline
+modifier: length
+context: scene
+phrase: make the animation {a} seconds long
+phrase: end the timeline at {a} seconds
+slot: a real
+test: a=4.0
+expect: => i=1 r=0.0 ok=true s="len" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @len 4
+test: a=2.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="len" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @len 2.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@len ");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "len");
+	out
+}
+@end
+
+@entry 9acefacbaf129b4a
+kind: step
+verb: light
+noun: scene
+modifier: studio
+context: scene
+phrase: light the scene with a studio key fill rim setup at {a} watts
+phrase: studio lighting at {a} watts
+slot: a real
+test: a=500.0
+expect: => i=3 r=0.0 ok=true s="rig3" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key1 light area 3,-3,3 0,0,1 w500 sz1,1
+expect: => doc: fill2 light area -3,-2,2 0,0,1 w200 sz2,2 k6500
+expect: => doc: rim3 light spot 0,4,3 0,0,1 w300 c40
+test: a=200.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=5 r=0.0 ok=true s="rig3" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: key3 light area 3,-3,3 0,0,1 w200 sz1,1
+expect: => doc: fill4 light area -3,-2,2 0,0,1 w80 sz2,2 k6500
+expect: => doc: rim5 light spot 0,4,3 0,0,1 w120 c40
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "key", "", o);
+	o.append(" light area ");
+	o.append("3");
+	o.append(",-");
+	o.append("3");
+	o.append(",");
+	o.append("3");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" w");
+	gold_fnum(o, ${a});
+	o.append(" sz");
+	o.append("1");
+	o.append(",");
+	o.append("1");
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "fill", "", o);
+	o.append(" light area -");
+	o.append("3");
+	o.append(",-");
+	o.append("2");
+	o.append(",");
+	o.append("2");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" w");
+	gold_fnum(o, ${a} * 0.4);
+	o.append(" sz");
+	o.append("2");
+	o.append(",");
+	o.append("2");
+	o.append(" k");
+	format(o, 6500);
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "rim", "", o);
+	o.append(" light spot ");
+	o.append("0");
+	o.append(",");
+	o.append("4");
+	o.append(",");
+	o.append("3");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" w");
+	gold_fnum(o, ${a} * 0.6);
+	o.append(" c");
+	o.append("40");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "rig3");
+	out
+}
+@end
+
+@entry 9bf947a193b37f02
+kind: step
+verb: repeat
+noun: shape
+modifier: array y
+context: scene
+phrase: repeat the last item {n} times spaced {a} along y
+phrase: line up {n} copies of the last item every {a} meters in depth
+slot: n int
+slot: a real
+test: n=3 a=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="arrayy" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 a3:0,2,0
+test: n=5 a=1.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="arrayy" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 a5:0,1,0
+test: n=2 a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("a");
+	format(o, ${n});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrayy");
+	out
+}
+@end
+
+@entry 9bfc6d3c85dccdb8
+kind: step
+verb: weather
+noun: material
+modifier: all noise
+context: scene
+phrase: weather every shape with noise depth {a}
+phrase: age all shapes with surface noise {a}
+slot: a real
+test: a=0.01 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="weather" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1 nz0.01:.3
+expect: => doc: crate box 1,2,.5 1,1,1 nz0.01:.3
+test: a=0.03 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="weather" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4 nz0.03:.3
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 nz0.03:.3
+test: a=1.0 doc="key light point 2,-2,3 w300"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("nz");
+	gold_fnum(o, ${a});
+	o.append(":.");
+	o.append("3");
+	var c = 0;
+	for k in g.dn { if gold_dshape(g, k) { gold_dappend(g, k, o); c++; } }
+	if c == 0 { gold_fail(g, "no shapes yet"); out.ok = false; return out; }
+	out.i = c;
+	out.s.clear();
+	format(out.s, "weather");
+	out
+}
+@end
+
+@entry 9c912c6143b59e23
+kind: step
+verb: rotate
+noun: shape
+modifier: z
+context: scene
+phrase: turn the last item {a} degrees around z
+phrase: spin the last item by {a} degrees about the vertical
+slot: a real
+test: a=45.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="turn" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 rot0,0,45
+test: a=90.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="turn" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 rot0,0,90
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("rot");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "turn");
+	out
+}
+@end
+
+@entry 9f308d2c070b03b4
+kind: step
+verb: animate
+noun: camera
+modifier: zoom
+context: scene
+phrase: zoom the last camera lens from {a} to {b} over {c} seconds
+phrase: animate the last camera focal length from {a} to {b} across {c} seconds
+slot: a real
+slot: b real
+slot: c real
+test: a=35.0 b=85.0 c=2.0 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="zoom" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: shot.cam anim 0:0,-6,2,0,0,1,35 2:0,-6,2,0,0,1,85
+test: a=24.0 b=50.0 c=3.0 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="zoom" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: wide.cam anim 0:0,-6,2,0,0,1,24 3:0,-6,2,0,0,1,50
+test: a=1.0 b=2.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".cam anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	o.append("6");
+	o.append(",");
+	o.append("2");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	o.append("6");
+	o.append(",");
+	o.append("2");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "zoom");
+	out
+}
+@end
+
+@entry a1e6831ad21ba1b5
+kind: step
+verb: soften
+noun: light
+modifier: edge
+context: scene
+phrase: soften the last spot edge by {b}
+phrase: set the last spotlight blend to {b}
+slot: b real
+test: b=0.5 doc="key light point 2,-2,3 w300"
+expect: => i=1 r=0.0 ok=true s="blend" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300 bl0.5
+test: b=0.2 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=2 r=0.0 ok=true s="blend" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3 bl0.2
+test: b=0.1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("bl");
+	gold_fnum(o, ${b});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "blend");
+	out
+}
+@end
+
+@entry a4c0572d2a2815bc
+kind: step
+verb: set
+noun: material
+modifier: gold
+context: scene
+phrase: make the last item gold
+phrase: gild the last item
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="goldm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:gold
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="goldm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:gold
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:gold");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "goldm");
+	out
+}
+@end
+
+@entry a719900a019751f3
+kind: step
+verb: set
+noun: material
+modifier: last
+context: scene
+phrase: set the last item material to {w}
+phrase: give the last item a {w} finish
+slot: w text
+test: w="metal" doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="mat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:metal
+test: w="ceramic" doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="mat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:ceramic
+test: w="matte"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:");
+	o.append(${w});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "mat");
+	out
+}
+@end
+
+@entry a73b316e29f1873d
+kind: step
+verb: add
+noun: light
+modifier: point
+context: scene
+phrase: add a point light at {x} {y} {z} with {a} watts
+phrase: put a lamp at {x} {y} {z} of power {a}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+test: x=1.0 y=-2.0 z=3.0 a=300.0
+expect: => i=1 r=0.0 ok=true s="lamp" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: lamp1 light point 1,-2,3 w300
+test: x=0.5 y=0.25 z=2.5 a=60.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="lamp" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: lamp3 light point 0.5,0.25,2.5 w60
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "lamp", "", o);
+	o.append(" light point ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" w");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lamp");
+	out
+}
+@end
+
+@entry a86025724385e0de
+kind: step
+verb: animate
+noun: light
+modifier: kelvin
+context: scene
+phrase: shift the last light color temperature from {t} to {u} over {c} seconds
+phrase: warm the last lamp from kelvin {t} to {u} across {c} seconds
+slot: t int
+slot: u int
+slot: c real
+test: t=6500 u=2700 c=3.0 doc="key light point 2,-2,3 w300"
+expect: => i=2 r=0.0 ok=true s="kelvin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+expect: => doc: key.kelvin anim 0:6500 3:2700
+test: t=5000 u=3200 c=1.5 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=3 r=0.0 ok=true s="kelvin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3
+expect: => doc: sun1.kelvin anim 0:5000 1.5:3200
+test: t=1 u=2 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".kelvin anim ");
+	o.append("0");
+	o.append(":");
+	format(o, ${t});
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	format(o, ${u});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "kelvin");
+	out
+}
+@end
+
+@entry a871111504ce9725
+kind: step
+verb: add
+noun: shape
+modifier: column
+context: scene
+phrase: add a column at {x} {y} of height {h} radius {r}
+phrase: stand a pillar at {x} {y} tall {h} radius {r}
+slot: x real
+slot: y real
+slot: h real
+slot: r real
+test: x=0.0 y=0.0 h=3.0 r=0.3
+expect: => i=1 r=0.0 ok=true s="column" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: column1 cyl 0,0,0 0,0,3 r0.3
+test: x=2.0 y=2.0 h=2.5 r=0.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="column" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: column3 cyl 2,2,0 2,2,2.5 r0.2
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "column", "", o);
+	o.append(" cyl ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "column");
+	out
+}
+@end
+
+@entry a8f6c9816d6b6270
+kind: step
+verb: add
+noun: light
+modifier: spot
+context: scene
+phrase: spot light at {x} {y} {z} facing the origin with cone {c}
+phrase: aim a spotlight from {x} {y} {z} at the center cone {c}
+slot: x real
+slot: y real
+slot: z real
+slot: c real
+test: x=2.0 y=-2.0 z=4.0 c=30.0
+expect: => i=1 r=0.0 ok=true s="spot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: spot1 light spot 2,-2,4 0,0,0 w500 c30
+test: x=-1.5 y=1.0 z=3.0 c=45.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="spot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: spot3 light spot -1.5,1,3 0,0,0 w500 c45
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "spot", "", o);
+	o.append(" light spot ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" w");
+	format(o, 500);
+	o.append(" c");
+	gold_fnum(o, ${c});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "spot");
+	out
+}
+@end
+
+@entry aaa65e04be868b96
+kind: step
+verb: restyle
+noun: material
+modifier: all
+context: scene
+phrase: make every shape {w}
+phrase: restyle all shapes as {w}
+slot: w text
+test: w="ceramic" doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="allmat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1 m:ceramic
+expect: => doc: crate box 1,2,.5 1,1,1 m:ceramic
+test: w="brushed" doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="allmat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4 m:brushed
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:brushed
+test: w="metal" doc="key light point 2,-2,3 w300"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("m:");
+	o.append(${w});
+	var c = 0;
+	for k in g.dn { if gold_dshape(g, k) { gold_dappend(g, k, o); c++; } }
+	if c == 0 { gold_fail(g, "no shapes yet"); out.ok = false; return out; }
+	out.i = c;
+	out.s.clear();
+	format(out.s, "allmat");
+	out
+}
+@end
+
+@entry ae3a435bc6bc66e9
+kind: step
+verb: schedule
+noun: action
+modifier: speed
+context: scene
+phrase: play action {w} at speed {a}
+phrase: nla strip of {w} scaled to speed {a}
+slot: w text
+slot: a real
+test: w="walk" a=1.5 doc="hip bone 0,0,1 0,0,1.4|walk:hip.rot anim 0:0,0,0 1:20,0,0"
+expect: => i=3 r=0.0 ok=true s="stripx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: walk:hip.rot anim 0:0,0,0 1:20,0,0
+expect: => doc: strip3 strip walk x1.5
+test: w="run" a=0.5 doc="armL bone .3,0,1.3 .8,0,1|wave:armL.rot anim 0:0,0,0 1:0,0,40|run:armL.rot anim 0:0,0,0 .5:30,0,0"
+expect: => i=4 r=0.0 ok=true s="stripx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: wave:armL.rot anim 0:0,0,0 1:0,0,40
+expect: => doc: run:armL.rot anim 0:0,0,0 .5:30,0,0
+expect: => doc: strip4 strip run x0.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "strip", "", o);
+	o.append(" strip ");
+	o.append(${w});
+	o.append(" x");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "stripx");
+	out
+}
+@end
+
+@entry af37e160be34cde4
+kind: step
+verb: restyle
+noun: material
+modifier: all rough
+context: scene
+phrase: set every shape to {w} with roughness {a}
+phrase: all shapes {w} of roughness {a}
+slot: w text
+slot: a real
+test: w="plastic" a=0.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="allrough" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1 m:plastic:0.2
+expect: => doc: crate box 1,2,.5 1,1,1 m:plastic:0.2
+test: w="metal" a=0.7 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="allrough" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4 m:metal:0.7
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:metal:0.7
+test: w="matte" a=1.0 doc="key light point 2,-2,3 w300"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("m:");
+	o.append(${w});
+	o.append(":");
+	gold_fnum(o, ${a});
+	var c = 0;
+	for k in g.dn { if gold_dshape(g, k) { gold_dappend(g, k, o); c++; } }
+	if c == 0 { gold_fail(g, "no shapes yet"); out.ok = false; return out; }
+	out.i = c;
+	out.s.clear();
+	format(out.s, "allrough");
+	out
+}
+@end
+
+@entry aff61b853a01d9f3
+kind: step
+verb: add
+noun: shape
+modifier: tube
+context: scene
+phrase: bend a pipe up from {x} {y} to height {h} radius {r}
+phrase: curved tube from {x} {y} rising {h} radius {r}
+slot: x real
+slot: y real
+slot: h real
+slot: r real
+test: x=1.0 y=0.0 h=2.0 r=0.1
+expect: => i=1 r=0.0 ok=true s="pipe" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pipe1 tube 1,0,0 1,0,1.2 0.5,0,2 r0.1
+test: x=2.0 y=2.0 h=1.0 r=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pipe" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pipe3 tube 2,2,0 2,2,0.6 1,1,1 r0.05
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "pipe", "", o);
+	o.append(" tube ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h} * 0.6);
+	o.append(" ");
+	gold_fnum(o, ${x} * 0.5);
+	o.append(",");
+	gold_fnum(o, ${y} * 0.5);
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pipe");
+	out
+}
+@end
+
+@entry b444a820f2cd78f7
+kind: step
+verb: activate
+noun: camera
+modifier: active
+context: scene
+phrase: make the last camera active
+phrase: look through the last camera
+test: doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="camactive" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: @camera shot
+test: doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="camactive" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: @camera wide
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append("@camera ");
+	o.append(last);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camactive");
+	out
+}
+@end
+
+@entry b45292df7625920d
+kind: step
+verb: play
+noun: action
+modifier: active
+context: scene
+phrase: play the action {w}
+phrase: set the active action to {w}
+slot: w text
+test: w="walk"
+expect: => i=1 r=0.0 ok=true s="play" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @action walk
+test: w="wave" doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="play" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: @action wave
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@action ");
+	o.append(${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "play");
+	out
+}
+@end
+
+@entry bb4a8063bf501bcc
+kind: step
+verb: add
+noun: camera
+modifier: origin
+context: scene
+phrase: add a camera at {x} {y} {z} looking at the origin
+phrase: place a camera at {x} {y} {z} facing the center
+slot: x real
+slot: y real
+slot: z real
+test: x=0.0 y=-6.0 z=2.0
+expect: => i=1 r=0.0 ok=true s="cam" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam1 camera 0,-6,2 0,0,0
+test: x=4.0 y=-4.0 z=3.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cam" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cam3 camera 4,-4,3 0,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cam", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cam");
+	out
+}
+@end
+
+@entry cacb9e4964cccb39
+kind: step
+verb: add
+noun: light
+modifier: sun
+context: scene
+phrase: add a sun light of {a} watts with angle {b}
+phrase: create sunlight with strength {a} spread {b} degrees
+slot: a real
+slot: b real
+test: a=3.5 b=2.0
+expect: => i=1 r=0.0 ok=true s="sun" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: sun1 light sun 0,0,10 w3.5 an2
+test: a=5.0 b=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="sun" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: sun3 light sun 0,0,10 w5 an0.5
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "sun", "", o);
+	o.append(" light sun ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("10");
+	o.append(" w");
+	gold_fnum(o, ${a});
+	o.append(" an");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sun");
+	out
+}
+@end
+
+@entry caf2daac7db91507
+kind: step
+verb: animate
+noun: camera
+modifier: dolly
+context: scene
+phrase: dolly the last camera from {d} to {e} meters over {c} seconds
+phrase: push the last camera in from {d} to {e} meters across {c} seconds
+slot: d real
+slot: e real
+slot: c real
+test: d=8.0 e=4.0 c=3.0 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="dolly" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1
+expect: => doc: shot.cam anim 0:0,-8,1.5,0,0,1 3:0,-4,1.5,0,0,1
+test: d=10.0 e=6.0 c=2.0 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=3 r=0.0 ok=true s="dolly" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24
+expect: => doc: wide.cam anim 0:0,-10,1.5,0,0,1 2:0,-6,1.5,0,0,1
+test: d=1.0 e=2.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".cam anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${d});
+	o.append(",");
+	o.append("1");
+	o.append(".");
+	o.append("5");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",-");
+	gold_fnum(o, ${e});
+	o.append(",");
+	o.append("1");
+	o.append(".");
+	o.append("5");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "dolly");
+	out
+}
+@end
+
+@entry cca6b7550b75fd94
+kind: step
+verb: set
+noun: timeline
+modifier: start
+context: scene
+phrase: start the animation at {a} seconds
+phrase: begin the timeline at {a} seconds
+slot: a real
+test: a=0.5
+expect: => i=1 r=0.0 ok=true s="start" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @start 0.5
+test: a=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="start" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @start 1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@start ");
+	gold_fnum(o, ${a});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "start");
+	out
+}
+@end
+
+@entry cdb6b66e31c8baeb
+kind: step
+verb: set
+noun: timeline
+modifier: fps
+context: scene
+phrase: set the frame rate to {n}
+phrase: animate at {n} frames per second
+slot: n int
+test: n=24
+expect: => i=1 r=0.0 ok=true s="fps" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: @fps 24
+test: n=60 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="fps" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: @fps 60
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	o.append("@fps ");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "fps");
+	out
+}
+@end
+
+@entry cf2d5fa71130247c
+kind: step
+verb: set
+noun: material
+modifier: rubber
+context: scene
+phrase: make the last item rubber
+phrase: rubbery finish on the last item
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="rubber" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 m:rubber
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="rubber" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 m:rubber
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("m:rubber");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "rubber");
+	out
+}
+@end
+
+@entry d663125eb7819087
+kind: step
+verb: color
+noun: material
+modifier: rgb
+context: scene
+phrase: color the last item rgb {cr} {cg} {cb}
+phrase: paint the last item {cr} {cg} {cb}
+slot: cr int
+slot: cg int
+slot: cb int
+test: cr=200 cg=40 cb=40 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="color" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 #c82828
+test: cr=10 cg=200 cb=90 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="color" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 #0ac85a
+test: cr=1 cg=2 cb=3
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	gold_hex(o, ${cr}, ${cg}, ${cb});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "color");
+	out
+}
+@end
+
+@entry d8217051b6d2584f
+kind: step
+verb: add
+noun: light
+modifier: soft
+context: scene
+phrase: add a soft lamp at {x} {y} {z} with shadow radius {r}
+phrase: soft shadow light at {x} {y} {z} radius {r}
+slot: x real
+slot: y real
+slot: z real
+slot: r real
+test: x=0.0 y=0.0 z=3.0 r=0.25
+expect: => i=1 r=0.0 ok=true s="lamps" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: lamp1 light point 0,0,3 w200 r0.25
+test: x=2.0 y=2.0 z=2.0 r=0.1 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="lamps" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: lamp3 light point 2,2,2 w200 r0.1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "lamp", "", o);
+	o.append(" light point ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" w");
+	format(o, 200);
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lamps");
+	out
+}
+@end
+
+@entry d8cff2df7fa7a934
+kind: step
+verb: add
+noun: shape
+modifier: rounded
+context: scene
+phrase: add a rounded cube of size {a} at {x} {y} {z} rounding {r}
+phrase: soft edged cube {a} wide at {x} {y} {z} bevel {r}
+slot: x real
+slot: y real
+slot: z real
+slot: a real
+slot: r real
+test: x=0.0 y=0.0 z=0.5 a=1.0 r=0.1
+expect: => i=1 r=0.0 ok=true s="cube" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: block1 box 0,0,0.5 1,1,1 r0.1
+test: x=1.0 y=1.0 z=0.4 a=0.8 r=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cube" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: block3 box 1,1,0.4 0.8,0.8,0.8 r0.05
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "block", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cube");
+	out
+}
+@end
+
+@entry d9acb25e0a9773d8
+kind: step
+verb: animate
+noun: track
+modifier: bounce
+context: scene
+phrase: make the last item bounce {h} high every {c} seconds
+phrase: bouncing hop of {h} on the last item period {c}
+slot: h real
+slot: c real
+test: h=0.5 c=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bounce" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.loc anim 0:0,0,0 0.5:0,0,0.5/bounce 1:0,0,0 loop
+test: h=1.0 c=0.8 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="bounce" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.loc anim 0:0,0,0 0.4:0,0,1/bounce 0.8:0,0,0 loop
+test: h=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".loc anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c} * 0.5);
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append("/bounce ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bounce");
+	out
+}
+@end
+
+@entry da9d3a1bf11b7dd8
+kind: step
+verb: inflate
+noun: shape
+modifier: offset
+context: scene
+phrase: inflate the last item by {a}
+phrase: grow the last item surface outward {a}
+slot: a real
+test: a=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="inflate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 o0.05
+test: a=0.1 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="inflate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 o0.1
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("o");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "inflate");
+	out
+}
+@end
+
+@entry dd9e577233718a63
+kind: step
+verb: add
+noun: shape
+modifier: prism
+context: scene
+phrase: add a {n} sided prism at {x} {y} height {h} radius {r}
+phrase: polygonal column with {n} sides at {x} {y} tall {h} radius {r}
+slot: x real
+slot: y real
+slot: h real
+slot: r real
+slot: n int
+test: x=0.0 y=0.0 h=1.0 r=0.5 n=6
+expect: => i=1 r=0.0 ok=true s="prism" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: prism1 prism 0,0,0 0,0,1 r0.5 n6
+test: x=1.0 y=1.0 h=2.0 r=0.3 n=8 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="prism" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: prism3 prism 1,1,0 1,1,2 r0.3 n8
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "prism", "", o);
+	o.append(" prism ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" n");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "prism");
+	out
+}
+@end
+
+@entry e5f534b75102d83c
+kind: step
+verb: intersect
+noun: shape
+modifier: intersect
+context: scene
+phrase: intersect the last item with the shapes before it
+phrase: keep only the overlap with the last item
+test: doc="block box 0,0,.5 1,1,1|ball sphere .3,0,.6 r.5"
+expect: => i=2 r=0.0 ok=true s="intersect" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: block box 0,0,.5 1,1,1
+expect: => doc: ball sphere .3,0,.6 r.5 &
+test: doc="slab box 0,0,0 2,2,.4|pin cyl 0,0,-1 0,0,1 r.2"
+expect: => i=2 r=0.0 ok=true s="intersect" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: slab box 0,0,0 2,2,.4
+expect: => doc: pin cyl 0,0,-1 0,0,1 r.2 &
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("&");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "intersect");
+	out
+}
+@end
+
+@entry e849e645e75a6719
+kind: step
+verb: animate
+noun: track
+modifier: spin
+context: scene
+phrase: spin the last item around fully every {c} seconds
+phrase: turntable rotation of the last item period {c}
+slot: c real
+test: c=4.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="spin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.rot anim linear 0:0,0,0 4:0,0,360 loop
+test: c=2.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="spin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.rot anim linear 0:0,0,0 2:0,0,360 loop
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".rot anim linear ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	format(o, 360);
+	o.append(" loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "spin");
+	out
+}
+@end
+
+@entry e9933703c63fbf92
+kind: step
+verb: animate
+noun: track
+modifier: quaternion
+context: scene
+phrase: rotate the last item to {a} degrees with quaternions over {c} seconds
+phrase: slerp the last item rotation to {a} across {c} seconds
+slot: a real
+slot: c real
+test: a=90.0 c=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="quat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.rot anim quat 0:0,0,0 1:90,90,0
+test: a=45.0 c=2.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="quat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.rot anim quat 0:0,0,0 2:45,45,0
+test: a=1.0 c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".rot anim quat ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "quat");
+	out
+}
+@end
+
+@entry eea75c43d91a0463
+kind: step
+verb: set
+noun: camera
+modifier: clipping
+context: scene
+phrase: set the last camera clipping from {a} to {b}
+phrase: clip the last camera view from {a} to {b} meters
+slot: a real
+slot: b real
+test: a=0.1 b=100.0 doc="shot camera 0,-6,2 0,0,1"
+expect: => i=1 r=0.0 ok=true s="camclip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shot camera 0,-6,2 0,0,1 cl0.1,100
+test: a=0.5 b=50.0 doc="floor box 0,0,-.5 8,8,1|wide camera 4,-8,3 0,0,0 mm24"
+expect: => i=2 r=0.0 ok=true s="camclip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 4,-8,3 0,0,0 mm24 cl0.5,50
+test: a=1.0 b=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("cl");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "camclip");
+	out
+}
+@end
+
+@entry f3bff487a5cfd9ba
+kind: step
+verb: animate
+noun: light
+modifier: sunset
+context: scene
+phrase: turn the last light orange over {c} seconds
+phrase: sunset tint on the last lamp across {c} seconds
+slot: c real
+test: c=4.0 doc="key light point 2,-2,3 w300"
+expect: => i=2 r=0.0 ok=true s="lcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: key light point 2,-2,3 w300
+expect: => doc: key.color anim 0:1,1,1 4:1,.45,.15
+test: c=10.0 doc="floor box 0,0,-.5 8,8,1|sun1 light sun 0,0,10 w3"
+expect: => i=3 r=0.0 ok=true s="lcolor" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: sun1 light sun 0,0,10 w3
+expect: => doc: sun1.color anim 0:1,1,1 10:1,.45,.15
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".color anim ");
+	o.append("0");
+	o.append(":");
+	o.append("1");
+	o.append(",");
+	o.append("1");
+	o.append(",");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("1");
+	o.append(",.");
+	o.append("45");
+	o.append(",.");
+	o.append("15");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "lcolor");
+	out
+}
+@end
+
+@entry f6e5b5f3cf8df8f4
+kind: step
+verb: mirror
+noun: shape
+modifier: x
+context: scene
+phrase: mirror the last item across x
+phrase: copy the last item to the other side
+test: doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="mirror" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 mx
+test: doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="mirror" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 mx
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("mx");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "mirror");
+	out
+}
+@end
+
+@entry f8030cd2d3b045e3
+kind: step
+verb: animate
+noun: track
+modifier: grow
+context: scene
+phrase: grow the last item in over {c} seconds
+phrase: scale the last item up from nothing across {c} seconds
+slot: c real
+test: c=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="growin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crate.scale anim back 0:0 0.5:1
+test: c=1.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="growin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: post.scale anim back 0:0 1.5:1
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".scale anim back ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "growin");
+	out
+}
+@end
+
+@entry f8a90bf5fd7625ca
+kind: step
+verb: add
+noun: shape
+modifier: pyramid
+context: scene
+phrase: add a pyramid at {x} {y} base {a} height {h}
+phrase: place a pyramid of width {a} tall {h} at {x} {y}
+slot: x real
+slot: y real
+slot: a real
+slot: h real
+test: x=0.0 y=0.0 a=2.0 h=1.5
+expect: => i=1 r=0.0 ok=true s="pyramid" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pyramid1 pyramid 0,0,0 2,2,1.5
+test: x=-3.0 y=-3.0 a=1.0 h=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pyramid" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pyramid3 pyramid -3,-3,0 1,1,1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "pyramid", "", o);
+	o.append(" pyramid ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pyramid");
+	out
+}
+@end
+
+@entry fcb6065fb8e63053
+kind: step
+verb: twist
+noun: shape
+modifier: twist
+context: scene
+phrase: twist the last item {a} degrees per meter
+phrase: corkscrew the last item by {a} degrees each meter
+slot: a real
+test: a=30.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="twist" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 tw30
+test: a=90.0 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="twist" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 tw90
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("tw");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "twist");
+	out
+}
+@end
+

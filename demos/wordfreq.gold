@@ -1,0 +1,10 @@
+# word frequency report
+A function `top_words` takes a text and a count n and returns the n most common lowercase words with their counts, most common first, ties broken alphabetically. Words are runs of letters; everything else separates them.
+
+The program runs `top_words` on "The cat and the hat. The bat sat on the cat!" with n = 3 and prints each as `word: count`, one per line, then prints the total number of words.
+
+expect:
+the: 4
+cat: 2
+and: 1
+total: 11

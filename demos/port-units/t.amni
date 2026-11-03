@@ -1,0 +1,19 @@
+import os;
+import units;
+fn num(s const byte[:]) real { if s == "inf" { return 1.0 / 0.0; } let v, ok = parse_flt(s); v }
+fn main() {
+	var txt byte[>..] = [];
+	read_file("cases.txt", txt);
+	for l in split(txt, '\n') {
+		if l.len == 0 { continue; }
+		var f byte[][>..] = [];
+		for x in split(l, '\t') { f.push(copy(x)); }
+		var a byte[]? = null;
+		var k = 0;
+		var c0 byte[>..] = []; var c1 byte[>..] = []; var c2 byte[>..] = []; var c3 byte[>..] = []; var c4 byte[>..] = [];
+		for x in f { if k == 0 { c0.append(x); } else if k == 1 { c1.append(x); } else if k == 2 { c2.append(x); } else if k == 3 { c3.append(x); } else { c4.append(x); } k++; }
+		if c0 == "nf" { let d, ok = parse_int(c2); print(nf(num(c1), d)); }
+		else if c0 == "one" { let d, ok = parse_int(c4); print(one(c1, num(c2), c3, d)); }
+		else { let d, ok = parse_int(c3); print(dual(c1, num(c2), d)); }
+	}
+}

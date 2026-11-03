@@ -1,0 +1,9 @@
+# Anthony's example, with concrete x / y / subfunction
+x = collatz step
+y = reaches one
+sub = digit sum
+input = 27
+Run function x until y.
+Check errors and cache results.
+Run subfunction.
+Return results.

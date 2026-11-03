@@ -1,0 +1,164 @@
+fn main() {
+	print(77);
+}
+
+fn main() {
+	print(77);
+}
+
+fn main() {
+	for i in 1..31 {
+		if i % 15 == 0 {
+			print("FizzBuzz");
+		} else if i % 3 == 0 {
+			print("Fizz");
+		} else if i % 5 == 0 {
+			print("Buzz");
+		} else {
+			print(i);
+		}
+	}
+}
+
+fn is_prime(n int) bool {
+	if n < 2 { return false; }
+	var d = 2;
+	while d * d <= n {
+		if n % d == 0 { return false; }
+		d++;
+	}
+	true
+}
+
+fn sum_primes(limit int) int {
+	var total = 0;
+	let hi = limit + 1;
+	for i in 2..hi {
+		if is_prime(i) { total += i; }
+	}
+	total
+}
+
+fn main() {
+	print(sum_primes(100000));
+}
+
+fn is_prime(n int) bool {
+	if n < 2 { return false; }
+	var d = 2;
+	while d * d <= n {
+		if n % d == 0 { return false; }
+		d++;
+	}
+	true
+}
+
+fn count_primes(limit int) int {
+	var count = 0;
+	var n = 2;
+	while n < limit {
+		if is_prime(n) { count++; }
+		n++;
+	}
+	count
+}
+
+fn main() {
+	print(count_primes(20000000));
+}
+
+fn main() {
+	for i in 1..31 {
+		if i % 15 == 0 {
+			print("FizzBuzz");
+		} else if i % 3 == 0 {
+			print("Fizz");
+		} else if i % 5 == 0 {
+			print("Buzz");
+		} else {
+			print(i);
+		}
+	}
+}
+
+fn is_prime(n int) bool {
+	if n < 2 { return false; }
+	var d = 2;
+	while d * d <= n {
+		if n % d == 0 { return false; }
+		d++;
+	}
+	true
+}
+
+fn sum_primes(limit int) int {
+	var total = 0;
+	let hi = limit + 1;
+	for i in 2..hi {
+		if is_prime(i) { total += i; }
+	}
+	total
+}
+
+fn main() {
+	print(sum_primes(100000));
+}
+
+fn is_prime(n int) bool {
+	if n < 2 { return false; }
+	var d = 2;
+	while d * d <= n {
+		if n % d == 0 { return false; }
+		d++;
+	}
+	true
+}
+
+fn count_primes(limit int) int {
+	var count = 0;
+	var n = 2;
+	while n < limit {
+		if is_prime(n) { count++; }
+		n++;
+	}
+	count
+}
+
+fn main() {
+	print(count_primes(20000000));
+}
+
+fn gcd(a int, b int) int {
+	var x = a;
+	var y = b;
+	while y != 0 {
+		let t = x % y;
+		x = y;
+		y = t;
+	}
+	x
+}
+fn lcm(a int, b int) int { a / gcd(a, b) * b }
+fn main() {
+	print(gcd(1071, 462), " ", lcm(21, 6));
+	print(gcd(123456789, 987654321));
+}
+
+fn main() {
+	let s = "the quick brown fox jumps over the lazy dog";
+	var out byte[>..] = [];
+	var end = s.len;
+	var i = s.len;
+	while i > 0 {
+		if s[i - 1] == ' ' {
+			if out.len > 0 { out.push(' '); }
+			out.append(s[i..end]);
+			end = i - 1;
+		}
+		i -= 1;
+	}
+	if out.len > 0 { out.push(' '); }
+	out.append(s[0..end]);
+	print(out);
+}
+

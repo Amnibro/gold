@@ -1,0 +1,22 @@
+{
+ "product": "Amni-Price",
+ "module": "Shelf-tag OCR price parser (PriceParser, UnitParser, Money)",
+ "orig_lang": "Kotlin",
+ "orig_src": [
+  "orig/OcrLine.kt",
+  "orig/Money.kt",
+  "orig/UnitParser.kt",
+  "orig/PriceParser.kt"
+ ],
+ "gold": [
+  "he/price_core.gold"
+ ],
+ "helium": [
+  "he/price.he"
+ ],
+ "run_orig": "../kotlin ref/ref.jar MainKt",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 40,
+ "runs": 5
+}

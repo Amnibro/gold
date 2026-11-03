@@ -1,0 +1,17 @@
+[Unit]
+Description=Rikku Gold conversational-function generator (Gemini via Braid room rikku-gold-gen)
+
+[Service]
+Type=simple
+ExecStart=/bin/bash %h/.cache/rikku/gold-gen/ctl.sh
+Nice=15
+IOSchedulingClass=idle
+CPUWeight=20
+MemoryMax=4G
+Restart=on-failure
+RestartSec=120
+KillSignal=SIGTERM
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,6 @@
+extrude plate 0.12 by 0.08 thick 0.01
+bevel last item edges by 0.002
+drill 4 bolt holes of radius 0.004 on circle of radius 0.03
+add shaft 0.1 long radius 0.008
+add gear of radius 0.025 thickness 0.008 with 18 teeth
+lathe bushing inner 0.008 outer 0.014 height 0.02

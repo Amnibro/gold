@@ -1,0 +1,689 @@
+@entry 20e4546a8e88152c
+kind: step
+verb: drill
+noun: part
+modifier: hole row
+context: cad
+phrase: drill a row of {n} holes spaced {a} radius {r}
+phrase: line of {n} holes every {a} with radius {r}
+slot: n int
+slot: a real
+slot: r real
+test: n=5 a=0.2 r=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="holerow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: holes3 cyl 0,0,-1 0,0,1 r0.05 - a5:0.2,0,0
+test: n=3 a=0.5 r=0.1 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="holerow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: holes3 cyl 0,0,-1 0,0,1 r0.1 - a3:0.5,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "holes", "", o);
+	o.append(" cyl ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",-");
+	o.append("1");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" - a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "holerow");
+	out
+}
+@end
+
+@entry 588fb9f5028db86d
+kind: step
+verb: extrude
+noun: part
+modifier: plate
+context: cad
+phrase: extrude a plate {a} by {b} thick {h}
+phrase: rectangular plate half width {a} half depth {b} thickness {h}
+slot: a real
+slot: b real
+slot: h real
+test: a=0.05 b=0.03 h=0.005
+expect: => i=1 r=0.0 ok=true s="plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: plate1 extrude 0,0,0 -0.05,-0.03 0.05,-0.03 0.05,0.03 -0.05,0.03 h0.005
+test: a=0.1 b=0.1 h=0.01 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: plate3 extrude 0,0,0 -0.1,-0.1 0.1,-0.1 0.1,0.1 -0.1,0.1 h0.01
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "plate", "", o);
+	o.append(" extrude ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" -");
+	gold_fnum(o, ${a});
+	o.append(",-");
+	gold_fnum(o, ${b});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",-");
+	gold_fnum(o, ${b});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(" -");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(" h");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "plate");
+	out
+}
+@end
+
+@entry 5ff00673880e1b24
+kind: step
+verb: add
+noun: part
+modifier: shaft
+context: cad
+phrase: add a shaft {h} long radius {r}
+phrase: turned rod of length {h} radius {r}
+slot: h real
+slot: r real
+test: h=0.2 r=0.01
+expect: => i=1 r=0.0 ok=true s="shaft" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: shaft1 cyl 0,0,0 0,0,0.2 r0.01 m:brushed
+test: h=0.5 r=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="shaft" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: shaft3 cyl 0,0,0 0,0,0.5 r0.02 m:brushed
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "shaft", "", o);
+	o.append(" cyl ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" m:brushed");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "shaft");
+	out
+}
+@end
+
+@entry 6746aa849e938dd8
+kind: step
+verb: cut
+noun: part
+modifier: slot
+context: cad
+phrase: cut a slot {a} long radius {r}
+phrase: mill a slot of half length {a} radius {r}
+slot: a real
+slot: r real
+test: a=0.5 r=0.1 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="slot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: slot3 capsule -0.5,0,0 0.5,0,0 r0.1 -
+test: a=0.02 r=0.005 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="slot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: slot3 capsule -0.02,0,0 0.02,0,0 r0.005 -
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "slot", "", o);
+	o.append(" capsule -");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "slot");
+	out
+}
+@end
+
+@entry 9136cb33849a082a
+kind: step
+verb: drill
+noun: part
+modifier: hole
+context: cad
+phrase: drill a hole at {x} {y} radius {r} depth {h}
+phrase: bore a hole at {x} {y} with radius {r} down {h}
+slot: x real
+slot: y real
+slot: r real
+slot: h real
+test: x=0.5 y=0.5 r=0.1 h=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: hole3 cyl 0.5,0.5,-1 0.5,0.5,1 r0.1 -
+test: x=0.0 y=0.0 r=0.05 h=0.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: hole3 cyl 0,0,-0.5 0,0,0.5 r0.05 -
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "hole", "", o);
+	o.append(" cyl ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",-");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "hole");
+	out
+}
+@end
+
+@entry 9f7a59cb97a78ef3
+kind: step
+verb: add
+noun: part
+modifier: hex bolt
+context: cad
+phrase: add a hex bolt head {h} tall radius {r}
+phrase: hexagonal bolt head of height {h} across {r}
+slot: h real
+slot: r real
+test: h=0.01 r=0.012
+expect: => i=1 r=0.0 ok=true s="bolt" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bolt1 prism 0,0,0 0,0,0.01 r0.012 n6 b0.001 m:metal
+test: h=0.02 r=0.03 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bolt" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bolt3 prism 0,0,0 0,0,0.02 r0.03 n6 b0.003 m:metal
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "bolt", "", o);
+	o.append(" prism ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" n");
+	o.append("6");
+	o.append(" b");
+	gold_fnum(o, ${r} * 0.1);
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bolt");
+	out
+}
+@end
+
+@entry a8e199ee550c8fcd
+kind: step
+verb: lathe
+noun: part
+modifier: bushing
+context: cad
+phrase: lathe a bushing inner {r} outer {a} height {h}
+phrase: turned sleeve with bore {r} outside {a} length {h}
+slot: r real
+slot: a real
+slot: h real
+test: r=0.01 a=0.02 h=0.03
+expect: => i=1 r=0.0 ok=true s="bushing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bushing1 lathe 0,0,0 0.01,0 0.02,0 0.02,0.03 0.01,0.03 m:brushed
+test: r=0.02 a=0.035 h=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bushing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bushing3 lathe 0,0,0 0.02,0 0.035,0 0.035,0.05 0.02,0.05 m:brushed
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "bushing", "", o);
+	o.append(" lathe ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" m:brushed");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bushing");
+	out
+}
+@end
+
+@entry ab0ea64763f303c1
+kind: step
+verb: extrude
+noun: part
+modifier: bracket
+context: cad
+phrase: extrude an angle bracket of size {a} thickness {h}
+phrase: L shaped bracket {a} across {h} thick
+slot: a real
+slot: h real
+test: a=0.05 h=0.005
+expect: => i=1 r=0.0 ok=true s="bracket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bracket1 extrude 0,0,0 0,0 0.05,0 0.05,0.01 0.01,0.01 0.01,0.05 0,0.05 h0.005 m:metal
+test: a=0.1 h=0.01 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bracket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bracket3 extrude 0,0,0 0,0 0.1,0 0.1,0.02 0.02,0.02 0.02,0.1 0,0.1 h0.01 m:metal
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "bracket", "", o);
+	o.append(" extrude ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(" ");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(",");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(" ");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" h");
+	gold_fnum(o, ${h});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bracket");
+	out
+}
+@end
+
+@entry af996dab72a11fae
+kind: step
+verb: add
+noun: part
+modifier: gear
+context: cad
+phrase: add a gear of radius {r} thickness {h} with {n} teeth
+phrase: toothed wheel radius {r} thick {h} teeth {n}
+slot: r real
+slot: h real
+slot: n int
+test: r=0.05 h=0.01 n=12
+expect: => i=2 r=0.0 ok=true s="gear" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: gear1 cyl 0,0,0 0,0,0.01 r0.05 m:metal
+expect: => doc: tooth2 box 0.05,0,0.005 0.015,0.01,0.01 m:metal ra12
+test: r=0.1 h=0.02 n=20 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="gear" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: gear3 cyl 0,0,0 0,0,0.02 r0.1 m:metal
+expect: => doc: tooth4 box 0.1,0,0.01 0.03,0.02,0.02 m:metal ra20
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "gear", "", o);
+	o.append(" cyl ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "tooth", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h} * 0.5);
+	o.append(" ");
+	gold_fnum(o, ${r} * 0.3);
+	o.append(",");
+	gold_fnum(o, ${r} * 0.2);
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" m:metal ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "gear");
+	out
+}
+@end
+
+@entry b80cb5b7e00060b7
+kind: step
+verb: add
+noun: part
+modifier: elbow
+context: cad
+phrase: add a pipe elbow of reach {a} radius {r}
+phrase: bent pipe fitting reach {a} radius {r}
+slot: a real
+slot: r real
+test: a=0.1 r=0.02
+expect: => i=1 r=0.0 ok=true s="elbow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: elbow1 tube 0,0,0 0,0,0.1 0.1,0,0.1 r0.02 sh0.004 m:copper
+test: a=0.3 r=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="elbow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: elbow3 tube 0,0,0 0,0,0.3 0.3,0,0.3 r0.05 sh0.01 m:copper
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "elbow", "", o);
+	o.append(" tube ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" sh");
+	gold_fnum(o, ${r} * 0.2);
+	o.append(" m:copper");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "elbow");
+	out
+}
+@end
+
+@entry c0e48e92628eda7e
+kind: step
+verb: bevel
+noun: part
+modifier: edges
+context: cad
+phrase: bevel the last item edges by {a}
+phrase: chamfer the edges of the last item {a}
+slot: a real
+test: a=0.01 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="bevel" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1 b0.01
+test: a=0.002 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=2 r=0.0 ok=true s="bevel" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1 b0.002
+test: a=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel");
+	out
+}
+@end
+
+@entry e37c16ab31e1a555
+kind: step
+verb: drill
+noun: part
+modifier: bolt circle
+context: cad
+phrase: drill {n} bolt holes of radius {a} on a circle of radius {r}
+phrase: bolt pattern of {n} holes size {a} around radius {r}
+slot: n int
+slot: a real
+slot: r real
+test: n=4 a=0.01 r=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="boltholes" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: holes3 cyl 0.05,0,-1 0.05,0,1 r0.01 - ra4
+test: n=6 a=0.005 r=0.03 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="boltholes" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: holes3 cyl 0.03,0,-1 0.03,0,1 r0.005 - ra6
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "holes", "", o);
+	o.append(" cyl ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	o.append("0");
+	o.append(",-");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" r");
+	gold_fnum(o, ${a});
+	o.append(" - ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "boltholes");
+	out
+}
+@end
+
+@entry e69485318ab16030
+kind: step
+verb: lathe
+noun: part
+modifier: knob
+context: cad
+phrase: turn a knob of radius {r} height {h}
+phrase: lathe a control knob {r} wide {h} tall
+slot: r real
+slot: h real
+test: r=0.02 h=0.015
+expect: => i=1 r=0.0 ok=true s="knob" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: knob1 lathe 0,0,0 0,0 0.02,0 0.02,0.012 0.014,0.015 0,0.015 curve m:rubber
+test: r=0.03 h=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="knob" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: knob3 lathe 0,0,0 0,0 0.03,0 0.03,0.016 0.021,0.02 0,0.02 curve m:rubber
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "knob", "", o);
+	o.append(" lathe ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	gold_fnum(o, ${h} * 0.8);
+	o.append(" ");
+	gold_fnum(o, ${r} * 0.7);
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" curve m:rubber");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "knob");
+	out
+}
+@end
+

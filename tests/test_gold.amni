@@ -1,0 +1,121 @@
+import os;
+import std;
+import src.parser;
+import src.lock;
+import src.codex;
+import src.tiers;
+import src.runner;
+
+fn test_parser() bool {
+	let src = ">fn f() int { 7 }\n\n```amni\nfn g() int { 14 }\n```\nreverse string text";
+	var kinds int[>..] = [];
+	var texts byte[][>..] = [];
+	parse_gold(src, kinds, texts);
+	assert(kinds.len == 4);
+	assert(kinds[0] == 1);
+	assert(kinds[1] == 0);
+	assert(kinds[2] == 1);
+	assert(kinds[3] == 2);
+	true
+}
+
+fn test_lock() bool {
+	let k1 = make_lock_key(0, "sum primes", 0);
+	let k2 = make_lock_key(0, "sum primes", 0);
+	let k3 = make_lock_key(0, "sum primes", 17);
+	assert(k1 == k2);
+	assert(k1 != k3);
+	let p = "/tmp/test_unit.gold.lock";
+	write_lock_entry(p, k1, "sum primes", "fn main(){print(77);}", "test", 1);
+	var h byte[>..] = [];
+	var ti byte[>..] = [];
+	var att = 0;
+	let hit = read_lock_entry(p, k1, h, ti, att);
+	assert(hit);
+	assert(att == 1);
+	true
+}
+
+fn test_codex() bool {
+	var tile byte[>..] = [];
+	let sc = codex_match("reverse string", tile);
+	assert(sc >= 2);
+	var code byte[>..] = [];
+	let got = codex_get_code(tile, code);
+	assert(got);
+	assert(code.len > 0);
+	true
+}
+
+fn test_codex_dyn() bool {
+	var id1 byte[>..] = [];
+	codex_dyn_id("reverse string", id1);
+	var id2 byte[>..] = [];
+	codex_dyn_id("reverse string", id2);
+	assert(id1 == id2);
+	var id3 byte[>..] = [];
+	codex_dyn_id("sum primes", id3);
+	assert(id1 != id3);
+	assert(starts_with(id1, "gold-dyn-"));
+	assert(starts_with(id3, "gold-dyn-"));
+	true
+}
+
+fn test_tier_on() bool {
+	assert(tier_on("all", "mosaic"));
+	assert(tier_on("all", "claude"));
+	assert(tier_on("mosaic", "mosaic"));
+	assert(!tier_on("mosaic", "local"));
+	assert(tier_on("mosaic,local", "mosaic"));
+	assert(tier_on("mosaic,local", "local"));
+	assert(!tier_on("mosaic,local", "claude"));
+	true
+}
+
+fn test_extract() bool {
+	var o1 byte[>..] = [];
+	extract_code_block("```amni\nfn main() {}\n```", o1);
+	assert(find(o1, "fn main() {}") >= 0);
+
+	var o2 byte[>..] = [];
+	extract_code_block("```Helium with trailing text\nfn main() { print(1); }\n```", o2);
+	assert(find(o2, "fn main() { print(1); }") >= 0);
+
+	var o3 byte[>..] = [];
+	extract_code_block("```amni\r\nfn main() { print(2); }\r\n```", o3);
+	assert(find(o3, "fn main() { print(2); }") >= 0);
+	assert(find(o3, "\r") < 0);
+
+	var o5 byte[>..] = [];
+	extract_code_block("Here is the program:\n```amni\nfn main() { print(5); }\n```\nDone.", o5);
+	assert(trim(o5) == "fn main() { print(5); }");
+
+	var o4 byte[>..] = [];
+	extract_code_block("fn main() { print(3); }", o4);
+	assert(o4 == "fn main() { print(3); }");
+
+	true
+}
+
+fn test_runner() bool {
+	var so byte[>..] = [];
+	var se byte[>..] = [];
+	var ss byte[>..] = [];
+	let ok = execute_helium("fn main() { print(777); }", "777", so, se, ss);
+	assert(ok);
+	var se2 byte[>..] = [];
+	let chk = check_helium_syntax("fn helper() int { 7 }", se2);
+	assert(chk);
+	true
+}
+
+fn main() {
+	assert(test_parser());
+	assert(test_lock());
+	assert(test_codex());
+	assert(test_codex_dyn());
+	assert(test_tier_on());
+	assert(test_extract());
+	assert(test_runner());
+	print("All unit tests passed successfully.");
+}

@@ -1,0 +1,19 @@
+{
+ "product": "Amni-CAD",
+ "module": "Unit display formatting (dimensions, dual units, fractions)",
+ "orig_lang": "JavaScript",
+ "orig_src": [
+  "ref/units.js"
+ ],
+ "gold": [
+  "he/units.gold"
+ ],
+ "helium": [
+  "he/units.amni"
+ ],
+ "run_orig": "node ref/drive.mjs",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 300,
+ "runs": 5
+}

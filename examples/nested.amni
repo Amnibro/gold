@@ -1,0 +1,160 @@
+// Gold runtime prelude: shared state threaded through every Gold step.
+// Every step template is `fn NAME(g Gold&, v Val) Val`.
+import math;
+
+struct Val { i int, r real, ok bool, s byte[..200] }
+struct Gold { errors int, steps int, hits int, misses int, n int, res int[512], cn int, ck int[256], cv int[256], err byte[..120] }
+
+fn gold_new() Gold { Gold { errors: 0, steps: 0, hits: 0, misses: 0, n: 0, res: [0; 512], cn: 0, ck: [0; 256], cv: [0; 256], err: "" } }
+fn gold_val() Val { Val { i: 0, r: 0.0, ok: true, s: "" } }
+fn gold_text(v Val&, t const byte[:]) { v.s.clear(); for b in t { if v.s.len < 200 { v.s.push(b); } } }
+fn gold_push(g Gold&, x int) { if g.n < 512 { g.res[g.n] = x; g.n++; } else { gold_fail(g, "results full"); } }
+fn gold_clear(g Gold&) { g.n = 0; }
+fn gold_fail(g Gold&, msg const byte[:]) { g.errors++; g.err.clear(); for b in msg { if g.err.len < 120 { g.err.push(b); } } }
+fn gold_cache_get(g Gold&, k int) int, bool {
+	for i in g.cn { if g.ck[i] == k { g.hits++; return g.cv[i], true; } }
+	g.misses++;
+	return 0, false;
+}
+fn gold_cache_put(g Gold&, k int, x int) {
+	for i in g.cn { if g.ck[i] == k { g.cv[i] = x; return; } }
+	if g.cn < 256 { g.ck[g.cn] = k; g.cv[g.cn] = x; g.cn++; }
+}
+fn gold_report(g Gold&, v Val) {
+	var o byte[>..] = [];
+	format(o, "=> i=", v.i, " r=", v.r, " ok=", v.ok, " s=\"", v.s, "\" errors=", g.errors, " n=", g.n, " res=[");
+	for k in g.n { if k > 0 { o.append(","); } format(o, g.res[k]); }
+	format(o, "] cache=", g.cn, " hits=", g.hits);
+	print(o);
+}
+
+// Core functions (fn kind: int -> int). Tests bind slots to these by bare name.
+fn core_double(n int) int { n * 2 }
+fn core_halve(n int) int { n / 2 }
+fn core_inc(n int) int { n + 1 }
+fn core_dec(n int) int { n - 1 }
+fn core_square(n int) int { n * n }
+fn core_triple(n int) int { n * 3 }
+fn core_cube(n int) int { n * n * n }
+fn core_negate(n int) int { -n }
+fn core_abs_val(n int) int { if n < 0 { -n } else { n } }
+fn core_collatz(n int) int { if n % 2 == 0 { n / 2 } else { 3 * n + 1 } }
+fn core_digit_sum(n int) int { var x = core_abs_val(n); var s = 0; while x > 0 { s += x % 10; x /= 10; } s }
+fn core_reverse_digits(n int) int { var x = core_abs_val(n); var r = 0; while x > 0 { r = r * 10 + x % 10; x /= 10; } r }
+
+// Core predicates (pred kind: int -> bool).
+fn core_is_one(n int) bool { n == 1 }
+fn core_is_zero(n int) bool { n == 0 }
+fn core_is_even(n int) bool { n % 2 == 0 }
+fn core_is_odd(n int) bool { n % 2 != 0 }
+fn core_is_negative(n int) bool { n < 0 }
+fn core_over_100(n int) bool { n > 100 }
+fn core_under_10(n int) bool { n < 10 }
+fn core_is_prime(n int) bool { if n < 2 { return false; } var d = 2; while d * d <= n { if n % d == 0 { return false; } d++; } true }
+fn core_is_square(n int) bool { if n < 0 { return false; } var r = 0; while r * r < n { r++; } r * r == n }
+fn core_is_palindrome(n int) bool { core_reverse_digits(n) == core_abs_val(n) }
+
+// ===== Gold bindings =====
+// step = collatz step   [lib/core.gold d3bc44730580fd40]
+fn gold_step(n int) int {
+	if n % 2 == 0 {
+		return n / 2;
+	}
+	3 * n + 1
+}
+// big = above 50   [lib/core.gold bb6a7418dd4ba2c6]
+fn gold_big(n int) bool {
+	let lim = 50;
+	n > lim
+}
+// sum = sum of digits   [lib/core.gold 7d0119d2ce9741c6]
+fn gold_sum(n int) int {
+	var x = if n < 0 { -n } else { n };
+	var s = 0;
+	while x > 0 { s += x % 10; x /= 10; }
+	s
+}
+
+// ===== Gold steps =====
+// step 0: keep running step until big   [lib/core.gold 344a32e952049c83]
+fn gold_s0(g Gold&, v Val) Val {
+	var out = v;
+	var k = 0;
+	gold_push(g, out.i);
+	while !gold_big(out.i) {
+		out.i = gold_step(out.i);
+		gold_push(g, out.i);
+		k++;
+		if k >= 1000 {
+			gold_fail(g, "run until: stop condition never reached");
+			out.ok = false;
+			return out;
+		}
+	}
+	g.steps += k;
+	out.s.clear();
+	format(out.s, "ran ", k, " times");
+	out
+}
+// step 1: check for errors   [lib/core.gold 7483d6878ba653c1]
+fn gold_s1(g Gold&, v Val) Val {
+	var out = v;
+	out.s.clear();
+	if g.errors > 0 {
+		print("error: ", g.err, " (", g.errors, " total)");
+		out.ok = false;
+		out.s.append("failed");
+	} else {
+		print("no errors in ", g.n, " results");
+		out.s.append("checked");
+	}
+	out
+}
+// step 2: apply sum to each result   [lib/core.gold b4689485270b2e86]
+fn gold_s2(g Gold&, v Val) Val {
+	var out = v;
+	let memo = 1099511627776;
+	let before = g.hits;
+	for k in g.n {
+		let x = g.res[k];
+		let c, hit = gold_cache_get(g, memo + x);
+		if hit {
+			g.res[k] = c;
+		} else {
+			let y = gold_sum(x);
+			gold_cache_put(g, memo + x, y);
+			g.res[k] = y;
+		}
+	}
+	print("subfunction ran on ", g.n, " results, ", g.hits - before, " memo hits");
+	out.i = g.n;
+	out
+}
+// step 3: hand back results   [lib/core.gold 22627c5de82f0988]
+fn gold_s3(g Gold&, v Val) Val {
+	var out = v;
+	var line byte[>..] = [];
+	var total = 0;
+	for k in g.n {
+		if k > 0 { line.append(","); }
+		format(line, g.res[k]);
+		total += g.res[k];
+	}
+	print("results: ", line);
+	out.i = total;
+	out.r = if g.n > 0 { total as real / g.n as real } else { 0.0 };
+	out.s.clear();
+	format(out.s, "returned ", g.n);
+	out
+}
+
+fn main() {
+	var g = gold_new();
+	var v = gold_val();
+	v.i = 7;
+	v = gold_s0(g, v);
+	v = gold_s1(g, v);
+	v = gold_s2(g, v);
+	v = gold_s3(g, v);
+	gold_report(g, v);
+}

@@ -1,0 +1,742 @@
+@entry 0f2cbf9638bb7958
+kind: step
+verb: add
+noun: bone
+modifier: leg
+context: char
+phrase: add a leg chain at hip height {h}
+phrase: build a left leg from hip height {h}
+slot: h real
+test: h=1.0
+expect: => i=2 r=0.0 ok=true s="leg" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: thigh1L bone .12,0,1 .12,0,0.5
+expect: => doc: shin2L bone .12,0,0.5 .12,0,.05 ^thigh1L
+test: h=0.8 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="leg" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: thigh3L bone .12,0,0.8 .12,0,0.4
+expect: => doc: shin4L bone .12,0,0.4 .12,0,.05 ^thigh3L
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "thigh", "L", o);
+	o.append(" bone .");
+	o.append("12");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" .");
+	o.append("12");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h} * 0.5);
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "shin", "L", o);
+	o.append(" bone .");
+	o.append("12");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h} * 0.5);
+	o.append(" .");
+	o.append("12");
+	o.append(",");
+	o.append("0");
+	o.append(",.");
+	o.append("05");
+	o.append(" ^");
+	o.append("thigh"); format(o, g.dn);
+	o.push('L');
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "leg");
+	out
+}
+@end
+
+@entry 1108236992fbb433
+kind: step
+verb: blend
+noun: constraint
+modifier: influence
+context: char
+phrase: blend in the last constraint over {c} seconds
+phrase: ramp the last constraint influence up across {c} seconds
+slot: c real
+test: c=1.0 doc="hip bone 0,0,1 0,0,1.4|reach ik hip 1,0,1"
+expect: => i=3 r=0.0 ok=true s="inf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: reach ik hip 1,0,1
+expect: => doc: reach.inf anim 0:0 1:1
+test: c=2.5 doc="armL bone .3,0,1.3 .8,0,1|aim trackto armL 0,-1,1"
+expect: => i=3 r=0.0 ok=true s="inf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: aim trackto armL 0,-1,1
+expect: => doc: aim.inf anim 0:0 2.5:1
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".inf anim ");
+	o.append("0");
+	o.append(":");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "inf");
+	out
+}
+@end
+
+@entry 11eaa091bc64d070
+kind: step
+verb: add
+noun: bone
+modifier: head
+context: char
+phrase: add a head on a neck at height {h}
+phrase: neck bone with a head sphere at height {h}
+slot: h real
+test: h=1.5
+expect: => i=2 r=0.0 ok=true s="head" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: neck1 bone 0,0,1.5 0,0,1.62
+expect: => doc: head2 sphere 0,0,1.8 r0.15 #f2c28b @neck1
+test: h=1.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="head" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: neck3 bone 0,0,1.2 0,0,1.296
+expect: => doc: head4 sphere 0,0,1.44 r0.12 #f2c28b @neck3
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "neck", "", o);
+	o.append(" bone ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h} * 1.08);
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "head", "", o);
+	o.append(" sphere ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h} * 1.2);
+	o.append(" r");
+	gold_fnum(o, ${h} * 0.1);
+	o.append(" ");
+	gold_hex(o, 242, 194, 139);
+	o.append(" @");
+	o.append("neck"); format(o, g.dn);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "head");
+	out
+}
+@end
+
+@entry 2a6999347ba69bfc
+kind: step
+verb: add
+noun: bone
+modifier: child
+context: char
+phrase: grow a child bone from height {a} to {b}
+phrase: attach a new bone under the last bone from {a} to {b}
+slot: a real
+slot: b real
+test: a=1.4 b=1.7 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="child" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: bone2 bone 0,0,1.4 0,0,1.7 ^hip
+test: a=1.3 b=1.6 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="child" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: bone3 bone 0,0,1.3 0,0,1.6 ^armL
+test: a=1.0 b=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "bone", "", o);
+	o.append(" bone ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${b});
+	o.append(" ^");
+	o.append(last);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "child");
+	out
+}
+@end
+
+@entry 2f7f6b07d08e7f4d
+kind: step
+verb: reach
+noun: constraint
+modifier: ik
+context: char
+phrase: make the last bone reach for {x} {y} {z} with ik
+phrase: ik the last bone toward {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=0.5 y=-0.5 z=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="ik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: ik2 ik hip 0.5,-0.5,1
+test: x=1.0 y=0.0 z=0.5 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="ik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: ik3 ik armL 1,0,0.5
+test: x=1.0 y=1.0 z=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "ik", "", o);
+	o.append(" ik ");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ik");
+	out
+}
+@end
+
+@entry 3ca417320b1d6dd6
+kind: step
+verb: limit
+noun: constraint
+modifier: z rotation
+context: char
+phrase: limit the last bone twist between {a} and {b}
+phrase: clamp the last bone z rotation between {a} and {b} degrees
+slot: a real
+slot: b real
+test: a=-45.0 b=45.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="limitz" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: limit2 limitrot hip z-45,45
+test: a=-10.0 b=10.0 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="limitz" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: limit3 limitrot armL z-10,10
+test: a=1.0 b=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "limit", "", o);
+	o.append(" limitrot ");
+	o.append(last);
+	o.append(" z");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "limitz");
+	out
+}
+@end
+
+@entry 450eaa8930c97af4
+kind: step
+verb: build
+noun: bone
+modifier: spine
+context: char
+phrase: build a spine of {n} bones from height {a} to {b}
+phrase: stack {n} spine bones between {a} and {b}
+slot: n int
+slot: a real
+slot: b real
+test: n=3 a=1.0 b=1.6
+expect: => i=3 r=0.0 ok=true s="spine" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: spine1 bone 0,0,1 0,0,1.2
+expect: => doc: spine2 bone 0,0,1.2 0,0,1.4 ^spine1
+expect: => doc: spine3 bone 0,0,1.4 0,0,1.6 ^spine2
+test: n=4 a=0.8 b=1.6 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="spine" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: spine3 bone 0,0,0.8 0,0,1
+expect: => doc: spine4 bone 0,0,1 0,0,1.2 ^spine3
+expect: => doc: spine5 bone 0,0,1.2 0,0,1.4 ^spine4
+expect: => doc: spine6 bone 0,0,1.4 0,0,1.6 ^spine5
+test: n=0 a=1.0 b=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	if ${n} < 1 || ${n} > 12 { gold_fail(g, "count out of range"); out.ok = false; return out; }
+	var prev byte[>..] = [];
+	for q in ${n} {
+		let z0 = ${a} + (${b} - ${a}) * q as real / ${n} as real;
+		let z1 = ${a} + (${b} - ${a}) * (q + 1) as real / ${n} as real;
+		o.clear();
+		gold_dnews(g, "spine", "", o);
+		o.append(" bone ");
+		o.append("0");
+		o.append(",");
+		o.append("0");
+		o.append(",");
+		gold_fnum(o, z0);
+		o.append(" ");
+		o.append("0");
+		o.append(",");
+		o.append("0");
+		o.append(",");
+		gold_fnum(o, z1);
+		if q > 0 { o.append(" ^"); o.append(prev); }
+		gold_doc(g, o);
+		prev.clear();
+		prev.append(g.dname);
+	}
+	out.i = ${n};
+	out.s.clear();
+	format(out.s, "spine");
+	out
+}
+@end
+
+@entry 5acc0f27f0b9c3a2
+kind: step
+verb: reach
+noun: constraint
+modifier: fabrik
+context: char
+phrase: reach the last bone toward {x} {y} {z} with fabrik
+phrase: fabrik solver on the last bone aiming at {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=0.5 y=-0.5 z=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="fabrik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: ik2 ik hip 0.5,-0.5,1 fabrik
+test: x=1.0 y=0.0 z=0.5 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="fabrik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: ik3 ik armL 1,0,0.5 fabrik
+test: x=1.0 y=1.0 z=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "ik", "", o);
+	o.append(" ik ");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" fabrik");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "fabrik");
+	out
+}
+@end
+
+@entry 5df48c4f405a0ebd
+kind: step
+verb: add
+noun: bone
+modifier: arm
+context: char
+phrase: add an arm chain of length {a} at shoulder height {h}
+phrase: build a left arm {a} long from shoulder height {h}
+slot: a real
+slot: h real
+test: a=1.0 h=1.4
+expect: => i=2 r=0.0 ok=true s="arm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: upper1L bone 0.2,0,1.4 0.6,0,1.4
+expect: => doc: lower2L bone 0.6,0,1.4 1,0,1.4 ^upper1L
+test: a=0.8 h=1.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="arm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: upper3L bone 0.16,0,1.2 0.48,0,1.2
+expect: => doc: lower4L bone 0.48,0,1.2 0.8,0,1.2 ^upper3L
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "upper", "L", o);
+	o.append(" bone ");
+	gold_fnum(o, ${a} * 0.2);
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${a} * 0.6);
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "lower", "L", o);
+	o.append(" bone ");
+	gold_fnum(o, ${a} * 0.6);
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ^");
+	o.append("upper"); format(o, g.dn);
+	o.push('L');
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arm");
+	out
+}
+@end
+
+@entry 8e936320ec372c58
+kind: step
+verb: point
+noun: constraint
+modifier: trackto
+context: char
+phrase: point the last bone at {x} {y} {z}
+phrase: make the last bone track {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=0.0 y=-2.0 z=1.5 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="track" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: look2 trackto hip 0,-2,1.5
+test: x=1.0 y=-1.0 z=1.0 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="track" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: look3 trackto armL 1,-1,1
+test: x=1.0 y=1.0 z=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "look", "", o);
+	o.append(" trackto ");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "track");
+	out
+}
+@end
+
+@entry 9eea2679472e5c1a
+kind: step
+verb: add
+noun: bone
+modifier: vertical
+context: char
+phrase: add a bone from height {a} to {b}
+phrase: vertical bone rising from {a} to {b}
+slot: a real
+slot: b real
+test: a=1.0 b=1.4
+expect: => i=1 r=0.0 ok=true s="bone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bone1 bone 0,0,1 0,0,1.4
+test: a=0.5 b=0.9 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bone3 bone 0,0,0.5 0,0,0.9
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "bone", "", o);
+	o.append(" bone ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bone");
+	out
+}
+@end
+
+@entry c0742217b9bb5ff5
+kind: step
+verb: reach
+noun: constraint
+modifier: ik goal
+context: char
+phrase: add an ik goal at {x} {y} {z} for the last bone
+phrase: give the last bone an ik target empty at {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=0.5 y=-0.5 z=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=3 r=0.0 ok=true s="ikgoal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: goal2 empty 0.5,-0.5,1
+expect: => doc: ik3 ik hip ik3
+test: x=1.0 y=0.0 z=0.5 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=4 r=0.0 ok=true s="ikgoal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: goal3 empty 1,0,0.5
+expect: => doc: ik4 ik armL ik4
+test: x=1.0 y=1.0 z=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "goal", "", o);
+	o.append(" empty ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "ik", "", o);
+	o.append(" ik ");
+	o.append(last);
+	o.append(" ");
+	o.append(g.dname);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ikgoal");
+	out
+}
+@end
+
+@entry da19379c39b3dd70
+kind: step
+verb: reach
+noun: constraint
+modifier: ik chain
+context: char
+phrase: solve ik on the last bone toward {x} {y} {z} over {n} bones
+phrase: ik chain of {n} bones from the last bone to {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+slot: n int
+test: x=0.5 y=-0.5 z=1.0 n=2 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="ikn" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: ik2 ik hip 0.5,-0.5,1 n2
+test: x=1.0 y=0.0 z=0.5 n=3 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="ikn" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: ik3 ik armL 1,0,0.5 n3
+test: x=1.0 y=1.0 z=1.0 n=2
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "ik", "", o);
+	o.append(" ik ");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" n");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ikn");
+	out
+}
+@end
+
+@entry e550eab9f654f473
+kind: step
+verb: limit
+noun: constraint
+modifier: x rotation
+context: char
+phrase: limit the last bone x rotation between {a} and {b}
+phrase: clamp the last bone pitch between {a} and {b} degrees
+slot: a real
+slot: b real
+test: a=-30.0 b=60.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="limitx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: limit2 limitrot hip x-30,60
+test: a=0.0 b=140.0 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="limitx" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: limit3 limitrot armL x0,140
+test: a=1.0 b=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "limit", "", o);
+	o.append(" limitrot ");
+	o.append(last);
+	o.append(" x");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${b});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "limitx");
+	out
+}
+@end
+
+@entry ed5ec7f322fafc5f
+kind: step
+verb: copy
+noun: constraint
+modifier: rotation
+context: char
+phrase: copy rotation from bone {w} onto the last bone
+phrase: the last bone follows the rotation of {w}
+slot: w text
+test: w="armL" doc="armL bone .3,0,1.3 .8,0,1|hip bone 0,0,1 0,0,1.4"
+expect: => i=3 r=0.0 ok=true s="copyrot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: copy3 copyrot hip armL
+test: w="hip" doc="hip bone 0,0,1 0,0,1.4|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="copyrot" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: copy3 copyrot armL hip
+test: w="spine"
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "copy", "", o);
+	o.append(" copyrot ");
+	o.append(last);
+	o.append(" ");
+	o.append(${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "copyrot");
+	out
+}
+@end
+

@@ -1,0 +1,5 @@
+new image canvas 16 wide 16 tall
+fill the texture with cellular noise of cell 4 seed 2
+invert the texture
+posterize the texture into 4 levels
+derive roughness from texture slope

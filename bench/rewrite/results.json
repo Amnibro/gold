@@ -1,0 +1,169 @@
+{
+ "calc": {
+  "id": "calc",
+  "product": "Amni-Calc",
+  "module": "Engineering calculators: beams, sections, bolts, springs, stress and fatigue, seals, thermal, materials, finishes, unit conversion",
+  "orig_lang": "Rust",
+  "norm_note": "20 malformed-input cases: both reject the input, but serde's error wording differs",
+  "cases": 687,
+  "exact": 668,
+  "match": 687,
+  "check_orig": "724662200",
+  "check_helium": "724634000",
+  "time": {
+   "orig": 1.1321,
+   "helium": 1.2423
+  },
+  "speedup": 0.91,
+  "reps": 200,
+  "tokens": {
+   "orig": 95993,
+   "gold": 45948,
+   "helium": 103573
+  },
+  "lines": {
+   "orig": 3112,
+   "gold": 1033,
+   "helium": 3826
+  }
+ },
+ "price": {
+  "id": "price",
+  "product": "Amni-Price",
+  "module": "Shelf-tag OCR price parser (PriceParser, UnitParser, Money)",
+  "orig_lang": "Kotlin",
+  "cases": 400,
+  "exact": 400,
+  "match": 400,
+  "check_orig": "939080",
+  "check_helium": "939080",
+  "time": {
+   "orig": 0.3254,
+   "helium": 0.2632
+  },
+  "speedup": 1.24,
+  "reps": 40,
+  "tokens": {
+   "orig": 5376,
+   "gold": 3576,
+   "helium": 10445
+  },
+  "lines": {
+   "orig": 248,
+   "gold": 80,
+   "helium": 532
+  }
+ },
+ "type": {
+  "id": "type",
+  "product": "Amni-Type",
+  "module": "Swipe-typing letter decoder (SwipeLetterDecoder)",
+  "orig_lang": "Java",
+  "cases": 400,
+  "exact": 400,
+  "match": 400,
+  "check_orig": "23379000",
+  "check_helium": "23379000",
+  "time": {
+   "orig": 1.1682,
+   "helium": 0.824
+  },
+  "speedup": 1.42,
+  "reps": 300,
+  "tokens": {
+   "orig": 3618,
+   "gold": 1974,
+   "helium": 2889
+  },
+  "lines": {
+   "orig": 239,
+   "gold": 39,
+   "helium": 178
+  }
+ },
+ "mail": {
+  "id": "mail",
+  "product": "Amni-Mail",
+  "module": "Mail rules engine: rule parsing, validation, matching and explanations",
+  "orig_lang": "Python",
+  "norm_note": "11 cases with a broken user regex: both reject it, but the regex libraries word the error differently",
+  "cases": 400,
+  "exact": 389,
+  "match": 400,
+  "check_orig": "7302120",
+  "check_helium": "7294560",
+  "time": {
+   "orig": 0.7551,
+   "helium": 0.2617
+  },
+  "speedup": 2.89,
+  "reps": 40,
+  "tokens": {
+   "orig": 6053,
+   "gold": 4276,
+   "helium": 17574
+  },
+  "lines": {
+   "orig": 322,
+   "gold": 126,
+   "helium": 1206
+  }
+ },
+ "crypt": {
+  "id": "crypt",
+  "product": "Amni-Crypt",
+  "module": "Reffelt-Shadow block cipher layer (encrypt, decrypt, shadow walk)",
+  "orig_lang": "Python (numpy)",
+  "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too.",
+  "cases": 80,
+  "exact": 80,
+  "match": 80,
+  "check_orig": "1222797",
+  "check_helium": "1222797",
+  "check_c": "1222797",
+  "time": {
+   "orig": 5.9571,
+   "helium": 0.0074,
+   "c": 0.0069
+  },
+  "speedup": 805.01,
+  "reps": 3,
+  "tokens": {
+   "orig": 6155,
+   "gold": 1491,
+   "helium": 3311
+  },
+  "lines": {
+   "orig": 280,
+   "gold": 30,
+   "helium": 209
+  }
+ },
+ "cad": {
+  "id": "cad",
+  "product": "Amni-CAD",
+  "module": "Unit display formatting (dimensions, dual units, fractions)",
+  "orig_lang": "JavaScript",
+  "cases": 1298,
+  "exact": 1298,
+  "match": 1298,
+  "check_orig": "3832500",
+  "check_helium": "4063500",
+  "time": {
+   "orig": 3.9335,
+   "helium": 0.1602
+  },
+  "speedup": 24.55,
+  "reps": 300,
+  "tokens": {
+   "orig": 1148,
+   "gold": 991,
+   "helium": 2347
+  },
+  "lines": {
+   "orig": 34,
+   "gold": 33,
+   "helium": 131
+  }
+ }
+}

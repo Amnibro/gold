@@ -1,0 +1,11 @@
+add grassy ground 40 meters wide
+raise hill at 6 4 radius 5 height 2
+dig crater at -5 -3 radius 2
+add water plane 12 meters wide at height 0.1
+lay road 30 meters long 3 meters wide
+scatter 8 trees over 15 meters with seed 7
+plant pine at -8 6 height 4
+drop rock at 3 -6 size 0.8
+add sun light of 4 watts with angle 2
+add camera at 18 -18 10 looking at origin
+make last camera active

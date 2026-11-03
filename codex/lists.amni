@@ -1,0 +1,5 @@
+fn list_sum(xs int[:]) int { var s = 0; for x in xs { s += x; } s }
+fn list_max(xs int[:]) int { var m = xs[0]; for x in xs { if x > m { m = x; } } m }
+fn list_min(xs int[:]) int { var m = xs[0]; for x in xs { if x < m { m = x; } } m }
+fn list_contains(xs int[:], v int) bool { var found = false; for x in xs { if x == v { found = true; break; } } found }
+fn list_count(xs int[:], v int) int { var cnt = 0; for x in xs { if x == v { cnt += 1; } } cnt }

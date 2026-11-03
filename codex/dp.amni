@@ -1,0 +1,1 @@
+fn dp_coin_change(coins int[:], amount int) int { var dp int[>..] = []; for i in 0..(amount + 1) { dp.push(if i == 0 { 0 } else { 999999 }); } for c in coins { for i in c..(amount + 1) { let prev = dp[i - c] + 1; if prev < dp[i] { dp[i] = prev; } } } if dp[amount] >= 999999 { -1 } else { dp[amount] } }

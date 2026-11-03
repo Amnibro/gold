@@ -1,0 +1,3232 @@
+@entry e6e14706362f01c1
+kind: fn
+verb: reverse
+noun: step
+modifier: in_reverse
+context: sort
+phrase: reverse step in reverse from maximum {max_val}
+phrase: invert step in reverse against ceiling {max_val}
+slot: max_val int
+test: arg=20,70 max_val=100
+expect: 80
+expect: 30
+test: arg=105 max_val=100
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let m = ${max_val};
+	if n > m { 0 } else { m - n }
+}
+@end
+@entry 3c11ad37b5ba80c4
+kind: fn
+verb: retry
+noun: primes
+modifier: while
+context: sort
+phrase: retry primes while factor divides {prime}
+phrase: factor retry primes while divisible by {prime}
+slot: prime int
+test: arg=24,18 prime=2
+expect: 3
+expect: 9
+test: arg=7 prime=2
+expect: 7
+code:
+fn ${ID}(n int) int {
+	let p = ${prime};
+	if p <= 1 { return n; }
+	var v = if n < 0 { -n } else { n };
+	while (v % p == 0) && v > 0 {
+		v /= p;
+	}
+	v
+}
+@end
+@entry 68c07c1e4871e714
+kind: fn
+verb: keep
+noun: total
+modifier: recursively
+context: sort
+phrase: keep total recursively digit root sort key
+phrase: recursively keep total digit sum radix key
+test: arg=38,99
+expect: 2
+expect: 9
+test: arg=7
+expect: 7
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	var steps = 0;
+	while v >= 10 && steps < 50 {
+		var sum = 0;
+		var t = v;
+		while t > 0 {
+			sum += t % 10;
+			t /= 10;
+		}
+		v = sum;
+		steps++;
+	}
+	v
+}
+@end
+@entry e6c3417d3d5382ea
+kind: pred
+verb: scan
+noun: threshold
+modifier: pairwise
+context: sort
+phrase: scan threshold pairwise digit jump {thresh}
+phrase: detect threshold pairwise gap over {thresh}
+slot: thresh int
+test: arg=19,12 thresh=4
+expect: true
+expect: false
+test: arg=15 thresh=4
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let t = ${thresh};
+	var v = if n < 0 { -n } else { n };
+	while v >= 10 {
+		let d1 = v % 10;
+		let d2 = (v / 10) % 10;
+		let diff = if d1 > d2 { d1 - d2 } else { d2 - d1 };
+		if diff > t { return true; }
+		v /= 10;
+	}
+	false
+}
+@end
+@entry cf46d9bc5d48c915
+kind: fn
+verb: map
+noun: step
+modifier: times
+context: sort
+phrase: map step times bucket interval {step_size}
+phrase: quantize step times by width {step_size}
+slot: step_size int
+test: arg=45,12 step_size=10
+expect: 4
+expect: 1
+test: arg=8 step_size=10
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let s = ${step_size};
+	if s <= 0 { return n; }
+	n / s
+}
+@end
+@entry 3ee17cb1e8e9224f
+kind: fn
+verb: retry
+noun: value
+modifier: until
+context: sort
+phrase: retry value until multiple of {mod_val}
+phrase: align retry value until divisible by {mod_val}
+slot: mod_val int
+test: arg=14,21 mod_val=5
+expect: 15
+expect: 25
+test: arg=20 mod_val=5
+expect: 20
+code:
+fn ${ID}(n int) int {
+	let m = ${mod_val};
+	if m <= 0 { return n; }
+	var v = n;
+	var count = 0;
+	while (v % m != 0) && count < 100 {
+		v++;
+		count++;
+	}
+	v
+}
+@end
+@entry b7cf375d34c6d771
+kind: pred
+verb: pair
+noun: squares
+modifier: unique
+context: sort
+phrase: pair squares unique perfect square test
+phrase: verify pair squares unique integer root
+test: arg=16,20
+expect: true
+expect: false
+test: arg=25
+expect: true
+code:
+fn ${ID}(n int) bool {
+	if n < 0 { return false; }
+	if n <= 1 { return true; }
+	var r = 1;
+	while r * r < n && r < 10000 {
+		r++;
+	}
+	r * r == n
+}
+@end
+@entry 4343328b14145ae1
+kind: fn
+verb: swap
+noun: memo
+modifier: in_reverse
+context: sort
+phrase: swap memo in reverse nibble order
+phrase: mirror swap memo in reverse radix bits
+test: arg=18,33
+expect: 33
+expect: 18
+test: arg=0
+expect: 0
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	var rev = 0;
+	while v > 0 {
+		rev = (rev << 4) | (v & 15);
+		v >>= 4;
+	}
+	rev
+}
+@end
+@entry 669522379482c153
+kind: fn
+verb: scale
+noun: primes
+modifier: between
+context: sort
+phrase: scale primes between bounds {low} through {high}
+phrase: amplify range between low {low} to high {high}
+slot: low int
+slot: high int
+test: arg=15,25 low=10 high=20
+expect: 30
+expect: 25
+test: arg=5 low=10 high=20
+expect: 5
+code:
+fn ${ID}(n int) int {
+	let l = ${low};
+	let h = ${high};
+	if n > l && n < h {
+		n * 2
+	} else {
+		n
+	}
+}
+@end
+@entry 3c24119574e22b7e
+kind: fn
+verb: retry
+noun: item
+modifier: last
+context: sort
+phrase: retry item last digit with base {base}
+phrase: extract item last bucket modulo {base}
+slot: base int
+test: arg=37,82 base=10
+expect: 7
+expect: 2
+test: arg=50 base=10
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let b = ${base};
+	if b <= 0 { return 0; }
+	let v = if n < 0 { -n } else { n };
+	v % b
+}
+@end
+@entry 28f0f3299405713f
+kind: fn
+verb: count
+noun: maximum
+modifier: none
+context: sort
+phrase: count maximum none peak digit multiplicity
+phrase: calculate count maximum none digit frequency
+test: arg=919,123
+expect: 2
+expect: 1
+test: arg=888
+expect: 3
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	if v == 0 { return 1; }
+	var max_d = 0;
+	var t = v;
+	while t > 0 {
+		let d = t % 10;
+		if d > max_d { max_d = d; }
+		t /= 10;
+	}
+	var count = 0;
+	while v > 0 {
+		let d = v % 10;
+		if d == max_d { count++; }
+		v /= 10;
+	}
+	count
+}
+@end
+@entry e39649224d67cfde
+kind: pred
+verb: keep
+noun: condition
+modifier: unique
+context: sort
+phrase: keep condition unique distinct digits
+phrase: verify condition unique without duplicate digits
+test: arg=123,121
+expect: true
+expect: false
+test: arg=987
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var v = if n < 0 { -n } else { n };
+	if v < 10 { return true; }
+	var seen = 0;
+	while v > 0 {
+		let d = v % 10;
+		let bit = 1 << d;
+		if (seen & bit) != 0 { return false; }
+		seen |= bit;
+		v /= 10;
+	}
+	true
+}
+@end
+@entry 81e28050a7a6428a
+kind: pred
+verb: check
+noun: history
+modifier: in_reverse
+context: sort
+phrase: check history in reverse descending digits
+phrase: test history in reverse strict decrease
+test: arg=321,123
+expect: true
+expect: false
+test: arg=952
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var v = if n < 0 { -n } else { n };
+	if v < 10 { return true; }
+	var prev = -1;
+	while v > 0 {
+		let d = v % 10;
+		if prev != -1 && d <= prev { return false; }
+		prev = d;
+		v /= 10;
+	}
+	true
+}
+@end
+@entry 63bdd9abbfeb5ff3
+kind: fn
+verb: retry
+noun: average
+modifier: each
+context: sort
+phrase: retry average each step toward target {target}
+phrase: repeatedly average each value with target {target}
+slot: target int
+test: arg=0,50 target=100
+expect: 99
+expect: 99
+test: arg=100 target=100
+expect: 100
+code:
+fn ${ID}(n int) int {
+	let tgt = ${target};
+	var cur = n;
+	var count = 0;
+	while cur != tgt && count < 10 {
+		cur = (cur + tgt) / 2;
+		count++;
+	}
+	cur
+}
+@end
+@entry 8c02509bb7ccabf3
+kind: fn
+verb: scale
+noun: range
+modifier: until
+context: sort
+phrase: scale range until reaching limit {limit}
+phrase: double range until target ceiling {limit}
+slot: limit int
+test: arg=5,15 limit=40
+expect: 40
+expect: 60
+test: arg=50 limit=40
+expect: 50
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var v = n;
+	var count = 0;
+	while v < lim && count < 20 {
+		v *= 2;
+		count++;
+	}
+	v
+}
+@end
+@entry 50360c81ad52c51c
+kind: pred
+verb: check
+noun: prefix
+modifier: at_most
+context: sort
+phrase: check prefix at most leading limit {limit}
+phrase: verify prefix at most initial digit {limit}
+slot: limit int
+test: arg=35,82 limit=5
+expect: true
+expect: false
+test: arg=50 limit=5
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let lim = ${limit};
+	var v = if n < 0 { -n } else { n };
+	while v >= 10 {
+		v /= 10;
+	}
+	v <= lim
+}
+@end
+@entry 9dca499e9b77b5b1
+kind: fn
+verb: retry
+noun: total
+modifier: first
+context: sort
+phrase: retry total first leading digit key
+phrase: extract retry total first bucket digit
+test: arg=734,29
+expect: 7
+expect: 2
+test: arg=5
+expect: 5
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	while v >= 10 {
+		v /= 10;
+	}
+	v
+}
+@end
+@entry 53c6ecdda800b145
+kind: fn
+verb: count
+noun: evens
+modifier: times
+context: sort
+phrase: count evens times in decimal key
+phrase: total count evens times even digits
+test: arg=246,135
+expect: 3
+expect: 0
+test: arg=204
+expect: 3
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	if v == 0 { return 1; }
+	var count = 0;
+	while v > 0 {
+		let d = v % 10;
+		if d % 2 == 0 { count++; }
+		v /= 10;
+	}
+	count
+}
+@end
+@entry 2ee8305c68474429
+kind: pred
+verb: check
+noun: maximum
+modifier: pairwise
+context: sort
+phrase: check maximum pairwise digit divergence {max_diff}
+phrase: verify maximum pairwise digit jump below {max_diff}
+slot: max_diff int
+test: arg=13,19 max_diff=3
+expect: true
+expect: false
+test: arg=25 max_diff=3
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let md = ${max_diff};
+	var v = if n < 0 { -n } else { n };
+	while v >= 10 {
+		let d1 = v % 10;
+		let d2 = (v / 10) % 10;
+		let diff = if d1 > d2 { d1 - d2 } else { d2 - d1 };
+		if diff > md { return false; }
+		v /= 10;
+	}
+	true
+}
+@end
+@entry c4fda3fc637b16ca
+kind: fn
+verb: keep
+noun: sequence
+modifier: first
+context: sort
+phrase: keep sequence first prefix length {len}
+phrase: retain sequence first digits count {len}
+slot: len int
+test: arg=12345,9876 len=2
+expect: 12
+expect: 98
+test: arg=42 len=2
+expect: 42
+code:
+fn ${ID}(n int) int {
+	let l = ${len};
+	var v = if n < 0 { -n } else { n };
+	var digits = 0;
+	var t = v;
+	while t > 0 { digits++; t /= 10; }
+	if digits <= l { return v; }
+	var drop = digits - l;
+	while drop > 0 {
+		v /= 10;
+		drop--;
+	}
+	v
+}
+@end
+@entry 6604062fb89c42c6
+kind: fn
+verb: measure
+noun: tail
+modifier: safely
+context: sort
+phrase: measure tail safely distance to base {base}
+phrase: calculate measure tail safely remainder for {base}
+slot: base int
+test: arg=17,20 base=5
+expect: 3
+expect: 0
+test: arg=11 base=5
+expect: 4
+code:
+fn ${ID}(n int) int {
+	let b = ${base};
+	if b <= 0 { return 0; }
+	let rem = n % b;
+	if rem == 0 { 0 } else { b - rem }
+}
+@end
+@entry 598710d2c2f2d1b6
+kind: fn
+verb: pair
+noun: digits
+modifier: each
+context: sort
+phrase: pair digits each nine complement sort key
+phrase: transform pair digits each radix inverse
+test: arg=123,456
+expect: 876
+expect: 543
+test: arg=0
+expect: 9
+code:
+fn ${ID}(n int) int {
+	var v = if n < 0 { -n } else { n };
+	if v == 0 { return 9; }
+	var res = 0;
+	var mult = 1;
+	while v > 0 {
+		let d = v % 10;
+		res += (9 - d) * mult;
+		mult *= 10;
+		v /= 10;
+	}
+	res
+}
+@end
+@entry a819b560f5bd055d
+kind: fn
+verb: count
+noun: threshold
+modifier: while
+context: sort
+phrase: count threshold while digits exceed {thresh}
+phrase: tally threshold while elements above {thresh}
+slot: thresh int
+test: arg=899,451 thresh=5
+expect: 3
+expect: 0
+test: arg=123 thresh=5
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let t = ${thresh};
+	var v = if n < 0 { -n } else { n };
+	var count = 0;
+	while v > 0 {
+		let d = v % 10;
+		if d <= t { break; }
+		count++;
+		v /= 10;
+	}
+	count
+}
+@end
+@entry 5d783d1e2a21c5dc
+kind: fn
+verb: merge
+noun: memo
+modifier: last
+context: sort
+phrase: merge memo last check digit factor {factor}
+phrase: append memo last tag with factor {factor}
+slot: factor int
+test: arg=12,34 factor=5
+expect: 124
+expect: 343
+test: arg=0 factor=5
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let f = ${factor};
+	let tag = (n * 7) % f;
+	n * 10 + tag
+}
+@end
+@entry 1ec3312985b3e7f4
+kind: fn
+verb: measure
+noun: steps
+modifier: running
+context: sort
+phrase: measure running steps to binary partition {target}
+phrase: count running steps required to reach {target}
+slot: target int
+test: arg=16,64 target=4
+expect: 2
+expect: 4
+test: arg=3 target=4
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let tgt = ${target};
+	var v = if n < 0 { -n } else { n };
+	var steps = 0;
+	while v > tgt && steps < 100 {
+		v /= 2;
+		steps++;
+	}
+	steps
+}
+@end
+@entry a390bdd1ea42d7e5
+kind: pred
+verb: scan
+noun: middle
+modifier: with_retry
+context: sort
+phrase: scan middle with retry near pivot {pivot} within {radius}
+phrase: test middle with retry radius {radius} around {pivot}
+slot: pivot int
+slot: radius int
+test: arg=12,25 pivot=10 radius=3
+expect: true
+expect: false
+test: arg=10 pivot=10 radius=3
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let p = ${pivot};
+	let r = ${radius};
+	let diff = if n > p { n - p } else { p - n };
+	diff <= r
+}
+@end
+@entry a068a7d33fd8f204
+kind: pred
+verb: check
+noun: tail
+modifier: running
+context: sort
+phrase: check tail running matches bucket {target}
+phrase: verify tail running equals target {target}
+slot: target int
+test: arg=37,82 target=7
+expect: true
+expect: false
+test: arg=17 target=7
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let t = ${target};
+	let v = if n < 0 { -n } else { n };
+	(v % 10) == t
+}
+@end
+@entry 3d2b715082d2f815
+kind: fn
+verb: merge
+noun: counter
+modifier: pairwise
+context: sort
+phrase: merge counter pairwise interleave key parts
+phrase: combine counter pairwise composite sort key
+test: arg=1234,5678
+expect: 12346
+expect: 56784
+test: arg=50
+expect: 500
+code:
+fn ${ID}(n int) int {
+	let v = if n < 0 { -n } else { n };
+	let lo = v % 100;
+	let hi = v / 100;
+	(hi * 1000) + (lo * 10) + ((hi + lo) % 10)
+}
+@end
+@entry 7a369b2d371b9cb6
+kind: fn
+verb: reverse
+noun: list
+modifier: until
+context: sort
+phrase: reverse list until lowest digits {digits}
+phrase: invert list until decimal position {digits}
+slot: digits int
+test: arg=1234,5678 digits=2
+expect: 1243
+expect: 5687
+test: arg=10 digits=2
+expect: 1
+code:
+fn ${ID}(n int) int {
+	let k = ${digits};
+	var v = if n < 0 { -n } else { n };
+	var rev = 0;
+	var count = 0;
+	var mult = 1;
+	while count < k && v > 0 {
+		rev = rev * 10 + (v % 10);
+		v /= 10;
+		count++;
+		mult *= 10;
+	}
+	v * mult + rev
+}
+@end
+@entry 91722eb4953c528c
+kind: fn
+verb: map
+noun: subfunction
+modifier: none
+context: sort
+phrase: map subfunction none scale {scale} shift {shift}
+phrase: apply subfunction none scale {scale} offset {shift}
+slot: scale int
+slot: shift int
+test: arg=5,10 scale=3 shift=2
+expect: 17
+expect: 32
+test: arg=0 scale=3 shift=2
+expect: 2
+code:
+fn ${ID}(n int) int {
+	let sc = ${scale};
+	let sh = ${shift};
+	n * sc + sh
+}
+@end
+@entry 1024fec670cff07a
+kind: fn
+verb: swap
+noun: words
+modifier: at_most
+context: sort
+phrase: swap words at most ceiling {bound}
+phrase: exchange words at most limit {bound}
+slot: bound int
+test: arg=258,513 bound=1000
+expect: 513
+expect: 258
+test: arg=2000 bound=1000
+expect: 1000
+code:
+fn ${ID}(n int) int {
+	let b = ${bound};
+	let b0 = n & 255;
+	let b1 = (n >> 8) & 255;
+	let rest = n >> 16;
+	let swapped = (rest << 16) | (b0 << 8) | b1;
+	if swapped > b { b } else { swapped }
+}
+@end
+@entry c141a00b11904b64
+kind: fn
+verb: swap
+noun: values
+modifier: pairwise
+context: sort
+phrase: swap values pairwise bitonic butterfly
+phrase: exchange values pairwise adjacent bits
+test: arg=1,2
+expect: 2
+expect: 1
+test: arg=5
+expect: 10
+code:
+fn ${ID}(n int) int {
+	let even_bits = n & 0x5555;
+	let odd_bits = n & 0xAAAA;
+	(even_bits << 1) | (odd_bits >> 1)
+}
+@end
+@entry fe1c2ad993276905
+kind: fn
+verb: count
+noun: memo
+modifier: up_to
+context: sort
+phrase: count memo up to set bits cap {limit}
+phrase: tally memo up to bit population {limit}
+slot: limit int
+test: arg=1,7 limit=4
+expect: 1
+expect: 3
+test: arg=0 limit=4
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var v = if n < 0 { -n } else { n };
+	var count = 0;
+	while v > 0 && count < lim {
+		count += v & 1;
+		v >>= 1;
+	}
+	count
+}
+@end
+@entry dbfbe8325e54d8e4
+kind: fn
+verb: pair
+noun: tally
+modifier: until
+context: sort
+phrase: pair tally until reduction base {base}
+phrase: measure pair tally until logarithmic base {base}
+slot: base int
+test: arg=16,64 base=2
+expect: 4
+expect: 6
+test: arg=1 base=2
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let b = ${base};
+	if b <= 1 { return 0; }
+	var v = if n < 0 { -n } else { n };
+	var steps = 0;
+	while v >= b && steps < 50 {
+		v /= b;
+		steps++;
+	}
+	steps
+}
+@end
+@entry 1665fe50d1ca4524
+kind: pred
+verb: scan
+noun: sequence
+modifier: sorted
+context: sort
+phrase: scan sequence sorted digit order
+phrase: verify sequence has sorted digits
+test: arg=123,321
+expect: true
+expect: false
+test: arg=1357
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var v = if n < 0 { -n } else { n };
+	if v < 10 { return true; }
+	var prev = 10;
+	while v > 0 {
+		let d = v % 10;
+		if d > prev { return false; }
+		prev = d;
+		v /= 10;
+	}
+	true
+}
+@end
+@entry 428d18834ad6f5b6
+kind: pred
+verb: keep
+noun: memo
+modifier: any
+context: sort
+phrase: keep memo any match in mask {mask}
+phrase: check memo any key in bitmask {mask}
+slot: mask int
+test: arg=0,4 mask=3
+expect: true
+expect: false
+test: arg=8 mask=3
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let m = ${mask};
+	let v = if n < 0 { -n } else { n };
+	let pos = v & 15;
+	let bit = 1 << pos;
+	(m & bit) != 0
+}
+@end
+@entry 3028216d4056d940
+kind: fn
+verb: scale
+noun: gaps
+modifier: with_retry
+context: sort
+phrase: scale gaps with retry using factor {factor}
+phrase: adaptively scale gaps with retry factor {factor}
+slot: factor int
+test: arg=100,20 factor=7
+expect: 17
+expect: 3
+test: arg=2 factor=7
+expect: 1
+code:
+fn ${ID}(n int) int {
+	let f = ${factor};
+	var gap = n;
+	var tries = 0;
+	while gap > 1 && tries < 5 {
+		gap = (gap * 5) / f;
+		tries++;
+	}
+	gap
+}
+@end
+@entry 34f2dc69b94fd9c3
+kind: fn
+verb: retry
+noun: steps
+modifier: sorted
+context: sort
+phrase: retry steps sorted down to cap {cap}
+phrase: iterate retry steps sorted towards cap {cap}
+slot: cap int
+test: arg=100,40 cap=20
+expect: 6
+expect: 3
+test: arg=15 cap=20
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let c = ${cap};
+	var steps = 0;
+	var v = n;
+	while v > 0 && v > c && steps < 50 {
+		v = (v * 3) / 4;
+		steps++;
+	}
+	steps
+}
+@end
+@entry 9477f5547569bff6
+kind: fn
+verb: measure
+noun: value
+modifier: any
+context: sort
+phrase: measure value any distance from center {center}
+phrase: compute measure value any offset to {center}
+slot: center int
+test: arg=15,5 center=10
+expect: 5
+expect: 5
+test: arg=10 center=10
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let c = ${center};
+	let d = n - c;
+	if d < 0 { -d } else { d }
+}
+@end
+@entry 5c93c8afdf585cc7
+kind: pred
+verb: keep
+noun: words
+modifier: at_least
+context: sort
+phrase: keep words at least significant bits {bits}
+phrase: require words at least bit count {bits}
+slot: bits int
+test: arg=8,4 bits=4
+expect: true
+expect: false
+test: arg=16 bits=4
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let b = ${bits};
+	var v = if n < 0 { -n } else { n };
+	var count = 0;
+	while v > 0 {
+		count++;
+		v >>= 1;
+	}
+	count >= b
+}
+@end
+@entry 557138b61d929ac0
+kind: step
+verb: bevel
+noun: spacer
+modifier: mm_scale
+context: cad
+phrase: bevel spacer edges by millimeter scale {a}
+phrase: chamfer spacer perimeter with dimension {a}
+slot: a real
+test: a=0.005 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_spacer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.005
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_spacer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_spacer");
+	out
+}
+@end
+@entry f0cb2019948f4d32
+kind: step
+verb: bevel
+noun: hinge
+modifier: radial
+context: cad
+phrase: bevel hinge knuckle radially by {a}
+phrase: chamfer hinge cylinder radially with offset {a}
+slot: a real
+test: a=0.005 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_hinge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.005
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_hinge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_hinge");
+	out
+}
+@end
+@entry 4777af18ecdabf0c
+kind: step
+verb: bore
+noun: standoff
+modifier: linear
+context: cad
+phrase: bore standoff positions in line count {n} spacing {s}
+phrase: cut linear standoff bore array count {n} pitch {s}
+slot: n int
+slot: s real
+test: n=3 s=0.05 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.01 - a3:0.05,0,0
+test: n=2 s=0.04 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.01 - a2:0.04,0,0
+test: n=0 s=0.05
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid bore"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r0.");
+	o.append("0");
+	o.append("1 - a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_standoff");
+	out
+}
+@end
+@entry b146920085c4d9a4
+kind: step
+verb: add
+noun: pulley
+modifier: none
+context: cad
+phrase: add pulley of radius {r} width {w}
+phrase: place standard pulley with radius {r} face {w}
+slot: r real
+slot: w real
+test: r=0.04 w=0.02
+expect: => i=1 r=0.0 ok=true s="pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pulley1 cyl 0,0,0 0,0,0.02 r0.04 m:metal
+test: r=0.06 w=0.03 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: pulley2 cyl 0,0,0 0,0,0.03 r0.06 m:metal
+test: r=-0.01 w=0.02
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 || ${w} <= 0.0 { gold_fail(g, "invalid pulley"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pulley", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	gold_fnum(o, ${w});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pulley");
+	out
+}
+@end
+@entry d66dedd3c323681d
+kind: step
+verb: bevel
+noun: washer
+modifier: counterbored
+context: cad
+phrase: bevel counterbored washer recess by {a}
+phrase: chamfer counterbored washer step with offset {a}
+slot: a real
+test: a=0.004 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_washer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.004
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_washer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_washer");
+	out
+}
+@end
+@entry 8a85597d121df08c
+kind: step
+verb: pattern
+noun: pocket
+modifier: mm_scale
+context: cad
+phrase: pattern pocket array count {n} spacing {s}
+phrase: recessed pocket pattern of {n} units step {s}
+slot: n int
+slot: s real
+test: n=3 s=0.06 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pattern_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pocket3 box 0,0,0.02 0.03,0.03,0.02 - a3:0.06,0,0
+test: n=2 s=0.05 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="pattern_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: pocket3 box 0,0,0.02 0.03,0.03,0.02 - a2:0.05,0,0
+test: n=0 s=0.05
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pocket", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 ");
+	o.append("0.");
+	o.append("0");
+	o.append("3,");
+	o.append("0.");
+	o.append("0");
+	o.append("3,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 - a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_pocket");
+	out
+}
+@end
+@entry 77c6f678b033e76f
+kind: step
+verb: add
+noun: gear
+modifier: mm_scale
+context: cad
+phrase: add gear radius {r} thickness {h}
+phrase: place spur gear of radius {r} thickness {h}
+slot: r real
+slot: h real
+test: r=0.05 h=0.02
+expect: => i=1 r=0.0 ok=true s="gear" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: gear1 cyl 0,0,0 0,0,0.02 r0.05 m:metal
+test: r=0.08 h=0.03 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="gear" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: gear2 cyl 0,0,0 0,0,0.03 r0.08 m:metal
+test: r=0.0 h=0.02
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 || ${h} <= 0.0 { gold_fail(g, "invalid gear"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "gear", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "gear");
+	out
+}
+@end
+@entry 63e1c2828b6b56e4
+kind: step
+verb: stiffen
+noun: housing
+modifier: radial
+context: cad
+phrase: stiffen housing with radial ribs count {n}
+phrase: add housing radial stiffener pattern count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="stiffen_housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: rib3 box 0.05,0,0.03 0.04,0.004,0.03 m:plastic ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1|housing box 0,0,0.05 0.1,0.1,0.1"
+expect: => i=3 r=0.0 ok=true s="stiffen_housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: housing box 0,0,0.05 0.1,0.1,0.1
+expect: => doc: rib3 box 0.05,0,0.03 0.04,0.004,0.03 m:plastic ra6
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "rib", "", o);
+	o.append(" box 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("3 ");
+	o.append("0.");
+	o.append("0");
+	o.append("4,");
+	o.append("0.0");
+	o.append("0");
+	o.append("4,");
+	o.append("0.");
+	o.append("0");
+	o.append("3 m:plastic ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "stiffen_housing");
+	out
+}
+@end
+@entry f720458604c72d81
+kind: step
+verb: bevel
+noun: pulley
+modifier: keyed
+context: cad
+phrase: bevel keyed pulley outer edge by {a}
+phrase: chamfer keyed pulley rim with dimension {a}
+slot: a real
+test: a=0.004 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.004
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_pulley");
+	out
+}
+@end
+@entry 7298deb461e92390
+kind: step
+verb: add
+noun: housing
+modifier: keyed
+context: cad
+phrase: add keyed housing enclosure width {w} height {h}
+phrase: place keyed housing structure span {w} height {h}
+slot: w real
+slot: h real
+test: w=0.1 h=0.08
+expect: => i=1 r=0.0 ok=true s="housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: housing1 box 0,0,0.04 0.1,0.1,0.08 sh0.005 m:plastic
+test: w=0.15 h=0.12 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: housing2 box 0,0,0.06 0.15,0.15,0.12 sh0.005 m:plastic
+test: w=0.0 h=0.08
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 || ${h} <= 0.0 { gold_fail(g, "invalid housing"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "housing", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	gold_fnum(o, ${h} * 0.5);
+	o.append(" ");
+	gold_fnum(o, ${w});
+	o.append(",");
+	gold_fnum(o, ${w});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" sh0.0");
+	o.append("0");
+	o.append("5 m:plastic");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "housing");
+	out
+}
+@end
+@entry dcaefa1956c69f2b
+kind: step
+verb: clamp
+noun: spaces
+modifier: nested
+context: format
+phrase: clamp nested spaces {n}
+phrase: clamp nested indentation to {n}
+slot: n int
+test: n=4
+expect: => i=4 r=0.0 ok=true s="nested" errors=0 n=0 res=[] cache=0 hits=0
+test: n=12
+expect: => i=8 r=0.0 ok=true s="nested" errors=0 n=0 res=[] cache=0 hits=0
+test: n=-1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 0 {
+		gold_fail(g, "spaces must be non-negative");
+		out.ok = false;
+		return out;
+	}
+	var limit = ${n};
+	if limit > 8 {
+		limit = 8;
+	}
+	var o byte[>..] = [];
+	for i in limit {
+		o.push(' ');
+	}
+	out.i = limit;
+	out.s.clear();
+	format(out.s, "nested");
+	out
+}
+@end
+@entry be482d54af9154b7
+kind: step
+verb: repeat
+noun: counter
+modifier: at_least
+context: format
+phrase: repeat counter {n} at least {min} times
+phrase: format counter {n} repeated at least {min} times
+slot: n int
+slot: min int
+test: n=5 min=3
+expect: => i=5 r=0.0 ok=true s="at_least" errors=0 n=0 res=[] cache=0 hits=0
+test: n=2 min=4
+expect: => i=4 r=0.0 ok=true s="at_least" errors=0 n=0 res=[] cache=0 hits=0
+test: n=2 min=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${min} < 1 {
+		gold_fail(g, "min count must be positive");
+		out.ok = false;
+		return out;
+	}
+	var reps = ${n};
+	if reps < ${min} {
+		reps = ${min};
+	}
+	if reps > 64 {
+		reps = 64;
+	}
+	var total = 0;
+	var buf byte[>..] = [];
+	for i in reps {
+		format(buf, i, " ");
+		total++;
+	}
+	out.i = total;
+	out.s.clear();
+	format(out.s, "at_least");
+	out
+}
+@end
+@entry 19ad820b40ef345d
+kind: step
+verb: bore
+noun: flange
+modifier: rounded
+context: cad
+phrase: bore flange with rounded holes count {n} radius {r}
+phrase: pattern rounded flange bores count {n} radius {r}
+slot: n int
+slot: r real
+test: n=4 r=0.01 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0.05,0,-0.05 0.05,0,0.05 r0.01 - ra4
+test: n=6 r=0.008 doc="base box 0,0,0 1,1,0.1|flange cyl 0,0,0 0,0,0.02 r0.08"
+expect: => i=3 r=0.0 ok=true s="bore_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: flange cyl 0,0,0 0,0,0.02 r0.08
+expect: => doc: bore3 cyl 0.05,0,-0.05 0.05,0,0.05 r0.008 - ra6
+test: n=0 r=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${r} <= 0.0 { gold_fail(g, "invalid flange bore"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" - ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_flange");
+	out
+}
+@end
+@entry 7d9283bedf295e26
+kind: step
+verb: add
+noun: pocket
+modifier: keyed
+context: cad
+phrase: add keyed pocket slot length {l} depth {d}
+phrase: cut keyed pocket recess span {l} depth {d}
+slot: l real
+slot: d real
+test: l=0.04 d=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pocket3 box 0,0,0.02 0.04,0.02,0.02 -
+test: l=0.06 d=0.03 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: pocket3 box 0,0,0.02 0.06,0.02,0.03 -
+test: l=0.04 d=-0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${l} <= 0.0 || ${d} <= 0.0 { gold_fail(g, "invalid pocket"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pocket", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 ");
+	gold_fnum(o, ${l});
+	o.append(",0.");
+	o.append("0");
+	o.append("2,");
+	gold_fnum(o, ${d});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pocket");
+	out
+}
+@end
+@entry 1589af18988654c3
+kind: step
+verb: bevel
+noun: boss
+modifier: counterbored
+context: cad
+phrase: bevel counterbored boss rim by dimension {a}
+phrase: chamfer counterbored boss shoulder with scale {a}
+slot: a real
+test: a=0.003 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.003
+test: a=0.001 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.001
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_boss");
+	out
+}
+@end
+@entry 3e0baea12d7d134d
+kind: step
+verb: pattern
+noun: standoff
+modifier: through
+context: cad
+phrase: pattern through standoff columns count {n} pitch {s}
+phrase: linear array of through standoffs count {n} step {s}
+slot: n int
+slot: s real
+test: n=4 s=0.05 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: standoff2 cyl 0,0,0 0,0,0.05 r0.01 m:metal a4:0.05,0,0
+test: n=2 s=0.08 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: standoff2 cyl 0,0,0 0,0,0.05 r0.01 m:metal a2:0.08,0,0
+test: n=-1 s=0.05
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "standoff", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r0.");
+	o.append("0");
+	o.append("1 m:metal a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_standoff");
+	out
+}
+@end
+@entry dcd03c4bf2fe177d
+kind: step
+verb: bevel
+noun: housing
+modifier: evenly
+context: cad
+phrase: bevel housing perimeter evenly by {a}
+phrase: chamfer housing edges with uniform offset {a}
+slot: a real
+test: a=0.006 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.006
+test: a=0.003 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.003
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_housing");
+	out
+}
+@end
+@entry b503ec50b5ed26cd
+kind: step
+verb: bevel
+noun: shaft
+modifier: linear
+context: cad
+phrase: bevel shaft tip linearly with chamfer {a}
+phrase: chamfer shaft lead linear edge by {a}
+slot: a real
+test: a=0.004 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_shaft" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.004
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_shaft" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_shaft");
+	out
+}
+@end
+@entry c88a3bb2a1429956
+kind: step
+verb: bore
+noun: standoff
+modifier: none
+context: cad
+phrase: bore standoff hole of radius {r}
+phrase: drill mounting standoff hole radius {r}
+slot: r real
+test: r=0.012 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.012 -
+test: r=0.008 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.008 -
+test: r=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid bore"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_standoff");
+	out
+}
+@end
+@entry 86cebf47a409259c
+kind: step
+verb: bore
+noun: flange
+modifier: mm_scale
+context: cad
+phrase: bore flange opening with radius {r}
+phrase: cut millimeter scale bore in flange radius {r}
+slot: r real
+test: r=0.025 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.025 -
+test: r=0.018 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.018 -
+test: r=-0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid bore"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_flange");
+	out
+}
+@end
+@entry c5e5cabb0dfaa1c8
+kind: step
+verb: pattern
+noun: boss
+modifier: flanged
+context: cad
+phrase: pattern flanged bosses radially count {n}
+phrase: radial array of flanged mounting bosses count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: boss2 cyl 0.06,0,0 0.06,0,0.03 r0.02 m:metal ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: boss2 cyl 0.06,0,0 0.06,0,0.03 r0.02 m:metal ra6
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid boss count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "boss", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("6,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0.");
+	o.append("0");
+	o.append("6,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("3 r0.");
+	o.append("0");
+	o.append("2 m:metal ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_boss");
+	out
+}
+@end
+@entry 2fc99e8eeaef5f63
+kind: step
+verb: add
+noun: standoff
+modifier: none
+context: cad
+phrase: add standoff pillar of height {h}
+phrase: place support standoff post height {h}
+slot: h real
+test: h=0.05
+expect: => i=1 r=0.0 ok=true s="standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: standoff1 cyl 0,0,0 0,0,0.05 r0.01 m:metal
+test: h=0.08 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: standoff2 cyl 0,0,0 0,0,0.08 r0.01 m:metal
+test: h=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${h} <= 0.0 { gold_fail(g, "invalid height"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "standoff", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	gold_fnum(o, ${h});
+	o.append(" r0.");
+	o.append("0");
+	o.append("1 m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "standoff");
+	out
+}
+@end
+@entry dbe3639604f2bac8
+kind: step
+verb: bevel
+noun: pocket
+modifier: hollow
+context: cad
+phrase: bevel hollow pocket top rim by {a}
+phrase: chamfer hollow pocket perimeter with dimension {a}
+slot: a real
+test: a=0.003 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.003
+test: a=0.001 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.001
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_pocket");
+	out
+}
+@end
+@entry e3d8327a086b4b4b
+kind: step
+verb: pattern
+noun: hole
+modifier: radial
+context: cad
+phrase: pattern bolt holes radially count {n} radius {r}
+phrase: radial hole pattern count {n} circle radius {r}
+slot: n int
+slot: r real
+test: n=4 r=0.01 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.08"
+expect: => i=3 r=0.0 ok=true s="hole_radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.08
+expect: => doc: holes3 cyl 0.05,0,-0.1 0.05,0,0.1 r0.01 - ra4
+test: n=6 r=0.005 doc="base box 0,0,0 1,1,0.1|disc cyl 0,0,0 0,0,0.05 r0.05"
+expect: => i=3 r=0.0 ok=true s="hole_radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: disc cyl 0,0,0 0,0,0.05 r0.05
+expect: => doc: holes3 cyl 0.05,0,-0.1 0.05,0,0.1 r0.005 - ra6
+test: n=0 r=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${r} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "holes", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("1 ");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("1 r");
+	gold_fnum(o, ${r});
+	o.append(" - ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "hole_radial");
+	out
+}
+@end
+@entry 6546f4a865647d65
+kind: step
+verb: bevel
+noun: plate
+modifier: none
+context: cad
+phrase: bevel plate boundary edges by {a}
+phrase: chamfer plate perimeter with offset {a}
+slot: a real
+test: a=0.005 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.005
+test: a=0.002 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.002
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_plate");
+	out
+}
+@end
+@entry b06dc73b722ed0d8
+kind: step
+verb: bore
+noun: standoff
+modifier: evenly
+context: cad
+phrase: bore standoff holes evenly count {n} spacing {s}
+phrase: cut evenly spaced standoff bores count {n} step {s}
+slot: n int
+slot: s real
+test: n=4 s=0.04 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.008 - a4:0.04,0,0
+test: n=2 s=0.06 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_standoff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.008 - a2:0.06,0,0
+test: n=-1 s=0.04
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r0.");
+	o.append("0");
+	o.append("0");
+	o.append("8 - a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_standoff");
+	out
+}
+@end
+@entry 17011e045920f983
+kind: step
+verb: pattern
+noun: flange
+modifier: centered
+context: cad
+phrase: pattern flange bolt circle count {n}
+phrase: radial pattern of flange mounts count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: flange2 cyl 0.08,0,0 0.08,0,0.01 r0.015 m:metal ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_flange" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: flange2 cyl 0.08,0,0 0.08,0,0.01 r0.015 m:metal ra6
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid flange count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "flange", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("8,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0.");
+	o.append("0");
+	o.append("8,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 r0.");
+	o.append("0");
+	o.append("1");
+	o.append("5 m:metal ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_flange");
+	out
+}
+@end
+@entry b7fc2bf1d6d2e1a8
+kind: step
+verb: stiffen
+noun: spacer
+modifier: hollow
+context: cad
+phrase: stiffen hollow spacer with sleeve thickness {t}
+phrase: add hollow sleeve stiffener wall {t}
+slot: t real
+test: t=0.005 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="stiffen_spacer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: stiffener3 tube 0,0,0 0,0,0.05 0.02,0,0.03 r0.02 sh0.005 m:metal
+test: t=0.008 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=3 r=0.0 ok=true s="stiffen_spacer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02
+expect: => doc: stiffener3 tube 0,0,0 0,0,0.05 0.02,0,0.03 r0.02 sh0.008 m:metal
+test: t=-0.005
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${t} <= 0.0 { gold_fail(g, "invalid thickness"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "stiffener", "", o);
+	o.append(" tube ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("3 r0.");
+	o.append("0");
+	o.append("2 sh");
+	gold_fnum(o, ${t});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "stiffen_spacer");
+	out
+}
+@end
+@entry 76d9b8a0c209f144
+kind: step
+verb: pattern
+noun: bushing
+modifier: evenly
+context: cad
+phrase: pattern bushing elements evenly count {n}
+phrase: radial array of bushing sleeves count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_bushing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: bushing2 cyl 0.05,0,0 0.05,0,0.02 r0.015 m:copper ra4
+test: n=3 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_bushing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: bushing2 cyl 0.05,0,0 0.05,0,0.02 r0.015 m:copper ra3
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bushing", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 r0.");
+	o.append("0");
+	o.append("1");
+	o.append("5 m:copper ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_bushing");
+	out
+}
+@end
+@entry 2519baefb05895aa
+kind: step
+verb: add
+noun: housing
+modifier: hollow
+context: cad
+phrase: add hollow housing with wall thickness {t}
+phrase: place hollow housing enclosure wall {t}
+slot: t real
+test: t=0.005
+expect: => i=1 r=0.0 ok=true s="housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: housing1 box 0,0,0.05 0.08,0.08,0.08 sh0.005 m:plastic
+test: t=0.008 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="housing" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: housing2 box 0,0,0.05 0.08,0.08,0.08 sh0.008 m:plastic
+test: t=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${t} <= 0.0 { gold_fail(g, "invalid thickness"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "housing", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0.");
+	o.append("0");
+	o.append("8,");
+	o.append("0.");
+	o.append("0");
+	o.append("8,");
+	o.append("0.");
+	o.append("0");
+	o.append("8 sh");
+	gold_fnum(o, ${t});
+	o.append(" m:plastic");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "housing");
+	out
+}
+@end
+@entry 303111ac3c92800c
+kind: step
+verb: pattern
+noun: boss
+modifier: keyed
+context: cad
+phrase: pattern keyed bosses in line count {n} spacing {s}
+phrase: linear pattern of keyed bosses count {n} pitch {s}
+slot: n int
+slot: s real
+test: n=3 s=0.06 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: boss2 cyl 0,0,0 0,0,0.04 r0.02 m:metal a3:0.06,0,0
+test: n=2 s=0.08 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: boss2 cyl 0,0,0 0,0,0.04 r0.02 m:metal a2:0.08,0,0
+test: n=-1 s=0.06
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "boss", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("4 r0.");
+	o.append("0");
+	o.append("2 m:metal a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_boss");
+	out
+}
+@end
+@entry 6b202fb5030a3c9f
+kind: step
+verb: pattern
+noun: boss
+modifier: centered
+context: cad
+phrase: pattern centered bosses radially count {n}
+phrase: circular array of centered boss mounts count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: boss2 cyl 0.05,0,0 0.05,0,0.03 r0.025 m:metal ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_boss" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: boss2 cyl 0.05,0,0 0.05,0,0.03 r0.025 m:metal ra6
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "boss", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("3 r0.");
+	o.append("0");
+	o.append("2");
+	o.append("5 m:metal ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_boss");
+	out
+}
+@end
+@entry 64eff977c8da8762
+kind: step
+verb: bore
+noun: hole
+modifier: counterbored
+context: cad
+phrase: bore counterbored hole of radius {r}
+phrase: drill counterbore hole profile radius {r}
+slot: r real
+test: r=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.02 -
+test: r=0.015 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.015 -
+test: r=-0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid radius"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_hole");
+	out
+}
+@end
+@entry 209e3e213d8b9e0d
+kind: step
+verb: pattern
+noun: pocket
+modifier: evenly
+context: cad
+phrase: pattern pockets evenly on circle count {n}
+phrase: circular pattern of recessed pockets count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.08"
+expect: => i=3 r=0.0 ok=true s="pattern_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.08
+expect: => doc: pocket3 box 0.05,0,0.02 0.02,0.02,0.02 - ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1|plate box 0,0,0.05 0.3,0.3,0.1"
+expect: => i=3 r=0.0 ok=true s="pattern_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: plate box 0,0,0.05 0.3,0.3,0.1
+expect: => doc: pocket3 box 0.05,0,0.02 0.02,0.02,0.02 - ra6
+test: n=-1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pocket", "", o);
+	o.append(" box 0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 ");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 - ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_pocket");
+	out
+}
+@end
+@entry 649815d2189beda2
+kind: step
+verb: bore
+noun: pulley
+modifier: counterbored
+context: cad
+phrase: bore counterbored bore in pulley radius {r}
+phrase: counterbore pulley center bore radius {r}
+slot: r real
+test: r=0.015 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.015 -
+test: r=0.012 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_pulley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.012 -
+test: r=-0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid radius"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_pulley");
+	out
+}
+@end
+@entry 3d0852a83eebb8be
+kind: step
+verb: pattern
+noun: plate
+modifier: keyed
+context: cad
+phrase: pattern keyed plates in line count {n} spacing {s}
+phrase: linear sequence of keyed plates count {n} pitch {s}
+slot: n int
+slot: s real
+test: n=3 s=0.08 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: plate2 box 0,0,0.01 0.06,0.04,0.01 m:plastic a3:0.08,0,0
+test: n=2 s=0.1 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: plate2 box 0,0,0.01 0.06,0.04,0.01 m:plastic a2:0.1,0,0
+test: n=0 s=0.08
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "plate", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 ");
+	o.append("0.");
+	o.append("0");
+	o.append("6,");
+	o.append("0.");
+	o.append("0");
+	o.append("4,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 m:plastic a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_plate");
+	out
+}
+@end
+@entry acd9262447467ddc
+kind: step
+verb: bore
+noun: plate
+modifier: through
+context: cad
+phrase: bore through plate opening radius {r}
+phrase: cut through bore across plate radius {r}
+slot: r real
+test: r=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.1 0,0,0.1 r0.02 -
+test: r=0.01 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.1 0,0,0.1 r0.01 -
+test: r=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid bore"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("1 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("1 r");
+	gold_fnum(o, ${r});
+	o.append(" -");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_plate");
+	out
+}
+@end
+@entry 788927304f35c81e
+kind: step
+verb: bevel
+noun: rib
+modifier: counterbored
+context: cad
+phrase: bevel counterbored rib edge by {a}
+phrase: chamfer counterbored rib web with scale {a}
+slot: a real
+test: a=0.003 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_rib" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.003
+test: a=0.001 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_rib" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.001
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_rib");
+	out
+}
+@end
+@entry 65ac61cb1a874cd4
+kind: step
+verb: add
+noun: plate
+modifier: mm_scale
+context: cad
+phrase: add plate of millimeter scale thickness {h}
+phrase: place flat plate of thickness {h}
+slot: h real
+test: h=0.01
+expect: => i=1 r=0.0 ok=true s="plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: plate1 box 0,0,0.01 0.1,0.1,0.01 m:metal
+test: h=0.02 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: plate2 box 0,0,0.01 0.1,0.1,0.02 m:metal
+test: h=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${h} <= 0.0 { gold_fail(g, "invalid thickness"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "plate", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 ");
+	o.append("0.");
+	o.append("1,");
+	o.append("0.");
+	o.append("1,");
+	gold_fnum(o, ${h});
+	o.append(" m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "plate");
+	out
+}
+@end
+@entry 6caa74dd289a4c0f
+kind: step
+verb: pattern
+noun: hinge
+modifier: flanged
+context: cad
+phrase: pattern flanged hinges radially count {n}
+phrase: radial array of flanged hinge mounts count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_hinge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: hinge2 cyl 0.06,0,0 0.06,0,0.05 r0.015 m:metal ra4
+test: n=3 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_hinge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: hinge2 cyl 0.06,0,0 0.06,0,0.05 r0.015 m:metal ra3
+test: n=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "hinge", "", o);
+	o.append(" cyl 0.");
+	o.append("0");
+	o.append("6,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0.");
+	o.append("0");
+	o.append("6,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r0.");
+	o.append("0");
+	o.append("1");
+	o.append("5 m:metal ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_hinge");
+	out
+}
+@end
+@entry a0a65123f83c4148
+kind: step
+verb: add
+noun: pocket
+modifier: radial
+context: cad
+phrase: add radial pocket recesses count {n}
+phrase: cut radial pocket pattern count {n}
+slot: n int
+test: n=4 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.08"
+expect: => i=3 r=0.0 ok=true s="pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.08
+expect: => doc: pocket3 box 0.04,0,0.02 0.02,0.02,0.02 - ra4
+test: n=6 doc="base box 0,0,0 1,1,0.1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pocket3 box 0.04,0,0.02 0.02,0.02,0.02 - ra6
+test: n=-1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 { gold_fail(g, "invalid count"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pocket", "", o);
+	o.append(" box 0.");
+	o.append("0");
+	o.append("4,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 ");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 - ra");
+	format(o, ${n});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pocket");
+	out
+}
+@end
+@entry 22fd5ba2233bcc44
+kind: step
+verb: bore
+noun: pocket
+modifier: hollow
+context: cad
+phrase: bore hollow pocket with wall thickness {t}
+phrase: hollow recessed pocket shell thickness {t}
+slot: t real
+test: t=0.005 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pocket3 box 0,0,0.01 0.04,0.04,0.02 - sh0.005
+test: t=0.003 doc="base box 0,0,0 1,1,0.1|block box 0,0,0.05 0.2,0.2,0.1"
+expect: => i=3 r=0.0 ok=true s="bore_pocket" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: block box 0,0,0.05 0.2,0.2,0.1
+expect: => doc: pocket3 box 0,0,0.01 0.04,0.04,0.02 - sh0.003
+test: t=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${t} <= 0.0 { gold_fail(g, "invalid thickness"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "pocket", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 ");
+	o.append("0.");
+	o.append("0");
+	o.append("4,");
+	o.append("0.");
+	o.append("0");
+	o.append("4,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 - sh");
+	gold_fnum(o, ${t});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_pocket");
+	out
+}
+@end
+@entry d52d026f06282791
+kind: step
+verb: pattern
+noun: plate
+modifier: linear
+context: cad
+phrase: pattern plate linear array count {n} spacing {s}
+phrase: linear plate pattern of {n} units step {s}
+slot: n int
+slot: s real
+test: n=3 s=0.1 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: plate2 box 0,0,0.01 0.05,0.05,0.01 a3:0.1,0,0
+test: n=2 s=0.15 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: plate2 box 0,0,0.01 0.05,0.05,0.01 a2:0.15,0,0
+test: n=0 s=0.1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "plate", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 ");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0.");
+	o.append("0");
+	o.append("5,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_plate");
+	out
+}
+@end
+@entry 26fa08e3fa3bb192
+kind: step
+verb: bore
+noun: plate
+modifier: rounded
+context: cad
+phrase: bore plate with rounded entry radius {r}
+phrase: cut rounded bore through plate radius {r}
+slot: r real
+test: r=0.02 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bore_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.02 - b0.002
+test: r=0.015 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="bore_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: bore3 cyl 0,0,-0.05 0,0,0.05 r0.015 - b0.002
+test: r=-0.02
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 { gold_fail(g, "invalid radius"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bore", "", o);
+	o.append(" cyl ");
+	o.append("0,");
+	o.append("0,-");
+	o.append("0.");
+	o.append("0");
+	o.append("5 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("5 r");
+	gold_fnum(o, ${r});
+	o.append(" - b0.0");
+	o.append("0");
+	o.append("2");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bore_plate");
+	out
+}
+@end
+@entry d677478bb6f9261f
+kind: step
+verb: pattern
+noun: washer
+modifier: mm_scale
+context: cad
+phrase: pattern washer units count {n} spacing {s}
+phrase: array washer elements count {n} spacing {s}
+slot: n int
+slot: s real
+test: n=4 s=0.03 doc="ground box 0,0,-.5 20,20,1"
+expect: => i=2 r=0.0 ok=true s="pattern_washer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: washer2 tube 0,0,0 0,0,0.01 0.02,0,0.01 r0.02 sh0.005 a4:0.03,0,0
+test: n=2 s=0.05 doc="base box 0,0,0 1,1,0.1"
+expect: => i=2 r=0.0 ok=true s="pattern_washer" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: washer2 tube 0,0,0 0,0,0.01 0.02,0,0.01 r0.02 sh0.005 a2:0.05,0,0
+test: n=-1 s=0.03
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${n} < 1 || ${s} <= 0.0 { gold_fail(g, "invalid pattern"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "washer", "", o);
+	o.append(" tube ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0 ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 ");
+	o.append("0.");
+	o.append("0");
+	o.append("2,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("1 r0.");
+	o.append("0");
+	o.append("2 sh0.");
+	o.append("0");
+	o.append("0");
+	o.append("5 a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${s});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pattern_washer");
+	out
+}
+@end
+@entry 53a1376a3db3fd4f
+kind: step
+verb: stiffen
+noun: plate
+modifier: mm_scale
+context: cad
+phrase: stiffen plate with rib thickness {t}
+phrase: add plate reinforcing rib thickness {t}
+slot: t real
+test: t=0.005 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="stiffen_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: rib3 box 0,0,0.02 0.08,0.005,0.02 m:metal
+test: t=0.008 doc="base box 0,0,0 1,1,0.1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=3 r=0.0 ok=true s="stiffen_plate" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05
+expect: => doc: rib3 box 0,0,0.02 0.08,0.008,0.02 m:metal
+test: t=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${t} <= 0.0 { gold_fail(g, "invalid rib"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "rib", "", o);
+	o.append(" box ");
+	o.append("0,");
+	o.append("0,");
+	o.append("0.");
+	o.append("0");
+	o.append("2 ");
+	o.append("0.");
+	o.append("0");
+	o.append("8,");
+	gold_fnum(o, ${t});
+	o.append(",0.");
+	o.append("0");
+	o.append("2 m:metal");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "stiffen_plate");
+	out
+}
+@end
+@entry 254190bfe9de2e39
+kind: step
+verb: bevel
+noun: hole
+modifier: mm_scale
+context: cad
+phrase: bevel hole entry by millimeter scale {a}
+phrase: chamfer hole rim with scale {a}
+slot: a real
+test: a=0.003 doc="ground box 0,0,-.5 20,20,1|part cyl 0,0,0 0,0,0.1 r0.05"
+expect: => i=2 r=0.0 ok=true s="bevel_hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: part cyl 0,0,0 0,0,0.1 r0.05 b0.003
+test: a=0.001 doc="base box 0,0,0 1,1,0.1|spacer cyl 0,0,0 0,0,0.05 r0.02"
+expect: => i=2 r=0.0 ok=true s="bevel_hole" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0 1,1,0.1
+expect: => doc: spacer cyl 0,0,0 0,0,0.05 r0.02 b0.001
+test: a=0.01
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	if ${a} <= 0.0 { gold_fail(g, "invalid bevel"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("b");
+	gold_fnum(o, ${a});
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bevel_hole");
+	out
+}
+@end
+@entry dc6cf9f6e8ec2f4a
+kind: step
+verb: add
+noun: part
+modifier: sphere
+context: cad
+phrase: add a sphere at {x} {y} {z} radius {r}
+phrase: place a sphere at {x} {y} {z} with radius {r}
+slot: x real
+slot: y real
+slot: z real
+slot: r real
+test: x=1.0 y=2.0 z=0.5 r=0.4
+expect: => i=1 r=0.0 ok=true s="sphere" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: sphere1 sphere 1,2,0.5 r0.4
+test: x=-2.0 y=1.0 z=0.4 r=0.4 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="sphere" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: sphere3 sphere -2,1,0.4 r0.4
+test: x=0.0 y=0.0 z=0.0 r=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${r} <= 0.0 {
+		gold_fail(g, "radius must be positive");
+		out.ok = false;
+		return out;
+	}
+	var o byte[>..] = [];
+	gold_dnews(g, "sphere", "", o);
+	o.append(" sphere ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sphere");
+	out
+}
+@end
+@entry e05bcd29e62d68cd
+kind: step
+verb: add
+noun: part
+modifier: block
+context: cad
+phrase: add a block at {x} {y} {z} size {sx} {sy} {sz}
+phrase: place a box at {x} {y} {z} dimensions {sx} {sy} {sz}
+slot: x real
+slot: y real
+slot: z real
+slot: sx real
+slot: sy real
+slot: sz real
+test: x=1.0 y=2.0 z=0.5 sx=1.0 sy=1.0 sz=1.0
+expect: => i=1 r=0.0 ok=true s="block" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: box1 box 1,2,0.5 1,1,1
+test: x=0.0 y=0.0 z=-0.5 sx=20.0 sy=20.0 sz=1.0 doc="crate box 1,2,.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="block" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: box2 box 0,0,-0.5 20,20,1
+test: x=0.0 y=0.0 z=0.0 sx=0.0 sy=1.0 sz=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${sx} <= 0.0 || ${sy} <= 0.0 || ${sz} <= 0.0 {
+		gold_fail(g, "dimensions must be positive");
+		out.ok = false;
+		return out;
+	}
+	var o byte[>..] = [];
+	gold_dnews(g, "box", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	o.append(" ");
+	gold_fnum(o, ${sx});
+	o.append(",");
+	gold_fnum(o, ${sy});
+	o.append(",");
+	gold_fnum(o, ${sz});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "block");
+	out
+}
+@end

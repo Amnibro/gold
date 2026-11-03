@@ -1,0 +1,7 @@
+# nesting: an int-slot predicate bound inside a binding, and an explicit subfunction
+let step be collatz step
+big = above 50
+input = 7
+keep running step until big, then check for errors
+sum = sum of digits
+apply sum to each result then hand back results

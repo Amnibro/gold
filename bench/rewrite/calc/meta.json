@@ -1,0 +1,53 @@
+{
+ "product": "Amni-Calc",
+ "module": "Engineering calculators: beams, sections, bolts, springs, stress and fatigue, seals, thermal, materials, finishes, unit conversion",
+ "orig_lang": "Rust",
+ "orig_src": [
+  "orig/units.rs",
+  "orig/materials.rs",
+  "orig/beam.rs",
+  "orig/cross_section.rs",
+  "orig/bolts.rs",
+  "orig/springs.rs",
+  "orig/finishes.rs",
+  "orig/stress.rs",
+  "orig/seals.rs",
+  "orig/thermal.rs"
+ ],
+ "gold": [
+  "he/units.gold",
+  "he/materials.gold",
+  "he/beam.gold",
+  "he/cross_section.gold",
+  "he/bolts.gold",
+  "he/springs.gold",
+  "he/finishes.gold",
+  "he/stress.gold",
+  "he/seals.gold",
+  "he/thermal.gold"
+ ],
+ "helium": [
+  "he/units.he",
+  "he/materials.he",
+  "he/beam.he",
+  "he/cross_section.he",
+  "he/bolts.he",
+  "he/springs.he",
+  "he/finishes.he",
+  "he/stress.he",
+  "he/seals.he",
+  "he/thermal.he"
+ ],
+ "run_orig": "ref/target/release/calcref",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 200,
+ "runs": 5,
+ "norm": [
+  [
+   "\"error\":\"(Parse error: )?[^\"]*\"",
+   "E"
+  ]
+ ],
+ "norm_note": "20 malformed-input cases: both reject the input, but serde's error wording differs"
+}

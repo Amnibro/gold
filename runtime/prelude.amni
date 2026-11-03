@@ -1,0 +1,352 @@
+// Gold runtime prelude: shared state threaded through every Gold step.
+// Every step template is `fn NAME(g Gold&, v Val) Val`.
+// v2 (phase0): adds reals/words/vectors/map/records side state; v1 fields and report line unchanged.
+import math;
+import vec;
+
+struct Val { i int, r real, ok bool, s byte[..200] }
+struct GoldRec { id int, x real, tag byte[..32] }
+struct Gold { errors int, steps int, hits int, misses int, n int, res int[512], cn int, ck int[256], cv int[256], err byte[..120],
+	flag bool, rn int, rl real[256], wn int, wl byte[..32][128], vn int, vl double3[64], mn int, mk int[128], mv int[128], mu bool[128], kn int, kl GoldRec[64],
+	dn int, dl byte[..160][96], dname byte[..32], iw int, ih int, img real[1024] }
+
+fn gold_new() Gold { Gold { errors: 0, steps: 0, hits: 0, misses: 0, n: 0, res: [0; 512], cn: 0, ck: [0; 256], cv: [0; 256], err: "",
+	flag: true, rn: 0, rl: [0.0; 256], wn: 0, wl: [""; 128], vn: 0, vl: [double3{0.0, 0.0, 0.0}; 64], mn: 0, mk: [0; 128], mv: [0; 128], mu: [false; 128], kn: 0, kl: [GoldRec{id: 0, x: 0.0, tag: ""}; 64],
+	dn: 0, dl: [""; 96], dname: "", iw: 0, ih: 0, img: [0.0; 1024] } }
+fn gold_val() Val { Val { i: 0, r: 0.0, ok: true, s: "" } }
+fn gold_text(v Val&, t const byte[:]) { v.s.clear(); for b in t { if v.s.len < 200 { v.s.push(b); } } }
+fn gold_push(g Gold&, x int) { if g.n < 512 { g.res[g.n] = x; g.n++; } else { gold_fail(g, "results full"); } }
+fn gold_clear(g Gold&) { g.n = 0; }
+fn gold_fail(g Gold&, msg const byte[:]) { g.errors++; g.err.clear(); for b in msg { if g.err.len < 120 { g.err.push(b); } } }
+fn gold_cache_get(g Gold&, k int) int, bool {
+	for i in g.cn { if g.ck[i] == k { g.hits++; return g.cv[i], true; } }
+	g.misses++;
+	return 0, false;
+}
+fn gold_cache_put(g Gold&, k int, x int) {
+	for i in g.cn { if g.ck[i] == k { g.cv[i] = x; return; } }
+	if g.cn < 256 { g.ck[g.cn] = k; g.cv[g.cn] = x; g.cn++; }
+}
+fn gold_report(g Gold&, v Val) {
+	var o byte[>..] = [];
+	format(o, "=> i=", v.i, " r=", v.r, " ok=", v.ok, " s=\"", v.s, "\" errors=", g.errors, " n=", g.n, " res=[");
+	for k in g.n { if k > 0 { o.append(","); } format(o, g.res[k]); }
+	format(o, "] cache=", g.cn, " hits=", g.hits);
+	print(o);
+	gold_report2(g);
+	gold_report3(g);
+}
+
+// ===== Runtime v2 (phase0): typed side lists, vectors, map, records =====
+// All v2 state starts empty; gold_report prints the v2 line only when something is in it,
+// so every v1 entry's expected output is unchanged.
+fn gold_rpush(g Gold&, x real) { if g.rn < 256 { g.rl[g.rn] = x; g.rn++; } else { gold_fail(g, "reals full"); } }
+fn gold_wpush(g Gold&, w const byte[:]) {
+	if g.wn >= 128 { gold_fail(g, "words full"); return; }
+	g.wl[g.wn].clear();
+	for b in w { if g.wl[g.wn].len < 32 { g.wl[g.wn].push(b); } }
+	g.wn++;
+}
+// split text on spaces into the word list
+fn gold_words_of(g Gold&, t const byte[:]) {
+	var cur byte[>..] = [];
+	for b in t {
+		if b == ' ' || b == '\t' || b == '\n' { if cur.len > 0 { gold_wpush(g, cur); cur.clear(); } }
+		else { cur.push(b); }
+	}
+	if cur.len > 0 { gold_wpush(g, cur); }
+}
+fn gold_v3(x real, y real, z real) double3 { double3{x, y, z} }
+fn gold_v2(x real, y real) double3 { double3{x, y, 0.0} }
+fn gold_vpush(g Gold&, p double3) { if g.vn < 64 { g.vl[g.vn] = p; g.vn++; } else { gold_fail(g, "vectors full"); } }
+fn gold_vlen(p double3) real { length(p) }
+fn gold_vdot(a double3, b double3) real { dot(a, b) }
+// int -> int map, open addressing over 128 slots
+fn gold_mslot(g Gold&, k int) int {
+	var h = ((k * 40503) % 128 + 128) % 128;
+	for t in 128 {
+		let i = (h + t) % 128;
+		if !g.mu[i] || g.mk[i] == k { return i; }
+	}
+	-1
+}
+fn gold_mput(g Gold&, k int, x int) {
+	let i = gold_mslot(g, k);
+	if i < 0 { gold_fail(g, "map full"); return; }
+	if !g.mu[i] { g.mu[i] = true; g.mk[i] = k; g.mn++; }
+	g.mv[i] = x;
+}
+fn gold_mget(g Gold&, k int) int, bool {
+	let i = gold_mslot(g, k);
+	if i < 0 || !g.mu[i] { return 0, false; }
+	return g.mv[i], true;
+}
+fn gold_madd(g Gold&, k int, d int) { let x, ok = gold_mget(g, k); gold_mput(g, k, x + d); }
+fn gold_mclear(g Gold&) { for i in 128 { g.mu[i] = false; } g.mn = 0; }
+fn gold_kpush(g Gold&, id int, x real, tag const byte[:]) {
+	if g.kn >= 64 { gold_fail(g, "records full"); return; }
+	g.kl[g.kn].id = id; g.kl[g.kn].x = x; g.kl[g.kn].tag.clear();
+	for b in tag { if g.kl[g.kn].tag.len < 32 { g.kl[g.kn].tag.push(b); } }
+	g.kn++;
+}
+// fingerprint of the flowing state (results, value, text, side lists) for step memoization
+fn gold_fp(g Gold&, v Val) int {
+	var h = v.i * 1000003 + g.n;
+	for k in g.n { h = h * 31 + g.res[k]; }
+	for b in v.s { h = h * 131 + b as int; }
+	h = h * 7 + g.rn * 3 + g.wn * 5 + g.vn * 11 + g.mn * 13 + g.kn * 17 + g.dn * 19 + g.iw * 23;
+	for k in g.dn { for b in g.dl[k] { h = h * 131 + b as int; } }
+	h
+}
+fn gold_report2(g Gold&) {
+	if g.rn == 0 && g.wn == 0 && g.vn == 0 && g.mn == 0 && g.kn == 0 { return; }
+	var o byte[>..] = [];
+	o.append("=>");
+	if g.rn > 0 { o.append(" reals=["); for k in g.rn { if k > 0 { o.append(","); } format(o, g.rl[k]); } o.append("]"); }
+	if g.wn > 0 { o.append(" words=["); for k in g.wn { if k > 0 { o.append(","); } o.append(g.wl[k]); } o.append("]"); }
+	if g.vn > 0 { o.append(" vecs=["); for k in g.vn { if k > 0 { o.append(","); } format(o, "(", g.vl[k].x, " ", g.vl[k].y, " ", g.vl[k].z, ")"); } o.append("]"); }
+	if g.mn > 0 {
+		o.append(" map={");
+		var last = 0;
+		var first = true;
+		for c in g.mn {
+			var best = -1;
+			for i in 128 { if g.mu[i] && (first || g.mk[i] > last) && (best < 0 || g.mk[i] < g.mk[best]) { best = i; } }
+			if best < 0 { break; }
+			if !first { o.append(","); }
+			format(o, g.mk[best], ":", g.mv[best]);
+			last = g.mk[best];
+			first = false;
+		}
+		o.append("}");
+	}
+	if g.kn > 0 { o.append(" recs=["); for k in g.kn { if k > 0 { o.append(","); } format(o, "{", g.kl[k].id, " ", g.kl[k].x, " ", g.kl[k].tag, "}"); } o.append("]"); }
+	print(o);
+}
+// Composition helpers used by goldc compose (not by entries).
+struct GoldMemo { has bool, key int, n int, res int[512], v Val }
+fn gold_memo_new() GoldMemo { GoldMemo { has: false, key: 0, n: 0, res: [0; 512], v: gold_val() } }
+fn gold_memo_load(g Gold&, v Val&, m GoldMemo&) { g.n = m.n; for k in m.n { g.res[k] = m.res[k]; } v = m.v; g.hits++; }
+fn gold_memo_save(g Gold&, v Val, m GoldMemo&, key int) { m.has = true; m.key = key; m.n = g.n; for k in g.n { m.res[k] = g.res[k]; } m.v = v; }
+// After each composed step: a step's ok=false without a new error is an answer flag, not a failure.
+fn gold_flow(g Gold&, v Val&, gp Gold&, step int) {
+	g.flag = v.ok;
+	if !v.ok && g.errors == gp.errors { v.ok = true; }
+	if g.n == 0 && gp.n > 0 && g.errors == gp.errors { print("note: step ", step, " left no results (", gp.n, " before)"); }
+}
+fn gold_show_text(g Gold&, v Val) { if g.n == 0 && v.s.len > 0 { print("text: ", v.s); } }
+
+
+// Core functions (fn kind: int -> int). Tests bind slots to these by bare name.
+fn core_double(n int) int { n * 2 }
+fn core_halve(n int) int { n / 2 }
+fn core_inc(n int) int { n + 1 }
+fn core_dec(n int) int { n - 1 }
+fn core_square(n int) int { n * n }
+fn core_triple(n int) int { n * 3 }
+fn core_cube(n int) int { n * n * n }
+fn core_negate(n int) int { -n }
+fn core_abs_val(n int) int { if n < 0 { -n } else { n } }
+fn core_collatz(n int) int { if n % 2 == 0 { n / 2 } else { 3 * n + 1 } }
+fn core_digit_sum(n int) int { var x = core_abs_val(n); var s = 0; while x > 0 { s += x % 10; x /= 10; } s }
+fn core_reverse_digits(n int) int { var x = core_abs_val(n); var r = 0; while x > 0 { r = r * 10 + x % 10; x /= 10; } r }
+
+// Core predicates (pred kind: int -> bool).
+fn core_is_one(n int) bool { n == 1 }
+fn core_is_zero(n int) bool { n == 0 }
+fn core_is_even(n int) bool { n % 2 == 0 }
+fn core_is_odd(n int) bool { n % 2 != 0 }
+fn core_is_negative(n int) bool { n < 0 }
+fn core_over_100(n int) bool { n > 100 }
+fn core_under_10(n int) bool { n < 10 }
+fn core_is_prime(n int) bool { if n < 2 { return false; } var d = 2; while d * d <= n { if n % d == 0 { return false; } d++; } true }
+fn core_is_square(n int) bool { if n < 0 { return false; } var r = 0; while r * r < n { r++; } r * r == n }
+fn core_is_palindrome(n int) bool { core_reverse_digits(n) == core_abs_val(n) }
+
+// ===== Runtime v3 (phase0 domains): scene document + image buffer =====
+// The scene document holds Amni-Form lines (Amni-CAD's model language: Z-up, meters). Entries only append or edit
+// lines here; writing files is done outside entries (tools/scene_e2e.sh pipes the doc: lines into form_build.mjs).
+// Reals in the doc are fixed to 3 decimals so the text is stable and checkable.
+fn gold_fnum(o byte[>..]&, x real) {
+	var q = round(x * 1000.0) as! int;
+	if q < 0 { o.push('-'); q = -q; }
+	format(o, q / 1000);
+	var f = q % 1000;
+	if f != 0 {
+		o.push('.');
+		var d = 100;
+		while f > 0 { format(o, f / d); f = f % d; d = d / 10; }
+	}
+}
+fn gold_doc(g Gold&, line const byte[:]) {
+	if g.dn >= 96 { gold_fail(g, "doc full"); return; }
+	g.dl[g.dn].clear();
+	for b in line { if g.dl[g.dn].len < 160 { g.dl[g.dn].push(b); } }
+	g.dn++;
+}
+// name for a new item: prefix + its 1-based line number (light3); becomes the "last item"
+fn gold_dnew(g Gold&, prefix const byte[:], o byte[>..]&) {
+	var nm byte[>..] = [];
+	format(nm, prefix, g.dn + 1);
+	g.dname.clear();
+	for b in nm { if g.dname.len < 32 { g.dname.push(b); } }
+	o.append(nm);
+}
+// the last named item, or a failure when the document has none yet
+fn gold_dlast(g Gold&, o byte[>..]&) bool {
+	if g.dname.len == 0 { gold_fail(g, "no item yet"); return false; }
+	o.append(g.dname);
+	true
+}
+// first word of line k (its item name)
+fn gold_dword(g Gold&, k int, o byte[>..]&) { for b in g.dl[k] { if b == ' ' { break; } o.push(b); } }
+// is line k a drawable shape (not a light, camera, bone, track or global)?
+fn gold_dshape(g Gold&, k int) bool {
+	let l = g.dl[k];
+	if l.len == 0 || l[0] == '@' { return false; }
+	var sp = 0;
+	while sp < l.len && l[sp] != ' ' { sp++; }
+	var e = sp + 1;
+	while e < l.len && l[e] != ' ' { e++; }
+	if sp + 1 >= l.len { return false; }
+	let kw = l[sp + 1..e];
+	kw == "sphere" || kw == "ellipsoid" || kw == "box" || kw == "capsule" || kw == "cyl" || kw == "torus" || kw == "cone" || kw == "prism" || kw == "pyramid" || kw == "wedge" || kw == "tube" || kw == "lathe" || kw == "extrude"
+}
+fn gold_img_new(g Gold&, w int, h int) bool {
+	if w < 1 || h < 1 || w * h > 1024 { gold_fail(g, "image too large"); return false; }
+	g.iw = w; g.ih = h;
+	for k in 1024 { g.img[k] = 0.0; }
+	true
+}
+// deterministic lattice hash in [0,1)
+fn gold_hash01(x int, y int, seed int) real {
+	var h = (x * 374761393 + y * 668265263 + seed * 2147483647) % 1000003;
+	if h < 0 { h += 1000003; }
+	h = (h * h + 12345) % 1000003;
+	h as real / 1000003.0
+}
+fn gold_report3(g Gold&) {
+	for k in g.dn { print("=> doc: ", g.dl[k]); }
+	if g.iw > 0 {
+		var mn = g.img[0];
+		var mx = g.img[0];
+		var sum = 0;
+		var hs = 0;
+		for k in g.iw * g.ih {
+			let p = g.img[k];
+			if p < mn { mn = p; }
+			if p > mx { mx = p; }
+			var q = round(p * 255.0) as! int;
+			if q < 0 { q = 0; }
+			if q > 255 { q = 255; }
+			sum += q;
+			hs = (hs * 31 + q + 1) % 1000003;
+		}
+		var o byte[>..] = [];
+		format(o, "=> img: ", g.iw, "x", g.ih, " min=");
+		gold_fnum(o, mn);
+		o.append(" max=");
+		gold_fnum(o, mx);
+		format(o, " sum8=", sum, " hash=", hs);
+		print(o);
+	}
+}
+// line index of the last named item, or -1
+fn gold_dfind(g Gold&) int {
+	if g.dname.len == 0 { return -1; }
+	var hit = -1;
+	for k in g.dn {
+		let l = g.dl[k];
+		if l.len > g.dname.len && l[g.dname.len] == ' ' {
+			var same = true;
+			for i in g.dname.len { if l[i] != g.dname[i] { same = false; } }
+			if same { hit = k; }
+		}
+	}
+	hit
+}
+fn gold_dappend(g Gold&, k int, t const byte[:]) { for b in t { if g.dl[k].len < 160 { g.dl[k].push(b); } } }
+fn gold_ddelete(g Gold&, k int) { var q = k; while q + 1 < g.dn { g.dl[q] = g.dl[q + 1]; q++; } g.dn--; g.dname.clear(); }
+// #rrggbb from 0-255 channels (clamped)
+fn gold_hex(o byte[>..]&, r int, gg int, b int) {
+	let hx = "0123456789abcdef";
+	o.push('#');
+	for c in [r, gg, b] { var x = c; if x < 0 { x = 0; } if x > 255 { x = 255; } o.push(hx[x / 16]); o.push(hx[x % 16]); }
+}
+// periodic value noise at pixel (x,y): lattice every `cell` pixels, wraps every `per` cells (tiles seamlessly)
+fn gold_vnoise(x int, y int, cell int, per int, seed int) real {
+	let cx = x / cell;
+	let cy = y / cell;
+	let fx = (x % cell) as real / cell as real;
+	let fy = (y % cell) as real / cell as real;
+	let sx = fx * fx * (3.0 - 2.0 * fx);
+	let sy = fy * fy * (3.0 - 2.0 * fy);
+	let a = gold_hash01(cx % per, cy % per, seed);
+	let b = gold_hash01((cx + 1) % per, cy % per, seed);
+	let c = gold_hash01(cx % per, (cy + 1) % per, seed);
+	let d = gold_hash01((cx + 1) % per, (cy + 1) % per, seed);
+	let top = a + (b - a) * sx;
+	let bot = c + (d - c) * sx;
+	top + (bot - top) * sy
+}
+// like gold_dnew with a suffix after the number (arm3L: names ending in L get mirrored R twins)
+fn gold_dnews(g Gold&, prefix const byte[:], suffix const byte[:], o byte[>..]&) {
+	var nm byte[>..] = [];
+	format(nm, prefix, g.dn + 1, suffix);
+	g.dname.clear();
+	for b in nm { if g.dname.len < 32 { g.dname.push(b); } }
+	o.append(nm);
+}
+// ---- texture helpers (img is a w*h grey buffer in [0,1], row-major, at most 32x32)
+// harness test canvas: n x n with a fixed non-tiling ramp pattern
+fn gold_img_test(g Gold&, n int) {
+	if gold_img_new(g, n, n) {
+		for y in n { for x in n { g.img[y * n + x] = ((x * 7 + y * 13) % 17) as real / 17.0; } }
+	}
+}
+fn gold_img_ok(g Gold&) bool {
+	if g.iw == 0 { gold_fail(g, "no texture yet"); return false; }
+	true
+}
+fn gold_img_square(g Gold&, cell int) bool {
+	if !gold_img_ok(g) { return false; }
+	if g.iw != g.ih { gold_fail(g, "texture must be square"); return false; }
+	if cell < 1 || g.iw % cell != 0 { gold_fail(g, "cell must divide size"); return false; }
+	true
+}
+fn gold_clamp01(x real) real {
+	if x < 0.0 { return 0.0; }
+	if x > 1.0 { return 1.0; }
+	x
+}
+fn gold_absr(x real) real { if x < 0.0 { return 0.0 - x; } x }
+fn gold_img_wrap(g Gold&, x int, y int) real {
+	var xx = x % g.iw;
+	if xx < 0 { xx += g.iw; }
+	var yy = y % g.ih;
+	if yy < 0 { yy += g.ih; }
+	g.img[yy * g.iw + xx]
+}
+// periodic worley (cellular) noise: distance to the nearest jittered feature point, in cells, clamped to [0,1]
+fn gold_worley(x int, y int, cell int, per int, seed int) real {
+	let cx = x / cell;
+	let cy = y / cell;
+	var best = 1000000.0;
+	for dy in 3 {
+		for dx in 3 {
+			let gx = cx + dx - 1;
+			let gy = cy + dy - 1;
+			var wx = gx % per;
+			if wx < 0 { wx += per; }
+			var wy = gy % per;
+			if wy < 0 { wy += per; }
+			let px = ((gx as real) + gold_hash01(wx, wy, seed)) * (cell as real);
+			let py = ((gy as real) + gold_hash01(wx, wy, seed + 1)) * (cell as real);
+			let ddx = px - (x as real);
+			let ddy = py - (y as real);
+			let d = ddx * ddx + ddy * ddy;
+			if d < best { best = d; }
+		}
+	}
+	gold_clamp01(sqrt(best) / (cell as real))
+}

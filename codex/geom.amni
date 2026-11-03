@@ -1,0 +1,3 @@
+fn geom_manhattan_dist(x1 int, y1 int, x2 int, y2 int) int { let dx = x1 - x2; let dy = y1 - y2; (if dx < 0 { -dx } else { dx }) + (if dy < 0 { -dy } else { dy }) }
+fn geom_rect_area(w int, h int) int { w * h }
+fn geom_circle_area_approx(r real) real { 3.1415927 * r * r }

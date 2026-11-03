@@ -1,0 +1,996 @@
+@entry 0ae39a9ad77d06cb
+kind: step
+verb: scatter
+noun: terrain
+modifier: trees
+context: env
+phrase: scatter {n} trees over {a} meters with seed {u}
+phrase: plant a grove of {n} trees across {a} meters seed {u}
+slot: n int
+slot: a real
+slot: u int
+test: n=5 a=10.0 u=3
+expect: => i=5 r=0.0 ok=true s="forest" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: tree1 cone -1.206,-7.92,.5 -1.206,-7.92,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree2 cone 2.621,-0.783,.5 2.621,-0.783,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree3 cone -3.175,-3.269,.5 -3.175,-3.269,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree4 cone 1.405,4.621,.5 1.405,4.621,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree5 cone -3.638,2.887,.5 -3.638,2.887,3 r.8 nz.05:.3 m:matte #2f5f3a
+test: n=8 a=15.0 u=9 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=8 r=0.0 ok=true s="forest" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: tree3 cone 9.124,-7.858,.5 9.124,-7.858,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree4 cone 0.853,-11.164,.5 0.853,-11.164,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree5 cone 8.147,1.095,.5 8.147,1.095,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree6 cone 1.005,-1.082,.5 1.005,-1.082,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree7 cone 9.429,12.306,.5 9.429,12.306,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree8 cone 3.416,11.258,.5 3.416,11.258,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree9 cone 12.969,-4.224,.5 12.969,-4.224,3 r.8 nz.05:.3 m:matte #2f5f3a
+expect: => doc: tree10 cone 8.086,-4.143,.5 8.086,-4.143,3 r.8 nz.05:.3 m:matte #2f5f3a
+test: n=0 a=1.0 u=1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	if ${n} < 1 || ${n} > 24 { gold_fail(g, "count out of range"); out.ok = false; return out; }
+	for q in ${n} {
+		let px = (gold_hash01(q, 1, ${u}) * 2.0 - 1.0) * ${a};
+		let py = (gold_hash01(q, 2, ${u}) * 2.0 - 1.0) * ${a};
+		o.clear();
+		gold_dnews(g, "tree", "", o);
+		o.append(" cone ");
+		gold_fnum(o, px);
+		o.append(",");
+		gold_fnum(o, py);
+		o.append(",.");
+		o.append("5");
+		o.append(" ");
+		gold_fnum(o, px);
+		o.append(",");
+		gold_fnum(o, py);
+		o.append(",");
+		o.append("3");
+		o.append(" r.");
+		o.append("8");
+		o.append(" nz.");
+		o.append("05");
+		o.append(":.");
+		o.append("3");
+		o.append(" m:matte ");
+		gold_hex(o, 47, 95, 58);
+		gold_doc(g, o);
+	}
+	out.i = ${n};
+	out.s.clear();
+	format(out.s, "forest");
+	out
+}
+@end
+
+@entry 1edc0acbd74c94ce
+kind: step
+verb: plant
+noun: terrain
+modifier: tree
+context: env
+phrase: plant a tree at {x} {y} height {h}
+phrase: grow a leafy tree at {x} {y} tall {h}
+slot: x real
+slot: y real
+slot: h real
+test: x=2.0 y=1.0 h=3.0
+expect: => i=2 r=0.0 ok=true s="tree" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: trunk1 cyl 2,1,0 2,1,3 r0.15 m:matte #6b4a2b
+expect: => doc: crown2 sphere 2,1,3 r1.05 nz.05:.3 m:matte #3f7f3a
+test: x=-3.0 y=4.0 h=5.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="tree" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: trunk3 cyl -3,4,0 -3,4,5 r0.25 m:matte #6b4a2b
+expect: => doc: crown4 sphere -3,4,5 r1.75 nz.05:.3 m:matte #3f7f3a
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "trunk", "", o);
+	o.append(" cyl ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${h} * 0.05);
+	o.append(" m:matte ");
+	gold_hex(o, 107, 74, 43);
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "crown", "", o);
+	o.append(" sphere ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${h} * 0.35);
+	o.append(" nz.");
+	o.append("05");
+	o.append(":.");
+	o.append("3");
+	o.append(" m:matte ");
+	gold_hex(o, 63, 127, 58);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "tree");
+	out
+}
+@end
+
+@entry 26587b4dc8262bee
+kind: step
+verb: add
+noun: terrain
+modifier: water
+context: env
+phrase: add a water plane {a} meters wide at height {h}
+phrase: flood the scene {a} meters across at level {h}
+slot: a real
+slot: h real
+test: a=30.0 h=0.2
+expect: => i=1 r=0.0 ok=true s="water" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: water1 box 0,0,0.2 30,30,0.6 m:glass #2f6f9f
+test: a=10.0 h=-0.3 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="water" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: water3 box 0,0,-0.3 10,10,0.2 m:glass #2f6f9f
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "water", "", o);
+	o.append(" box ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a} * 0.02);
+	o.append(" m:glass ");
+	gold_hex(o, 47, 111, 159);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "water");
+	out
+}
+@end
+
+@entry 28e34fd51ed5661b
+kind: step
+verb: sculpt
+noun: terrain
+modifier: dent
+context: env
+phrase: press a dent at {x} {y} radius {r} strength {s}
+phrase: push the ground down at {x} {y} brush {r} force {s}
+slot: x real
+slot: y real
+slot: r real
+slot: s real
+test: x=1.0 y=1.0 r=2.0 s=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="dent" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: dent3 dent r2 s0.5 1,1,0
+test: x=-2.0 y=0.0 r=1.0 s=0.8 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="dent" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: dent3 dent r1 s0.8 -2,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "dent", "", o);
+	o.append(" dent r");
+	gold_fnum(o, ${r});
+	o.append(" s");
+	gold_fnum(o, ${s});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "dent");
+	out
+}
+@end
+
+@entry 31d0dd9ac476d173
+kind: step
+verb: sculpt
+noun: terrain
+modifier: inflate
+context: env
+phrase: sculpt a bump at {x} {y} radius {r} strength {s}
+phrase: push the ground up at {x} {y} brush {r} force {s}
+slot: x real
+slot: y real
+slot: r real
+slot: s real
+test: x=1.0 y=1.0 r=2.0 s=0.5 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="bump" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: raise3 inflate r2 s0.5 1,1,0
+test: x=-2.0 y=0.0 r=1.0 s=0.8 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="bump" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: raise3 inflate r1 s0.8 -2,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "raise", "", o);
+	o.append(" inflate r");
+	gold_fnum(o, ${r});
+	o.append(" s");
+	gold_fnum(o, ${s});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "bump");
+	out
+}
+@end
+
+@entry 35ef55fac53b1c88
+kind: step
+verb: plant
+noun: terrain
+modifier: pine
+context: env
+phrase: plant a pine at {x} {y} height {h}
+phrase: conifer at {x} {y} tall {h}
+slot: x real
+slot: y real
+slot: h real
+test: x=1.0 y=1.0 h=4.0
+expect: => i=2 r=0.0 ok=true s="pine" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: trunk1 cyl 1,1,0 1,1,1.2 r0.16 m:matte #6b4a2b
+expect: => doc: needles2 cone 1,1,0.8 1,1,4 r1 m:matte #2f5f3a
+test: x=5.0 y=-2.0 h=6.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=4 r=0.0 ok=true s="pine" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: trunk3 cyl 5,-2,0 5,-2,1.8 r0.24 m:matte #6b4a2b
+expect: => doc: needles4 cone 5,-2,1.2 5,-2,6 r1.5 m:matte #2f5f3a
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "trunk", "", o);
+	o.append(" cyl ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h} * 0.3);
+	o.append(" r");
+	gold_fnum(o, ${h} * 0.04);
+	o.append(" m:matte ");
+	gold_hex(o, 107, 74, 43);
+	gold_doc(g, o);
+	o.clear();
+	gold_dnews(g, "needles", "", o);
+	o.append(" cone ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h} * 0.2);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r");
+	gold_fnum(o, ${h} * 0.25);
+	o.append(" m:matte ");
+	gold_hex(o, 47, 95, 58);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "pine");
+	out
+}
+@end
+
+@entry 4030827591fd93c1
+kind: step
+verb: flatten
+noun: terrain
+modifier: pad
+context: env
+phrase: flatten the ground at {x} {y} radius {r}
+phrase: level a building pad at {x} {y} of radius {r}
+slot: x real
+slot: y real
+slot: r real
+test: x=0.0 y=0.0 r=3.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="flatten" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: pad3 flatten r3 s1 0,0,0 n0,0,1
+test: x=4.0 y=-2.0 r=1.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="flatten" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: pad3 flatten r1.5 s1 4,-2,0 n0,0,1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "pad", "", o);
+	o.append(" flatten r");
+	gold_fnum(o, ${r});
+	o.append(" s");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" n");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "flatten");
+	out
+}
+@end
+
+@entry 43c7e95b9b9dc5c3
+kind: step
+verb: dig
+noun: terrain
+modifier: crater
+context: env
+phrase: dig a crater at {x} {y} radius {r}
+phrase: blast a pit at {x} {y} of radius {r}
+slot: x real
+slot: y real
+slot: r real
+test: x=0.0 y=0.0 r=1.5
+expect: => i=1 r=0.0 ok=true s="crater" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: crater1 sphere 0,0,.2 r1.5 - ~0.3
+test: x=2.0 y=-3.0 r=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="crater" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: crater3 sphere 2,-3,.2 r1 - ~0.2
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "crater", "", o);
+	o.append(" sphere ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",.");
+	o.append("2");
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" - ~");
+	gold_fnum(o, ${r} * 0.2);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "crater");
+	out
+}
+@end
+
+@entry 4c653fdf8d996abc
+kind: step
+verb: add
+noun: terrain
+modifier: grass
+context: env
+phrase: add a grassy ground {a} meters wide
+phrase: lay a green field of width {a}
+slot: a real
+test: a=20.0
+expect: => i=1 r=0.0 ok=true s="ground" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground1 box 0,0,-.5 20,20,1 m:matte #6b8f4e
+test: a=50.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="ground" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: ground3 box 0,0,-.5 50,50,1 m:matte #6b8f4e
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "ground", "", o);
+	o.append(" box ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",-.");
+	o.append("5");
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("1");
+	o.append(" m:matte ");
+	gold_hex(o, 107, 143, 78);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ground");
+	out
+}
+@end
+
+@entry 5fe4ab6d4fb9ae48
+kind: step
+verb: add
+noun: terrain
+modifier: cliff
+context: env
+phrase: add a rocky cliff at {x} {y} height {h}
+phrase: rock wall at {x} {y} rising {h}
+slot: x real
+slot: y real
+slot: h real
+test: x=0.0 y=5.0 h=3.0
+expect: => i=1 r=0.0 ok=true s="cliff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cliff1 box 0,5,1.5 4,1,3 r.2 nz.15:.6 m:matte #7a6a55
+test: x=-4.0 y=6.0 h=5.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cliff" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cliff3 box -4,6,2.5 4,1,5 r.2 nz.15:.6 m:matte #7a6a55
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cliff", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${h} * 0.5);
+	o.append(" ");
+	o.append("4");
+	o.append(",");
+	o.append("1");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" r.");
+	o.append("2");
+	o.append(" nz.");
+	o.append("15");
+	o.append(":.");
+	o.append("6");
+	o.append(" m:matte ");
+	gold_hex(o, 122, 106, 85);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cliff");
+	out
+}
+@end
+
+@entry 8300477da169a9d0
+kind: step
+verb: hollow
+noun: terrain
+modifier: cave
+context: env
+phrase: hollow a cave at {x} {y} radius {r}
+phrase: tunnel into the rock at {x} {y} with radius {r}
+slot: x real
+slot: y real
+slot: r real
+test: x=0.0 y=4.0 r=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="cave" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: cave3 capsule 0,4,1 0,2,1 r1 - ~.1
+test: x=2.0 y=6.0 r=0.5 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="cave" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: cave3 capsule 2,6,0.5 2,3,0.5 r0.5 - ~.1
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "cave", "", o);
+	o.append(" capsule ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${r});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y} * 0.5);
+	o.append(",");
+	gold_fnum(o, ${r});
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" - ~.");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "cave");
+	out
+}
+@end
+
+@entry 87f84d83dc045fc3
+kind: step
+verb: carve
+noun: terrain
+modifier: river
+context: env
+phrase: carve a river from {x} {y} radius {r} depth {s}
+phrase: crease a riverbed from {x} {y} through the center width {r} force {s}
+slot: x real
+slot: y real
+slot: r real
+slot: s real
+test: x=8.0 y=2.0 r=1.0 s=0.6 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="river" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: river3 crease r1 s0.6 -8,2,0 0,0,0 8,-2,0
+test: x=5.0 y=5.0 r=0.5 s=0.9 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="river" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: river3 crease r0.5 s0.9 -5,5,0 0,0,0 5,-5,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "river", "", o);
+	o.append(" crease r");
+	gold_fnum(o, ${r});
+	o.append(" s");
+	gold_fnum(o, ${s});
+	o.append(" -");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",-");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "river");
+	out
+}
+@end
+
+@entry 9fe79975e21f1081
+kind: step
+verb: build
+noun: terrain
+modifier: fence
+context: env
+phrase: build a fence of {n} posts spaced {a}
+phrase: row of {n} fence posts every {a} meters
+slot: n int
+slot: a real
+test: n=6 a=1.5
+expect: => i=1 r=0.0 ok=true s="fence" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: post1 cyl 0,0,0 0,0,1 r.05 m:matte #6b4a2b a6:1.5,0,0
+test: n=10 a=1.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="fence" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: post3 cyl 0,0,0 0,0,1 r.05 m:matte #6b4a2b a10:1,0,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "post", "", o);
+	o.append(" cyl ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("1");
+	o.append(" r.");
+	o.append("05");
+	o.append(" m:matte ");
+	gold_hex(o, 107, 74, 43);
+	o.append(" a");
+	format(o, ${n});
+	o.append(":");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "fence");
+	out
+}
+@end
+
+@entry a96f6cf56bc03c23
+kind: step
+verb: lay
+noun: terrain
+modifier: road
+context: env
+phrase: lay a road {a} meters long {b} meters wide
+phrase: pave a strip of length {a} width {b}
+slot: a real
+slot: b real
+test: a=20.0 b=4.0
+expect: => i=1 r=0.0 ok=true s="road" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: road1 box 0,0,0.2 4,20,0.4 m:matte #3a3a3a
+test: a=12.0 b=3.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="road" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: road3 box 0,0,0.12 3,12,0.24 m:matte #3a3a3a
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "road", "", o);
+	o.append(" box ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${a} * 0.01);
+	o.append(" ");
+	gold_fnum(o, ${b});
+	o.append(",");
+	gold_fnum(o, ${a});
+	o.append(",");
+	gold_fnum(o, ${a} * 0.02);
+	o.append(" m:matte ");
+	gold_hex(o, 58, 58, 58);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "road");
+	out
+}
+@end
+
+@entry b440c1cfa0b4b8d9
+kind: step
+verb: smooth
+noun: terrain
+modifier: smooth
+context: env
+phrase: smooth the ground at {x} {y} radius {r} strength {s}
+phrase: relax the terrain at {x} {y} brush {r} force {s}
+slot: x real
+slot: y real
+slot: r real
+slot: s real
+test: x=0.0 y=1.0 r=2.0 s=0.3 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="soften" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: soft3 smooth r2 s0.3 0,1,0
+test: x=1.0 y=1.0 r=4.0 s=0.7 doc="rock sphere -2,1,.4 r.4|post cyl 0,0,0 0,0,2 r.1"
+expect: => i=3 r=0.0 ok=true s="soften" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock sphere -2,1,.4 r.4
+expect: => doc: post cyl 0,0,0 0,0,2 r.1
+expect: => doc: soft3 smooth r4 s0.7 1,1,0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "soft", "", o);
+	o.append(" smooth r");
+	gold_fnum(o, ${r});
+	o.append(" s");
+	gold_fnum(o, ${s});
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "soften");
+	out
+}
+@end
+
+@entry ed55971bfbf3d010
+kind: step
+verb: raise
+noun: terrain
+modifier: ridge
+context: env
+phrase: raise a ridge {a} meters long height {h} width {r}
+phrase: mountain spine of length {a} peak {h} thickness {r}
+slot: a real
+slot: h real
+slot: r real
+test: a=6.0 h=3.0 r=1.0
+expect: => i=1 r=0.0 ok=true s="ridge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ridge1 tube -6,0,0 0,0,3 6,0,0 r1 ~0.5 m:matte #7a6a55
+test: a=10.0 h=4.0 r=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="ridge" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: ridge3 tube -10,0,0 0,0,4 10,0,0 r2 ~1 m:matte #7a6a55
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "ridge", "", o);
+	o.append(" tube -");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ");
+	gold_fnum(o, ${a});
+	o.append(",");
+	o.append("0");
+	o.append(",");
+	o.append("0");
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" ~");
+	gold_fnum(o, ${r} * 0.5);
+	o.append(" m:matte ");
+	gold_hex(o, 122, 106, 85);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ridge");
+	out
+}
+@end
+
+@entry eee652977a441d94
+kind: step
+verb: raise
+noun: terrain
+modifier: hill
+context: env
+phrase: raise a hill at {x} {y} radius {r} height {h}
+phrase: grassy mound at {x} {y} wide {r} tall {h}
+slot: x real
+slot: y real
+slot: r real
+slot: h real
+test: x=3.0 y=2.0 r=4.0 h=1.5
+expect: => i=1 r=0.0 ok=true s="hill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hill1 ellipsoid 3,2,0 4,4,1.5 ~1.2 m:matte #6b8f4e
+test: x=-5.0 y=0.0 r=6.0 h=2.0 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="hill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: hill3 ellipsoid -5,0,0 6,6,2 ~1.8 m:matte #6b8f4e
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "hill", "", o);
+	o.append(" ellipsoid ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	o.append("0");
+	o.append(" ");
+	gold_fnum(o, ${r});
+	o.append(",");
+	gold_fnum(o, ${r});
+	o.append(",");
+	gold_fnum(o, ${h});
+	o.append(" ~");
+	gold_fnum(o, ${r} * 0.3);
+	o.append(" m:matte ");
+	gold_hex(o, 107, 143, 78);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "hill");
+	out
+}
+@end
+
+@entry f203a2e09e5ab6b6
+kind: step
+verb: add
+noun: terrain
+modifier: rock
+context: env
+phrase: drop a rock at {x} {y} size {r}
+phrase: boulder at {x} {y} of radius {r}
+slot: x real
+slot: y real
+slot: r real
+test: x=1.0 y=2.0 r=0.5
+expect: => i=1 r=0.0 ok=true s="rock" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock1 sphere 1,2,0.25 r0.5 nz0.1:0.25 m:matte #8a8580
+test: x=-2.0 y=-1.0 r=1.2 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="rock" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: rock3 sphere -2,-1,0.6 r1.2 nz0.24:0.6 m:matte #8a8580
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	gold_dnews(g, "rock", "", o);
+	o.append(" sphere ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${r} * 0.5);
+	o.append(" r");
+	gold_fnum(o, ${r});
+	o.append(" nz");
+	gold_fnum(o, ${r} * 0.2);
+	o.append(":");
+	gold_fnum(o, ${r} * 0.5);
+	o.append(" m:matte ");
+	gold_hex(o, 138, 133, 128);
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "rock");
+	out
+}
+@end
+
+@entry f9038d20ec0a4573
+kind: step
+verb: scatter
+noun: terrain
+modifier: rocks
+context: env
+phrase: scatter {n} rocks of size {r} over {a} meters with seed {u}
+phrase: strew {n} stones radius {r} across {a} meters seed {u}
+slot: n int
+slot: r real
+slot: a real
+slot: u int
+test: n=4 r=0.3 a=5.0 u=7
+expect: => i=4 r=0.0 ok=true s="rocks" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rock1 sphere 4.499,2.939,0.15 r0.3 nz.04:.2 m:matte #8a8580
+expect: => doc: rock2 sphere -0.035,0.061,0.15 r0.3 nz.04:.2 m:matte #8a8580
+expect: => doc: rock3 sphere 0.62,2.371,0.15 r0.3 nz.04:.2 m:matte #8a8580
+expect: => doc: rock4 sphere -3.537,-0.131,0.15 r0.3 nz.04:.2 m:matte #8a8580
+test: n=6 r=0.2 a=8.0 u=11 doc="ground box 0,0,-.5 20,20,1|crate box 1,2,.5 1,1,1"
+expect: => i=6 r=0.0 ok=true s="rocks" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 20,20,1
+expect: => doc: crate box 1,2,.5 1,1,1
+expect: => doc: rock3 sphere 3.591,3.972,0.1 r0.2 nz.04:.2 m:matte #8a8580
+expect: => doc: rock4 sphere 2.022,5.051,0.1 r0.2 nz.04:.2 m:matte #8a8580
+expect: => doc: rock5 sphere -7.245,-1.568,0.1 r0.2 nz.04:.2 m:matte #8a8580
+expect: => doc: rock6 sphere 7.789,0.113,0.1 r0.2 nz.04:.2 m:matte #8a8580
+expect: => doc: rock7 sphere -0.877,-5.904,0.1 r0.2 nz.04:.2 m:matte #8a8580
+expect: => doc: rock8 sphere -1.241,-3.621,0.1 r0.2 nz.04:.2 m:matte #8a8580
+test: n=40 r=0.3 a=5.0 u=7
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	if ${n} < 1 || ${n} > 24 { gold_fail(g, "count out of range"); out.ok = false; return out; }
+	for q in ${n} {
+		let px = (gold_hash01(q, 1, ${u}) * 2.0 - 1.0) * ${a};
+		let py = (gold_hash01(q, 2, ${u}) * 2.0 - 1.0) * ${a};
+		o.clear();
+		gold_dnews(g, "rock", "", o);
+		o.append(" sphere ");
+		gold_fnum(o, px);
+		o.append(",");
+		gold_fnum(o, py);
+		o.append(",");
+		gold_fnum(o, ${r} * 0.5);
+		o.append(" r");
+		gold_fnum(o, ${r});
+		o.append(" nz.");
+		o.append("04");
+		o.append(":.");
+		o.append("2");
+		o.append(" m:matte ");
+		gold_hex(o, 138, 133, 128);
+		gold_doc(g, o);
+	}
+	out.i = ${n};
+	out.s.clear();
+	format(out.s, "rocks");
+	out
+}
+@end
+

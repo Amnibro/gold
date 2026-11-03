@@ -1,0 +1,244 @@
+@entry 15d66c27656e35f3
+kind: step
+verb: cache
+noun: results
+modifier: none
+context: core
+phrase: cache results
+phrase: remember results
+phrase: save results to cache
+test: list=4,9,4
+expect: cached 3 results
+expect: => i=3 r=0.0 ok=true s="" errors=0 n=3 res=[4,9,4] cache=3 hits=0
+test: list=7
+expect: cached 1 results
+expect: => i=1 r=0.0 ok=true s="" errors=0 n=1 res=[7] cache=1 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for k in g.n { gold_cache_put(g, k, g.res[k]); }
+	print("cached ", g.n, " results");
+	out.i = g.n;
+	out
+}
+@end
+@entry 7483d6878ba653c1
+kind: step
+verb: check
+noun: errors
+modifier: none
+context: core
+phrase: check errors
+phrase: check for errors
+phrase: make sure nothing failed
+test: input=5 list=1,2,3
+expect: no errors in 3 results
+expect: => i=5 r=0.0 ok=true s="checked" errors=0 n=3 res=[1,2,3] cache=0 hits=0
+test: input=0
+expect: no errors in 0 results
+expect: => i=0 r=0.0 ok=true s="checked" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	out.s.clear();
+	if g.errors > 0 {
+		print("error: ", g.err, " (", g.errors, " total)");
+		out.ok = false;
+		out.s.append("failed");
+	} else {
+		print("no errors in ", g.n, " results");
+		out.s.append("checked");
+	}
+	out
+}
+@end
+@entry d3bc44730580fd40
+kind: fn
+verb: step
+noun: number
+modifier: collatz
+context: math
+phrase: collatz step
+phrase: next collatz number
+test: arg=6,7
+expect: 3
+expect: 22
+test: arg=1
+expect: 4
+code:
+fn ${ID}(n int) int {
+	if n % 2 == 0 {
+		return n / 2;
+	}
+	3 * n + 1
+}
+@end
+@entry 7d0119d2ce9741c6
+kind: fn
+verb: sum
+noun: digits
+modifier: none
+context: math
+phrase: digit sum
+phrase: sum of digits
+phrase: add up digits
+test: arg=9875
+expect: 29
+test: arg=-406,0
+expect: 10
+expect: 0
+code:
+fn ${ID}(n int) int {
+	var x = if n < 0 { -n } else { n };
+	var s = 0;
+	while x > 0 { s += x % 10; x /= 10; }
+	s
+}
+@end
+@entry bb6a7418dd4ba2c6
+kind: pred
+verb: check
+noun: number
+modifier: above
+context: math
+phrase: above {limit}
+phrase: greater than {limit}
+phrase: bigger than {limit}
+slot: limit int
+test: arg=50,51 limit=50
+expect: false
+expect: true
+test: arg=7 limit=-1
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let lim = ${limit};
+	n > lim
+}
+@end
+@entry de2e52c0230faea9
+kind: pred
+verb: check
+noun: number
+modifier: one
+context: math
+phrase: reaches one
+phrase: equals one
+phrase: is one
+test: arg=1
+expect: true
+test: arg=2,0
+expect: false
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let target = 1;
+	n == target
+}
+@end
+@entry 22627c5de82f0988
+kind: step
+verb: return
+noun: results
+modifier: none
+context: core
+phrase: return results
+phrase: hand back results
+phrase: give me results
+test: list=3,1,2
+expect: results: 3,1,2
+expect: => i=6 r=2.0 ok=true s="returned 3" errors=0 n=3 res=[3,1,2] cache=0 hits=0
+test: list=10,20
+expect: results: 10,20
+expect: => i=30 r=15.0 ok=true s="returned 2" errors=0 n=2 res=[10,20] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var line byte[>..] = [];
+	var total = 0;
+	for k in g.n {
+		if k > 0 { line.append(","); }
+		format(line, g.res[k]);
+		total += g.res[k];
+	}
+	print("results: ", line);
+	out.i = total;
+	out.r = if g.n > 0 { total as real / g.n as real } else { 0.0 };
+	out.s.clear();
+	format(out.s, "returned ", g.n);
+	out
+}
+@end
+@entry b4689485270b2e86
+kind: step
+verb: run
+noun: subfunction
+modifier: each
+context: core
+phrase: run subfunction
+phrase: run subfunction {sub}
+phrase: apply {sub} to each result
+slot: sub fn
+test: list=12,30,12 sub=digit_sum
+expect: subfunction ran on 3 results, 1 memo hits
+expect: => i=3 r=0.0 ok=true s="" errors=0 n=3 res=[3,3,3] cache=2 hits=1
+test: list=2,5 sub=square
+expect: subfunction ran on 2 results, 0 memo hits
+expect: => i=2 r=0.0 ok=true s="" errors=0 n=2 res=[4,25] cache=2 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let memo = 1099511627776;
+	let before = g.hits;
+	for k in g.n {
+		let x = g.res[k];
+		let c, hit = gold_cache_get(g, memo + x);
+		if hit {
+			g.res[k] = c;
+		} else {
+			let y = ${sub}(x);
+			gold_cache_put(g, memo + x, y);
+			g.res[k] = y;
+		}
+	}
+	print("subfunction ran on ", g.n, " results, ", g.hits - before, " memo hits");
+	out.i = g.n;
+	out
+}
+@end
+@entry 344a32e952049c83
+kind: step
+verb: run
+noun: function
+modifier: until
+context: core
+phrase: run function {x} until {y}
+phrase: keep running {x} until {y}
+phrase: call {x} repeatedly until {y}
+slot: x fn
+slot: y pred
+test: input=6 x=collatz y=is_one
+expect: => i=1 r=0.0 ok=true s="ran 8 times" errors=0 n=9 res=[6,3,10,5,16,8,4,2,1] cache=0 hits=0
+test: input=3 x=double y=over_100
+expect: => i=192 r=0.0 ok=true s="ran 6 times" errors=0 n=7 res=[3,6,12,24,48,96,192] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var k = 0;
+	gold_push(g, out.i);
+	while !${y}(out.i) {
+		out.i = ${x}(out.i);
+		gold_push(g, out.i);
+		k++;
+		if k >= 1000 {
+			gold_fail(g, "run until: stop condition never reached");
+			out.ok = false;
+			return out;
+		}
+	}
+	g.steps += k;
+	out.s.clear();
+	format(out.s, "ran ", k, " times");
+	out
+}
+@end

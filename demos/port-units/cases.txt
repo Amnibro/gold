@@ -1,0 +1,1298 @@
+nf	0	-1
+nf	0	0
+nf	0	2
+nf	0	3
+nf	1	-1
+nf	1	0
+nf	1	2
+nf	1	3
+nf	-1	-1
+nf	-1	0
+nf	-1	2
+nf	-1	3
+nf	0.5	-1
+nf	0.5	0
+nf	0.5	2
+nf	0.5	3
+nf	12.3456	-1
+nf	12.3456	0
+nf	12.3456	2
+nf	12.3456	3
+nf	1234.5	-1
+nf	1234.5	0
+nf	1234.5	2
+nf	1234.5	3
+nf	-1234.5	-1
+nf	-1234.5	0
+nf	-1234.5	2
+nf	-1234.5	3
+nf	999.9995	-1
+nf	999.9995	0
+nf	999.9995	2
+nf	999.9995	3
+nf	1000000.4	-1
+nf	1000000.4	0
+nf	1000000.4	2
+nf	1000000.4	3
+nf	123456789.987	-1
+nf	123456789.987	0
+nf	123456789.987	2
+nf	123456789.987	3
+nf	0.004567	-1
+nf	0.004567	0
+nf	0.004567	2
+nf	0.004567	3
+nf	-1e-05	-1
+nf	-1e-05	0
+nf	-1e-05	2
+nf	-1e-05	3
+nf	9.99999	-1
+nf	9.99999	0
+nf	9.99999	2
+nf	9.99999	3
+nf	99.995	-1
+nf	99.995	0
+nf	99.995	2
+nf	99.995	3
+nf	0.0099999	-1
+nf	0.0099999	0
+nf	0.0099999	2
+nf	0.0099999	3
+nf	1e-07	-1
+nf	1e-07	0
+nf	1e-07	2
+nf	1e-07	3
+nf	inf	-1
+nf	inf	0
+nf	inf	2
+nf	inf	3
+nf	-0.000227586	-1
+nf	-0.000227586	0
+nf	-0.000227586	2
+nf	-0.000227586	3
+nf	2.2338e-05	-1
+nf	2.2338e-05	0
+nf	2.2338e-05	2
+nf	2.2338e-05	3
+nf	0.017545821	-1
+nf	0.017545821	0
+nf	0.017545821	2
+nf	0.017545821	3
+nf	-10.856307094	-1
+nf	-10.856307094	0
+nf	-10.856307094	2
+nf	-10.856307094	3
+nf	-1.478747466	-1
+nf	-1.478747466	0
+nf	-1.478747466	2
+nf	-1.478747466	3
+nf	-0.000105487	-1
+nf	-0.000105487	0
+nf	-0.000105487	2
+nf	-0.000105487	3
+nf	-12620.950071865	-1
+nf	-12620.950071865	0
+nf	-12620.950071865	2
+nf	-12620.950071865	3
+nf	-0.003591816	-1
+nf	-0.003591816	0
+nf	-0.003591816	2
+nf	-0.003591816	3
+nf	600924.58249654	-1
+nf	600924.58249654	0
+nf	600924.58249654	2
+nf	600924.58249654	3
+nf	0.088770094	-1
+nf	0.088770094	0
+nf	0.088770094	2
+nf	0.088770094	3
+nf	3.4503e-05	-1
+nf	3.4503e-05	0
+nf	3.4503e-05	2
+nf	3.4503e-05	3
+nf	0.021418664	-1
+nf	0.021418664	0
+nf	0.021418664	2
+nf	0.021418664	3
+nf	-0.000184364	-1
+nf	-0.000184364	0
+nf	-0.000184364	2
+nf	-0.000184364	3
+nf	-23809.830393895	-1
+nf	-23809.830393895	0
+nf	-23809.830393895	2
+nf	-23809.830393895	3
+nf	-60.868835909	-1
+nf	-60.868835909	0
+nf	-60.868835909	2
+nf	-60.868835909	3
+nf	0.08176075	-1
+nf	0.08176075	0
+nf	0.08176075	2
+nf	0.08176075	3
+nf	5.413e-06	-1
+nf	5.413e-06	0
+nf	5.413e-06	2
+nf	5.413e-06	3
+nf	-0.002608439	-1
+nf	-0.002608439	0
+nf	-0.002608439	2
+nf	-0.002608439	3
+nf	0.487948663	-1
+nf	0.487948663	0
+nf	0.487948663	2
+nf	0.487948663	3
+nf	-39.531339951	-1
+nf	-39.531339951	0
+nf	-39.531339951	2
+nf	-39.531339951	3
+nf	-0.003703606	-1
+nf	-0.003703606	0
+nf	-0.003703606	2
+nf	-0.003703606	3
+nf	1438.3703976	-1
+nf	1438.3703976	0
+nf	1438.3703976	2
+nf	1438.3703976	3
+nf	-40.012042954	-1
+nf	-40.012042954	0
+nf	-40.012042954	2
+nf	-40.012042954	3
+nf	15996.325256737	-1
+nf	15996.325256737	0
+nf	15996.325256737	2
+nf	15996.325256737	3
+nf	0.013090683	-1
+nf	0.013090683	0
+nf	0.013090683	2
+nf	0.013090683	3
+nf	0.000250737	-1
+nf	0.000250737	0
+nf	0.000250737	2
+nf	0.000250737	3
+nf	-1994.72953142	-1
+nf	-1994.72953142	0
+nf	-1994.72953142	2
+nf	-1994.72953142	3
+nf	-5.130807787	-1
+nf	-5.130807787	0
+nf	-5.130807787	2
+nf	-5.130807787	3
+nf	-961.891096508	-1
+nf	-961.891096508	0
+nf	-961.891096508	2
+nf	-961.891096508	3
+nf	39.800020724	-1
+nf	39.800020724	0
+nf	39.800020724	2
+nf	39.800020724	3
+nf	0.043710365	-1
+nf	0.043710365	0
+nf	0.043710365	2
+nf	0.043710365	3
+nf	52.98591762	-1
+nf	52.98591762	0
+nf	52.98591762	2
+nf	52.98591762	3
+nf	0.476447094	-1
+nf	0.476447094	0
+nf	0.476447094	2
+nf	0.476447094	3
+nf	1474486.826931163	-1
+nf	1474486.826931163	0
+nf	1474486.826931163	2
+nf	1474486.826931163	3
+nf	-48.326362016	-1
+nf	-48.326362016	0
+nf	-48.326362016	2
+nf	-48.326362016	3
+nf	-2299.988569072	-1
+nf	-2299.988569072	0
+nf	-2299.988569072	2
+nf	-2299.988569072	3
+nf	2431527.149217807	-1
+nf	2431527.149217807	0
+nf	2431527.149217807	2
+nf	2431527.149217807	3
+nf	0.01674676	-1
+nf	0.01674676	0
+nf	0.01674676	2
+nf	0.01674676	3
+nf	-241.302172917	-1
+nf	-241.302172917	0
+nf	-241.302172917	2
+nf	-241.302172917	3
+nf	-3.313519794	-1
+nf	-3.313519794	0
+nf	-3.313519794	2
+nf	-3.313519794	3
+one	len	0	si	-1
+one	len	0	us	-1
+one	len	1	si	-1
+one	len	1	us	-1
+one	len	-1	si	-1
+one	len	-1	us	-1
+one	len	0.5	si	-1
+one	len	0.5	us	-1
+one	len	12.3456	si	-1
+one	len	12.3456	us	-1
+one	len	1234.5	si	-1
+one	len	1234.5	us	-1
+one	len	-1234.5	si	-1
+one	len	-1234.5	us	-1
+one	len	999.9995	si	-1
+one	len	999.9995	us	-1
+one	len	1000000.4	si	-1
+one	len	1000000.4	us	-1
+one	len	123456789.987	si	-1
+one	len	123456789.987	us	-1
+one	len	0.004567	si	-1
+one	len	0.004567	us	-1
+one	len	-1e-05	si	-1
+one	len	-1e-05	us	-1
+one	len	9.99999	si	-1
+one	len	9.99999	us	-1
+one	len	99.995	si	-1
+one	len	99.995	us	-1
+one	len	0.0099999	si	-1
+one	len	0.0099999	us	-1
+one	len	1e-07	si	-1
+one	len	1e-07	us	-1
+one	len	inf	si	-1
+one	len	inf	us	-1
+one	len	-0.000227586	si	-1
+one	len	-0.000227586	us	-1
+one	len	2.2338e-05	si	-1
+one	len	2.2338e-05	us	-1
+one	len	0.017545821	si	-1
+one	len	0.017545821	us	-1
+one	len	-10.856307094	si	-1
+one	len	-10.856307094	us	-1
+one	len	-1.478747466	si	-1
+one	len	-1.478747466	us	-1
+one	len	-0.000105487	si	-1
+one	len	-0.000105487	us	-1
+one	len	-12620.950071865	si	-1
+one	len	-12620.950071865	us	-1
+one	len	-0.003591816	si	-1
+one	len	-0.003591816	us	-1
+one	area	0	si	-1
+one	area	0	us	-1
+one	area	1	si	-1
+one	area	1	us	-1
+one	area	-1	si	-1
+one	area	-1	us	-1
+one	area	0.5	si	-1
+one	area	0.5	us	-1
+one	area	12.3456	si	-1
+one	area	12.3456	us	-1
+one	area	1234.5	si	-1
+one	area	1234.5	us	-1
+one	area	-1234.5	si	-1
+one	area	-1234.5	us	-1
+one	area	999.9995	si	-1
+one	area	999.9995	us	-1
+one	area	1000000.4	si	-1
+one	area	1000000.4	us	-1
+one	area	123456789.987	si	-1
+one	area	123456789.987	us	-1
+one	area	0.004567	si	-1
+one	area	0.004567	us	-1
+one	area	-1e-05	si	-1
+one	area	-1e-05	us	-1
+one	area	9.99999	si	-1
+one	area	9.99999	us	-1
+one	area	99.995	si	-1
+one	area	99.995	us	-1
+one	area	0.0099999	si	-1
+one	area	0.0099999	us	-1
+one	area	1e-07	si	-1
+one	area	1e-07	us	-1
+one	area	inf	si	-1
+one	area	inf	us	-1
+one	area	-0.000227586	si	-1
+one	area	-0.000227586	us	-1
+one	area	2.2338e-05	si	-1
+one	area	2.2338e-05	us	-1
+one	area	0.017545821	si	-1
+one	area	0.017545821	us	-1
+one	area	-10.856307094	si	-1
+one	area	-10.856307094	us	-1
+one	area	-1.478747466	si	-1
+one	area	-1.478747466	us	-1
+one	area	-0.000105487	si	-1
+one	area	-0.000105487	us	-1
+one	area	-12620.950071865	si	-1
+one	area	-12620.950071865	us	-1
+one	area	-0.003591816	si	-1
+one	area	-0.003591816	us	-1
+one	vol	0	si	-1
+one	vol	0	us	-1
+one	vol	1	si	-1
+one	vol	1	us	-1
+one	vol	-1	si	-1
+one	vol	-1	us	-1
+one	vol	0.5	si	-1
+one	vol	0.5	us	-1
+one	vol	12.3456	si	-1
+one	vol	12.3456	us	-1
+one	vol	1234.5	si	-1
+one	vol	1234.5	us	-1
+one	vol	-1234.5	si	-1
+one	vol	-1234.5	us	-1
+one	vol	999.9995	si	-1
+one	vol	999.9995	us	-1
+one	vol	1000000.4	si	-1
+one	vol	1000000.4	us	-1
+one	vol	123456789.987	si	-1
+one	vol	123456789.987	us	-1
+one	vol	0.004567	si	-1
+one	vol	0.004567	us	-1
+one	vol	-1e-05	si	-1
+one	vol	-1e-05	us	-1
+one	vol	9.99999	si	-1
+one	vol	9.99999	us	-1
+one	vol	99.995	si	-1
+one	vol	99.995	us	-1
+one	vol	0.0099999	si	-1
+one	vol	0.0099999	us	-1
+one	vol	1e-07	si	-1
+one	vol	1e-07	us	-1
+one	vol	inf	si	-1
+one	vol	inf	us	-1
+one	vol	-0.000227586	si	-1
+one	vol	-0.000227586	us	-1
+one	vol	2.2338e-05	si	-1
+one	vol	2.2338e-05	us	-1
+one	vol	0.017545821	si	-1
+one	vol	0.017545821	us	-1
+one	vol	-10.856307094	si	-1
+one	vol	-10.856307094	us	-1
+one	vol	-1.478747466	si	-1
+one	vol	-1.478747466	us	-1
+one	vol	-0.000105487	si	-1
+one	vol	-0.000105487	us	-1
+one	vol	-12620.950071865	si	-1
+one	vol	-12620.950071865	us	-1
+one	vol	-0.003591816	si	-1
+one	vol	-0.003591816	us	-1
+one	mass	0	si	-1
+one	mass	0	us	-1
+one	mass	1	si	-1
+one	mass	1	us	-1
+one	mass	-1	si	-1
+one	mass	-1	us	-1
+one	mass	0.5	si	-1
+one	mass	0.5	us	-1
+one	mass	12.3456	si	-1
+one	mass	12.3456	us	-1
+one	mass	1234.5	si	-1
+one	mass	1234.5	us	-1
+one	mass	-1234.5	si	-1
+one	mass	-1234.5	us	-1
+one	mass	999.9995	si	-1
+one	mass	999.9995	us	-1
+one	mass	1000000.4	si	-1
+one	mass	1000000.4	us	-1
+one	mass	123456789.987	si	-1
+one	mass	123456789.987	us	-1
+one	mass	0.004567	si	-1
+one	mass	0.004567	us	-1
+one	mass	-1e-05	si	-1
+one	mass	-1e-05	us	-1
+one	mass	9.99999	si	-1
+one	mass	9.99999	us	-1
+one	mass	99.995	si	-1
+one	mass	99.995	us	-1
+one	mass	0.0099999	si	-1
+one	mass	0.0099999	us	-1
+one	mass	1e-07	si	-1
+one	mass	1e-07	us	-1
+one	mass	inf	si	-1
+one	mass	inf	us	-1
+one	mass	-0.000227586	si	-1
+one	mass	-0.000227586	us	-1
+one	mass	2.2338e-05	si	-1
+one	mass	2.2338e-05	us	-1
+one	mass	0.017545821	si	-1
+one	mass	0.017545821	us	-1
+one	mass	-10.856307094	si	-1
+one	mass	-10.856307094	us	-1
+one	mass	-1.478747466	si	-1
+one	mass	-1.478747466	us	-1
+one	mass	-0.000105487	si	-1
+one	mass	-0.000105487	us	-1
+one	mass	-12620.950071865	si	-1
+one	mass	-12620.950071865	us	-1
+one	mass	-0.003591816	si	-1
+one	mass	-0.003591816	us	-1
+one	force	0	si	-1
+one	force	0	us	-1
+one	force	1	si	-1
+one	force	1	us	-1
+one	force	-1	si	-1
+one	force	-1	us	-1
+one	force	0.5	si	-1
+one	force	0.5	us	-1
+one	force	12.3456	si	-1
+one	force	12.3456	us	-1
+one	force	1234.5	si	-1
+one	force	1234.5	us	-1
+one	force	-1234.5	si	-1
+one	force	-1234.5	us	-1
+one	force	999.9995	si	-1
+one	force	999.9995	us	-1
+one	force	1000000.4	si	-1
+one	force	1000000.4	us	-1
+one	force	123456789.987	si	-1
+one	force	123456789.987	us	-1
+one	force	0.004567	si	-1
+one	force	0.004567	us	-1
+one	force	-1e-05	si	-1
+one	force	-1e-05	us	-1
+one	force	9.99999	si	-1
+one	force	9.99999	us	-1
+one	force	99.995	si	-1
+one	force	99.995	us	-1
+one	force	0.0099999	si	-1
+one	force	0.0099999	us	-1
+one	force	1e-07	si	-1
+one	force	1e-07	us	-1
+one	force	inf	si	-1
+one	force	inf	us	-1
+one	force	-0.000227586	si	-1
+one	force	-0.000227586	us	-1
+one	force	2.2338e-05	si	-1
+one	force	2.2338e-05	us	-1
+one	force	0.017545821	si	-1
+one	force	0.017545821	us	-1
+one	force	-10.856307094	si	-1
+one	force	-10.856307094	us	-1
+one	force	-1.478747466	si	-1
+one	force	-1.478747466	us	-1
+one	force	-0.000105487	si	-1
+one	force	-0.000105487	us	-1
+one	force	-12620.950071865	si	-1
+one	force	-12620.950071865	us	-1
+one	force	-0.003591816	si	-1
+one	force	-0.003591816	us	-1
+one	press	0	si	-1
+one	press	0	us	-1
+one	press	1	si	-1
+one	press	1	us	-1
+one	press	-1	si	-1
+one	press	-1	us	-1
+one	press	0.5	si	-1
+one	press	0.5	us	-1
+one	press	12.3456	si	-1
+one	press	12.3456	us	-1
+one	press	1234.5	si	-1
+one	press	1234.5	us	-1
+one	press	-1234.5	si	-1
+one	press	-1234.5	us	-1
+one	press	999.9995	si	-1
+one	press	999.9995	us	-1
+one	press	1000000.4	si	-1
+one	press	1000000.4	us	-1
+one	press	123456789.987	si	-1
+one	press	123456789.987	us	-1
+one	press	0.004567	si	-1
+one	press	0.004567	us	-1
+one	press	-1e-05	si	-1
+one	press	-1e-05	us	-1
+one	press	9.99999	si	-1
+one	press	9.99999	us	-1
+one	press	99.995	si	-1
+one	press	99.995	us	-1
+one	press	0.0099999	si	-1
+one	press	0.0099999	us	-1
+one	press	1e-07	si	-1
+one	press	1e-07	us	-1
+one	press	inf	si	-1
+one	press	inf	us	-1
+one	press	-0.000227586	si	-1
+one	press	-0.000227586	us	-1
+one	press	2.2338e-05	si	-1
+one	press	2.2338e-05	us	-1
+one	press	0.017545821	si	-1
+one	press	0.017545821	us	-1
+one	press	-10.856307094	si	-1
+one	press	-10.856307094	us	-1
+one	press	-1.478747466	si	-1
+one	press	-1.478747466	us	-1
+one	press	-0.000105487	si	-1
+one	press	-0.000105487	us	-1
+one	press	-12620.950071865	si	-1
+one	press	-12620.950071865	us	-1
+one	press	-0.003591816	si	-1
+one	press	-0.003591816	us	-1
+one	stress	0	si	-1
+one	stress	0	us	-1
+one	stress	1	si	-1
+one	stress	1	us	-1
+one	stress	-1	si	-1
+one	stress	-1	us	-1
+one	stress	0.5	si	-1
+one	stress	0.5	us	-1
+one	stress	12.3456	si	-1
+one	stress	12.3456	us	-1
+one	stress	1234.5	si	-1
+one	stress	1234.5	us	-1
+one	stress	-1234.5	si	-1
+one	stress	-1234.5	us	-1
+one	stress	999.9995	si	-1
+one	stress	999.9995	us	-1
+one	stress	1000000.4	si	-1
+one	stress	1000000.4	us	-1
+one	stress	123456789.987	si	-1
+one	stress	123456789.987	us	-1
+one	stress	0.004567	si	-1
+one	stress	0.004567	us	-1
+one	stress	-1e-05	si	-1
+one	stress	-1e-05	us	-1
+one	stress	9.99999	si	-1
+one	stress	9.99999	us	-1
+one	stress	99.995	si	-1
+one	stress	99.995	us	-1
+one	stress	0.0099999	si	-1
+one	stress	0.0099999	us	-1
+one	stress	1e-07	si	-1
+one	stress	1e-07	us	-1
+one	stress	inf	si	-1
+one	stress	inf	us	-1
+one	stress	-0.000227586	si	-1
+one	stress	-0.000227586	us	-1
+one	stress	2.2338e-05	si	-1
+one	stress	2.2338e-05	us	-1
+one	stress	0.017545821	si	-1
+one	stress	0.017545821	us	-1
+one	stress	-10.856307094	si	-1
+one	stress	-10.856307094	us	-1
+one	stress	-1.478747466	si	-1
+one	stress	-1.478747466	us	-1
+one	stress	-0.000105487	si	-1
+one	stress	-0.000105487	us	-1
+one	stress	-12620.950071865	si	-1
+one	stress	-12620.950071865	us	-1
+one	stress	-0.003591816	si	-1
+one	stress	-0.003591816	us	-1
+one	modulus	0	si	-1
+one	modulus	0	us	-1
+one	modulus	1	si	-1
+one	modulus	1	us	-1
+one	modulus	-1	si	-1
+one	modulus	-1	us	-1
+one	modulus	0.5	si	-1
+one	modulus	0.5	us	-1
+one	modulus	12.3456	si	-1
+one	modulus	12.3456	us	-1
+one	modulus	1234.5	si	-1
+one	modulus	1234.5	us	-1
+one	modulus	-1234.5	si	-1
+one	modulus	-1234.5	us	-1
+one	modulus	999.9995	si	-1
+one	modulus	999.9995	us	-1
+one	modulus	1000000.4	si	-1
+one	modulus	1000000.4	us	-1
+one	modulus	123456789.987	si	-1
+one	modulus	123456789.987	us	-1
+one	modulus	0.004567	si	-1
+one	modulus	0.004567	us	-1
+one	modulus	-1e-05	si	-1
+one	modulus	-1e-05	us	-1
+one	modulus	9.99999	si	-1
+one	modulus	9.99999	us	-1
+one	modulus	99.995	si	-1
+one	modulus	99.995	us	-1
+one	modulus	0.0099999	si	-1
+one	modulus	0.0099999	us	-1
+one	modulus	1e-07	si	-1
+one	modulus	1e-07	us	-1
+one	modulus	inf	si	-1
+one	modulus	inf	us	-1
+one	modulus	-0.000227586	si	-1
+one	modulus	-0.000227586	us	-1
+one	modulus	2.2338e-05	si	-1
+one	modulus	2.2338e-05	us	-1
+one	modulus	0.017545821	si	-1
+one	modulus	0.017545821	us	-1
+one	modulus	-10.856307094	si	-1
+one	modulus	-10.856307094	us	-1
+one	modulus	-1.478747466	si	-1
+one	modulus	-1.478747466	us	-1
+one	modulus	-0.000105487	si	-1
+one	modulus	-0.000105487	us	-1
+one	modulus	-12620.950071865	si	-1
+one	modulus	-12620.950071865	us	-1
+one	modulus	-0.003591816	si	-1
+one	modulus	-0.003591816	us	-1
+one	torque	0	si	-1
+one	torque	0	us	-1
+one	torque	1	si	-1
+one	torque	1	us	-1
+one	torque	-1	si	-1
+one	torque	-1	us	-1
+one	torque	0.5	si	-1
+one	torque	0.5	us	-1
+one	torque	12.3456	si	-1
+one	torque	12.3456	us	-1
+one	torque	1234.5	si	-1
+one	torque	1234.5	us	-1
+one	torque	-1234.5	si	-1
+one	torque	-1234.5	us	-1
+one	torque	999.9995	si	-1
+one	torque	999.9995	us	-1
+one	torque	1000000.4	si	-1
+one	torque	1000000.4	us	-1
+one	torque	123456789.987	si	-1
+one	torque	123456789.987	us	-1
+one	torque	0.004567	si	-1
+one	torque	0.004567	us	-1
+one	torque	-1e-05	si	-1
+one	torque	-1e-05	us	-1
+one	torque	9.99999	si	-1
+one	torque	9.99999	us	-1
+one	torque	99.995	si	-1
+one	torque	99.995	us	-1
+one	torque	0.0099999	si	-1
+one	torque	0.0099999	us	-1
+one	torque	1e-07	si	-1
+one	torque	1e-07	us	-1
+one	torque	inf	si	-1
+one	torque	inf	us	-1
+one	torque	-0.000227586	si	-1
+one	torque	-0.000227586	us	-1
+one	torque	2.2338e-05	si	-1
+one	torque	2.2338e-05	us	-1
+one	torque	0.017545821	si	-1
+one	torque	0.017545821	us	-1
+one	torque	-10.856307094	si	-1
+one	torque	-10.856307094	us	-1
+one	torque	-1.478747466	si	-1
+one	torque	-1.478747466	us	-1
+one	torque	-0.000105487	si	-1
+one	torque	-0.000105487	us	-1
+one	torque	-12620.950071865	si	-1
+one	torque	-12620.950071865	us	-1
+one	torque	-0.003591816	si	-1
+one	torque	-0.003591816	us	-1
+one	temp	0	si	-1
+one	temp	0	us	-1
+one	temp	1	si	-1
+one	temp	1	us	-1
+one	temp	-1	si	-1
+one	temp	-1	us	-1
+one	temp	0.5	si	-1
+one	temp	0.5	us	-1
+one	temp	12.3456	si	-1
+one	temp	12.3456	us	-1
+one	temp	1234.5	si	-1
+one	temp	1234.5	us	-1
+one	temp	-1234.5	si	-1
+one	temp	-1234.5	us	-1
+one	temp	999.9995	si	-1
+one	temp	999.9995	us	-1
+one	temp	1000000.4	si	-1
+one	temp	1000000.4	us	-1
+one	temp	123456789.987	si	-1
+one	temp	123456789.987	us	-1
+one	temp	0.004567	si	-1
+one	temp	0.004567	us	-1
+one	temp	-1e-05	si	-1
+one	temp	-1e-05	us	-1
+one	temp	9.99999	si	-1
+one	temp	9.99999	us	-1
+one	temp	99.995	si	-1
+one	temp	99.995	us	-1
+one	temp	0.0099999	si	-1
+one	temp	0.0099999	us	-1
+one	temp	1e-07	si	-1
+one	temp	1e-07	us	-1
+one	temp	inf	si	-1
+one	temp	inf	us	-1
+one	temp	-0.000227586	si	-1
+one	temp	-0.000227586	us	-1
+one	temp	2.2338e-05	si	-1
+one	temp	2.2338e-05	us	-1
+one	temp	0.017545821	si	-1
+one	temp	0.017545821	us	-1
+one	temp	-10.856307094	si	-1
+one	temp	-10.856307094	us	-1
+one	temp	-1.478747466	si	-1
+one	temp	-1.478747466	us	-1
+one	temp	-0.000105487	si	-1
+one	temp	-0.000105487	us	-1
+one	temp	-12620.950071865	si	-1
+one	temp	-12620.950071865	us	-1
+one	temp	-0.003591816	si	-1
+one	temp	-0.003591816	us	-1
+one	dtemp	0	si	-1
+one	dtemp	0	us	-1
+one	dtemp	1	si	-1
+one	dtemp	1	us	-1
+one	dtemp	-1	si	-1
+one	dtemp	-1	us	-1
+one	dtemp	0.5	si	-1
+one	dtemp	0.5	us	-1
+one	dtemp	12.3456	si	-1
+one	dtemp	12.3456	us	-1
+one	dtemp	1234.5	si	-1
+one	dtemp	1234.5	us	-1
+one	dtemp	-1234.5	si	-1
+one	dtemp	-1234.5	us	-1
+one	dtemp	999.9995	si	-1
+one	dtemp	999.9995	us	-1
+one	dtemp	1000000.4	si	-1
+one	dtemp	1000000.4	us	-1
+one	dtemp	123456789.987	si	-1
+one	dtemp	123456789.987	us	-1
+one	dtemp	0.004567	si	-1
+one	dtemp	0.004567	us	-1
+one	dtemp	-1e-05	si	-1
+one	dtemp	-1e-05	us	-1
+one	dtemp	9.99999	si	-1
+one	dtemp	9.99999	us	-1
+one	dtemp	99.995	si	-1
+one	dtemp	99.995	us	-1
+one	dtemp	0.0099999	si	-1
+one	dtemp	0.0099999	us	-1
+one	dtemp	1e-07	si	-1
+one	dtemp	1e-07	us	-1
+one	dtemp	inf	si	-1
+one	dtemp	inf	us	-1
+one	dtemp	-0.000227586	si	-1
+one	dtemp	-0.000227586	us	-1
+one	dtemp	2.2338e-05	si	-1
+one	dtemp	2.2338e-05	us	-1
+one	dtemp	0.017545821	si	-1
+one	dtemp	0.017545821	us	-1
+one	dtemp	-10.856307094	si	-1
+one	dtemp	-10.856307094	us	-1
+one	dtemp	-1.478747466	si	-1
+one	dtemp	-1.478747466	us	-1
+one	dtemp	-0.000105487	si	-1
+one	dtemp	-0.000105487	us	-1
+one	dtemp	-12620.950071865	si	-1
+one	dtemp	-12620.950071865	us	-1
+one	dtemp	-0.003591816	si	-1
+one	dtemp	-0.003591816	us	-1
+one	power	0	si	-1
+one	power	0	us	-1
+one	power	1	si	-1
+one	power	1	us	-1
+one	power	-1	si	-1
+one	power	-1	us	-1
+one	power	0.5	si	-1
+one	power	0.5	us	-1
+one	power	12.3456	si	-1
+one	power	12.3456	us	-1
+one	power	1234.5	si	-1
+one	power	1234.5	us	-1
+one	power	-1234.5	si	-1
+one	power	-1234.5	us	-1
+one	power	999.9995	si	-1
+one	power	999.9995	us	-1
+one	power	1000000.4	si	-1
+one	power	1000000.4	us	-1
+one	power	123456789.987	si	-1
+one	power	123456789.987	us	-1
+one	power	0.004567	si	-1
+one	power	0.004567	us	-1
+one	power	-1e-05	si	-1
+one	power	-1e-05	us	-1
+one	power	9.99999	si	-1
+one	power	9.99999	us	-1
+one	power	99.995	si	-1
+one	power	99.995	us	-1
+one	power	0.0099999	si	-1
+one	power	0.0099999	us	-1
+one	power	1e-07	si	-1
+one	power	1e-07	us	-1
+one	power	inf	si	-1
+one	power	inf	us	-1
+one	power	-0.000227586	si	-1
+one	power	-0.000227586	us	-1
+one	power	2.2338e-05	si	-1
+one	power	2.2338e-05	us	-1
+one	power	0.017545821	si	-1
+one	power	0.017545821	us	-1
+one	power	-10.856307094	si	-1
+one	power	-10.856307094	us	-1
+one	power	-1.478747466	si	-1
+one	power	-1.478747466	us	-1
+one	power	-0.000105487	si	-1
+one	power	-0.000105487	us	-1
+one	power	-12620.950071865	si	-1
+one	power	-12620.950071865	us	-1
+one	power	-0.003591816	si	-1
+one	power	-0.003591816	us	-1
+one	film	0	si	-1
+one	film	0	us	-1
+one	film	1	si	-1
+one	film	1	us	-1
+one	film	-1	si	-1
+one	film	-1	us	-1
+one	film	0.5	si	-1
+one	film	0.5	us	-1
+one	film	12.3456	si	-1
+one	film	12.3456	us	-1
+one	film	1234.5	si	-1
+one	film	1234.5	us	-1
+one	film	-1234.5	si	-1
+one	film	-1234.5	us	-1
+one	film	999.9995	si	-1
+one	film	999.9995	us	-1
+one	film	1000000.4	si	-1
+one	film	1000000.4	us	-1
+one	film	123456789.987	si	-1
+one	film	123456789.987	us	-1
+one	film	0.004567	si	-1
+one	film	0.004567	us	-1
+one	film	-1e-05	si	-1
+one	film	-1e-05	us	-1
+one	film	9.99999	si	-1
+one	film	9.99999	us	-1
+one	film	99.995	si	-1
+one	film	99.995	us	-1
+one	film	0.0099999	si	-1
+one	film	0.0099999	us	-1
+one	film	1e-07	si	-1
+one	film	1e-07	us	-1
+one	film	inf	si	-1
+one	film	inf	us	-1
+one	film	-0.000227586	si	-1
+one	film	-0.000227586	us	-1
+one	film	2.2338e-05	si	-1
+one	film	2.2338e-05	us	-1
+one	film	0.017545821	si	-1
+one	film	0.017545821	us	-1
+one	film	-10.856307094	si	-1
+one	film	-10.856307094	us	-1
+one	film	-1.478747466	si	-1
+one	film	-1.478747466	us	-1
+one	film	-0.000105487	si	-1
+one	film	-0.000105487	us	-1
+one	film	-12620.950071865	si	-1
+one	film	-12620.950071865	us	-1
+one	film	-0.003591816	si	-1
+one	film	-0.003591816	us	-1
+one	cond	0	si	-1
+one	cond	0	us	-1
+one	cond	1	si	-1
+one	cond	1	us	-1
+one	cond	-1	si	-1
+one	cond	-1	us	-1
+one	cond	0.5	si	-1
+one	cond	0.5	us	-1
+one	cond	12.3456	si	-1
+one	cond	12.3456	us	-1
+one	cond	1234.5	si	-1
+one	cond	1234.5	us	-1
+one	cond	-1234.5	si	-1
+one	cond	-1234.5	us	-1
+one	cond	999.9995	si	-1
+one	cond	999.9995	us	-1
+one	cond	1000000.4	si	-1
+one	cond	1000000.4	us	-1
+one	cond	123456789.987	si	-1
+one	cond	123456789.987	us	-1
+one	cond	0.004567	si	-1
+one	cond	0.004567	us	-1
+one	cond	-1e-05	si	-1
+one	cond	-1e-05	us	-1
+one	cond	9.99999	si	-1
+one	cond	9.99999	us	-1
+one	cond	99.995	si	-1
+one	cond	99.995	us	-1
+one	cond	0.0099999	si	-1
+one	cond	0.0099999	us	-1
+one	cond	1e-07	si	-1
+one	cond	1e-07	us	-1
+one	cond	inf	si	-1
+one	cond	inf	us	-1
+one	cond	-0.000227586	si	-1
+one	cond	-0.000227586	us	-1
+one	cond	2.2338e-05	si	-1
+one	cond	2.2338e-05	us	-1
+one	cond	0.017545821	si	-1
+one	cond	0.017545821	us	-1
+one	cond	-10.856307094	si	-1
+one	cond	-10.856307094	us	-1
+one	cond	-1.478747466	si	-1
+one	cond	-1.478747466	us	-1
+one	cond	-0.000105487	si	-1
+one	cond	-0.000105487	us	-1
+one	cond	-12620.950071865	si	-1
+one	cond	-12620.950071865	us	-1
+one	cond	-0.003591816	si	-1
+one	cond	-0.003591816	us	-1
+one	speed	0	si	-1
+one	speed	0	us	-1
+one	speed	1	si	-1
+one	speed	1	us	-1
+one	speed	-1	si	-1
+one	speed	-1	us	-1
+one	speed	0.5	si	-1
+one	speed	0.5	us	-1
+one	speed	12.3456	si	-1
+one	speed	12.3456	us	-1
+one	speed	1234.5	si	-1
+one	speed	1234.5	us	-1
+one	speed	-1234.5	si	-1
+one	speed	-1234.5	us	-1
+one	speed	999.9995	si	-1
+one	speed	999.9995	us	-1
+one	speed	1000000.4	si	-1
+one	speed	1000000.4	us	-1
+one	speed	123456789.987	si	-1
+one	speed	123456789.987	us	-1
+one	speed	0.004567	si	-1
+one	speed	0.004567	us	-1
+one	speed	-1e-05	si	-1
+one	speed	-1e-05	us	-1
+one	speed	9.99999	si	-1
+one	speed	9.99999	us	-1
+one	speed	99.995	si	-1
+one	speed	99.995	us	-1
+one	speed	0.0099999	si	-1
+one	speed	0.0099999	us	-1
+one	speed	1e-07	si	-1
+one	speed	1e-07	us	-1
+one	speed	inf	si	-1
+one	speed	inf	us	-1
+one	speed	-0.000227586	si	-1
+one	speed	-0.000227586	us	-1
+one	speed	2.2338e-05	si	-1
+one	speed	2.2338e-05	us	-1
+one	speed	0.017545821	si	-1
+one	speed	0.017545821	us	-1
+one	speed	-10.856307094	si	-1
+one	speed	-10.856307094	us	-1
+one	speed	-1.478747466	si	-1
+one	speed	-1.478747466	us	-1
+one	speed	-0.000105487	si	-1
+one	speed	-0.000105487	us	-1
+one	speed	-12620.950071865	si	-1
+one	speed	-12620.950071865	us	-1
+one	speed	-0.003591816	si	-1
+one	speed	-0.003591816	us	-1
+one	dens	0	si	-1
+one	dens	0	us	-1
+one	dens	1	si	-1
+one	dens	1	us	-1
+one	dens	-1	si	-1
+one	dens	-1	us	-1
+one	dens	0.5	si	-1
+one	dens	0.5	us	-1
+one	dens	12.3456	si	-1
+one	dens	12.3456	us	-1
+one	dens	1234.5	si	-1
+one	dens	1234.5	us	-1
+one	dens	-1234.5	si	-1
+one	dens	-1234.5	us	-1
+one	dens	999.9995	si	-1
+one	dens	999.9995	us	-1
+one	dens	1000000.4	si	-1
+one	dens	1000000.4	us	-1
+one	dens	123456789.987	si	-1
+one	dens	123456789.987	us	-1
+one	dens	0.004567	si	-1
+one	dens	0.004567	us	-1
+one	dens	-1e-05	si	-1
+one	dens	-1e-05	us	-1
+one	dens	9.99999	si	-1
+one	dens	9.99999	us	-1
+one	dens	99.995	si	-1
+one	dens	99.995	us	-1
+one	dens	0.0099999	si	-1
+one	dens	0.0099999	us	-1
+one	dens	1e-07	si	-1
+one	dens	1e-07	us	-1
+one	dens	inf	si	-1
+one	dens	inf	us	-1
+one	dens	-0.000227586	si	-1
+one	dens	-0.000227586	us	-1
+one	dens	2.2338e-05	si	-1
+one	dens	2.2338e-05	us	-1
+one	dens	0.017545821	si	-1
+one	dens	0.017545821	us	-1
+one	dens	-10.856307094	si	-1
+one	dens	-10.856307094	us	-1
+one	dens	-1.478747466	si	-1
+one	dens	-1.478747466	us	-1
+one	dens	-0.000105487	si	-1
+one	dens	-0.000105487	us	-1
+one	dens	-12620.950071865	si	-1
+one	dens	-12620.950071865	us	-1
+one	dens	-0.003591816	si	-1
+one	dens	-0.003591816	us	-1
+one	accel	0	si	-1
+one	accel	0	us	-1
+one	accel	1	si	-1
+one	accel	1	us	-1
+one	accel	-1	si	-1
+one	accel	-1	us	-1
+one	accel	0.5	si	-1
+one	accel	0.5	us	-1
+one	accel	12.3456	si	-1
+one	accel	12.3456	us	-1
+one	accel	1234.5	si	-1
+one	accel	1234.5	us	-1
+one	accel	-1234.5	si	-1
+one	accel	-1234.5	us	-1
+one	accel	999.9995	si	-1
+one	accel	999.9995	us	-1
+one	accel	1000000.4	si	-1
+one	accel	1000000.4	us	-1
+one	accel	123456789.987	si	-1
+one	accel	123456789.987	us	-1
+one	accel	0.004567	si	-1
+one	accel	0.004567	us	-1
+one	accel	-1e-05	si	-1
+one	accel	-1e-05	us	-1
+one	accel	9.99999	si	-1
+one	accel	9.99999	us	-1
+one	accel	99.995	si	-1
+one	accel	99.995	us	-1
+one	accel	0.0099999	si	-1
+one	accel	0.0099999	us	-1
+one	accel	1e-07	si	-1
+one	accel	1e-07	us	-1
+one	accel	inf	si	-1
+one	accel	inf	us	-1
+one	accel	-0.000227586	si	-1
+one	accel	-0.000227586	us	-1
+one	accel	2.2338e-05	si	-1
+one	accel	2.2338e-05	us	-1
+one	accel	0.017545821	si	-1
+one	accel	0.017545821	us	-1
+one	accel	-10.856307094	si	-1
+one	accel	-10.856307094	us	-1
+one	accel	-1.478747466	si	-1
+one	accel	-1.478747466	us	-1
+one	accel	-0.000105487	si	-1
+one	accel	-0.000105487	us	-1
+one	accel	-12620.950071865	si	-1
+one	accel	-12620.950071865	us	-1
+one	accel	-0.003591816	si	-1
+one	accel	-0.003591816	us	-1
+one	freq	0	si	-1
+one	freq	0	us	-1
+one	freq	1	si	-1
+one	freq	1	us	-1
+one	freq	-1	si	-1
+one	freq	-1	us	-1
+one	freq	0.5	si	-1
+one	freq	0.5	us	-1
+one	freq	12.3456	si	-1
+one	freq	12.3456	us	-1
+one	freq	1234.5	si	-1
+one	freq	1234.5	us	-1
+one	freq	-1234.5	si	-1
+one	freq	-1234.5	us	-1
+one	freq	999.9995	si	-1
+one	freq	999.9995	us	-1
+one	freq	1000000.4	si	-1
+one	freq	1000000.4	us	-1
+one	freq	123456789.987	si	-1
+one	freq	123456789.987	us	-1
+one	freq	0.004567	si	-1
+one	freq	0.004567	us	-1
+one	freq	-1e-05	si	-1
+one	freq	-1e-05	us	-1
+one	freq	9.99999	si	-1
+one	freq	9.99999	us	-1
+one	freq	99.995	si	-1
+one	freq	99.995	us	-1
+one	freq	0.0099999	si	-1
+one	freq	0.0099999	us	-1
+one	freq	1e-07	si	-1
+one	freq	1e-07	us	-1
+one	freq	inf	si	-1
+one	freq	inf	us	-1
+one	freq	-0.000227586	si	-1
+one	freq	-0.000227586	us	-1
+one	freq	2.2338e-05	si	-1
+one	freq	2.2338e-05	us	-1
+one	freq	0.017545821	si	-1
+one	freq	0.017545821	us	-1
+one	freq	-10.856307094	si	-1
+one	freq	-10.856307094	us	-1
+one	freq	-1.478747466	si	-1
+one	freq	-1.478747466	us	-1
+one	freq	-0.000105487	si	-1
+one	freq	-0.000105487	us	-1
+one	freq	-12620.950071865	si	-1
+one	freq	-12620.950071865	us	-1
+one	freq	-0.003591816	si	-1
+one	freq	-0.003591816	us	-1
+one	pa	0	si	-1
+one	pa	0	us	-1
+one	pa	1	si	-1
+one	pa	1	us	-1
+one	pa	-1	si	-1
+one	pa	-1	us	-1
+one	pa	0.5	si	-1
+one	pa	0.5	us	-1
+one	pa	12.3456	si	-1
+one	pa	12.3456	us	-1
+one	pa	1234.5	si	-1
+one	pa	1234.5	us	-1
+one	pa	-1234.5	si	-1
+one	pa	-1234.5	us	-1
+one	pa	999.9995	si	-1
+one	pa	999.9995	us	-1
+one	pa	1000000.4	si	-1
+one	pa	1000000.4	us	-1
+one	pa	123456789.987	si	-1
+one	pa	123456789.987	us	-1
+one	pa	0.004567	si	-1
+one	pa	0.004567	us	-1
+one	pa	-1e-05	si	-1
+one	pa	-1e-05	us	-1
+one	pa	9.99999	si	-1
+one	pa	9.99999	us	-1
+one	pa	99.995	si	-1
+one	pa	99.995	us	-1
+one	pa	0.0099999	si	-1
+one	pa	0.0099999	us	-1
+one	pa	1e-07	si	-1
+one	pa	1e-07	us	-1
+one	pa	inf	si	-1
+one	pa	inf	us	-1
+one	pa	-0.000227586	si	-1
+one	pa	-0.000227586	us	-1
+one	pa	2.2338e-05	si	-1
+one	pa	2.2338e-05	us	-1
+one	pa	0.017545821	si	-1
+one	pa	0.017545821	us	-1
+one	pa	-10.856307094	si	-1
+one	pa	-10.856307094	us	-1
+one	pa	-1.478747466	si	-1
+one	pa	-1.478747466	us	-1
+one	pa	-0.000105487	si	-1
+one	pa	-0.000105487	us	-1
+one	pa	-12620.950071865	si	-1
+one	pa	-12620.950071865	us	-1
+one	pa	-0.003591816	si	-1
+one	pa	-0.003591816	us	-1
+dual	stress	0	-1
+dual	temp	0	-1
+dual	stress	0	2
+dual	temp	0	2
+dual	stress	1	-1
+dual	temp	1	-1
+dual	stress	1	2
+dual	temp	1	2
+dual	stress	-1	-1
+dual	temp	-1	-1
+dual	stress	-1	2
+dual	temp	-1	2
+dual	stress	0.5	-1
+dual	temp	0.5	-1
+dual	stress	0.5	2
+dual	temp	0.5	2
+dual	stress	12.3456	-1
+dual	temp	12.3456	-1
+dual	stress	12.3456	2
+dual	temp	12.3456	2
+dual	stress	1234.5	-1
+dual	temp	1234.5	-1
+dual	stress	1234.5	2
+dual	temp	1234.5	2
+dual	stress	-1234.5	-1
+dual	temp	-1234.5	-1
+dual	stress	-1234.5	2
+dual	temp	-1234.5	2
+dual	stress	999.9995	-1
+dual	temp	999.9995	-1
+dual	stress	999.9995	2
+dual	temp	999.9995	2
+dual	stress	1000000.4	-1
+dual	temp	1000000.4	-1
+dual	stress	1000000.4	2
+dual	temp	1000000.4	2
+dual	stress	123456789.987	-1
+dual	temp	123456789.987	-1
+dual	stress	123456789.987	2
+dual	temp	123456789.987	2
+dual	stress	0.004567	-1
+dual	temp	0.004567	-1
+dual	stress	0.004567	2
+dual	temp	0.004567	2
+dual	stress	-1e-05	-1
+dual	temp	-1e-05	-1
+dual	stress	-1e-05	2
+dual	temp	-1e-05	2
+dual	stress	9.99999	-1
+dual	temp	9.99999	-1
+dual	stress	9.99999	2
+dual	temp	9.99999	2
+dual	stress	99.995	-1
+dual	temp	99.995	-1
+dual	stress	99.995	2
+dual	temp	99.995	2
+dual	stress	0.0099999	-1
+dual	temp	0.0099999	-1
+dual	stress	0.0099999	2
+dual	temp	0.0099999	2
+dual	stress	1e-07	-1
+dual	temp	1e-07	-1
+dual	stress	1e-07	2
+dual	temp	1e-07	2
+dual	stress	inf	-1
+dual	temp	inf	-1
+dual	stress	inf	2
+dual	temp	inf	2
+dual	stress	-0.000227586	-1
+dual	temp	-0.000227586	-1
+dual	stress	-0.000227586	2
+dual	temp	-0.000227586	2
+dual	stress	2.2338e-05	-1
+dual	temp	2.2338e-05	-1
+dual	stress	2.2338e-05	2
+dual	temp	2.2338e-05	2
+dual	stress	0.017545821	-1
+dual	temp	0.017545821	-1
+dual	stress	0.017545821	2
+dual	temp	0.017545821	2
+dual	stress	-10.856307094	-1
+dual	temp	-10.856307094	-1
+dual	stress	-10.856307094	2
+dual	temp	-10.856307094	2
+dual	stress	-1.478747466	-1
+dual	temp	-1.478747466	-1
+dual	stress	-1.478747466	2
+dual	temp	-1.478747466	2
+dual	stress	-0.000105487	-1
+dual	temp	-0.000105487	-1
+dual	stress	-0.000105487	2
+dual	temp	-0.000105487	2
+dual	stress	-12620.950071865	-1
+dual	temp	-12620.950071865	-1
+dual	stress	-12620.950071865	2
+dual	temp	-12620.950071865	2
+dual	stress	-0.003591816	-1
+dual	temp	-0.003591816	-1
+dual	stress	-0.003591816	2
+dual	temp	-0.003591816	2
+dual	stress	600924.58249654	-1
+dual	temp	600924.58249654	-1
+dual	stress	600924.58249654	2
+dual	temp	600924.58249654	2
+dual	stress	0.088770094	-1
+dual	temp	0.088770094	-1
+dual	stress	0.088770094	2
+dual	temp	0.088770094	2
+dual	stress	3.4503e-05	-1
+dual	temp	3.4503e-05	-1
+dual	stress	3.4503e-05	2
+dual	temp	3.4503e-05	2
+dual	stress	0.021418664	-1
+dual	temp	0.021418664	-1
+dual	stress	0.021418664	2
+dual	temp	0.021418664	2
+dual	stress	-0.000184364	-1
+dual	temp	-0.000184364	-1
+dual	stress	-0.000184364	2
+dual	temp	-0.000184364	2

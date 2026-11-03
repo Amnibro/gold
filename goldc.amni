@@ -1,0 +1,1512 @@
+// goldc: the Gold phrase-to-code tool, written in Helium.
+//   goldc check   <entry.gold>                       validate an entry, print keys/shapes or "reject <reason>"
+//   goldc harness <entry.gold> <prelude> <outdir>   write t<k>.amni + t<k>.expect per test, print test count
+//   goldc index   <entry.gold> <relpath> <id>        print index lines (shape \t kind \t relpath \t id \t slots)
+//   goldc split   <response.txt> <outdir>             split a model reply into e<k>.gold files, print count
+//   goldc compose <script.gold> <gold_root> <out.amni>  expand a conversational script into one Helium program
+import os;
+import dictionary;
+
+let CORE_FN = " double halve inc dec square triple cube negate abs_val collatz digit_sum reverse_digits ";
+let CORE_PRED = " is_one is_zero is_even is_odd is_negative over_100 under_10 is_prime is_square is_palindrome ";
+
+fn is_digit(c byte) bool { c >= '0' && c <= '9' }
+fn is_alnum(c byte) bool { (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || is_digit(c) || c == '_' }
+fn is_ident(s const byte[:]) bool {
+	if s.len == 0 || s.len > 24 { return false; }
+	if !((s[0] >= 'a' && s[0] <= 'z') || s[0] == '_') { return false; }
+	for c in s { if !is_alnum(c) { return false; } }
+	true
+}
+fn is_number(s const byte[:]) bool {
+	if s.len == 0 || s.len > 12 { return false; }
+	var start = 0;
+	if s[0] == '-' { start = 1; }
+	if start >= s.len { return false; }
+	for i in start..s.len { if !is_digit(s[i]) { return false; } }
+	true
+}
+fn is_real(s const byte[:]) bool {
+	if s.len == 0 || s.len > 24 { return false; }
+	var start = 0;
+	if s[0] == '-' { start = 1; }
+	if start >= s.len { return false; }
+	var dots = 0;
+	var digs = 0;
+	for i in start..s.len { if s[i] == '.' { dots++; } else if is_digit(s[i]) { digs++; } else { return false; } }
+	dots <= 1 && digs > 0
+}
+fn is_filler(w const byte[:]) bool {
+	w == "please" || w == "the" || w == "a" || w == "an" || w == "now" || w == "just" || w == "my" || w == "some" || w == "can" || w == "you" || w == "go" || w == "ahead"
+}
+fn has_word(list const byte[:], w const byte[:]) bool {
+	var k byte[>..] = [];
+	format(k, " ", w, " ");
+	find(list, k) >= 0
+}
+fn hex64(out byte[>..]&, h uint) { format_int(out, (h >> 32) as! int, 16, 8, '0'); format_int(out, (h & 4294967295) as! int, 16, 8, '0'); }
+
+// Tokens are written to `out` separated by '\n'. Words are lowercased; fillers dropped;
+// "quoted text" and {slot} stay single tokens. '-' and punctuation separate words.
+fn tokenize(s const byte[:], out byte[>..]&) {
+	var cur byte[>..] = [];
+	fn flush() {
+		if cur.len > 0 {
+			to_lower(cur);
+			if !is_filler(cur) { out.append(cur); out.push('\n'); }
+			cur.clear();
+		}
+	}
+	var i = 0;
+	while i < s.len {
+		let c = s[i];
+		if c == '"' || c == '{' {
+			flush();
+			let close = if c == '"' { '"' } else { '}' };
+			var j = i + 1;
+			while j < s.len && s[j] != close { j++; }
+			let e = min(j + 1, s.len);
+			if c == '{' {
+				var t byte[>..] = [];
+				t.append(s[i..e]);
+				to_lower(t);
+				out.append(t);
+			} else {
+				out.append(s[i..e]);
+			}
+			out.push('\n');
+			i = e;
+			continue;
+		}
+		if is_alnum(c) || (c == '-' && cur.len == 0 && i + 1 < s.len && is_digit(s[i + 1])) || (c == '.' && cur.len > 0 && is_real(cur) && find(cur, ".") < 0 && i + 1 < s.len && is_digit(s[i + 1])) {
+			cur.push(c);
+		} else {
+			flush();
+		}
+		i++;
+	}
+	flush();
+}
+
+fn phrase_shape(p const byte[:], shape byte[>..]&, order byte[>..]&) int {
+	var toks byte[>..] = [];
+	tokenize(p, toks);
+	var words = 0;
+	for t in split(toks, '\n') {
+		if t.len == 0 { continue; }
+		if shape.len > 0 { shape.push(' '); }
+		if t[0] == '{' && t.len > 2 {
+			shape.append("{}");
+			if order.len > 0 { order.push(','); }
+			order.append(t[1..t.len - 1]);
+		} else {
+			shape.append(t);
+			words++;
+		}
+	}
+	words
+}
+
+// ---------- entry access ----------
+fn entry_code(src const byte[:], out byte[>..]&) {
+	var in_code = false;
+	for line in split(src, '\n') {
+		if in_code {
+			if trim(line) == "@end" { break; }
+			if starts_with(trim(line), "```") || starts_with(trim(line), "import ") { continue; }
+			out.append(line);
+			out.push('\n');
+		} else if trim(line) == "code:" {
+			in_code = true;
+		}
+	}
+}
+// Header values for `key:` before the code section, joined by '\n'. Returns how many.
+fn entry_all(src const byte[:], key const byte[:], out byte[>..]&) int {
+	var n = 0;
+	for line0 in split(src, '\n') {
+		let line = trim(line0);
+		if line == "code:" { break; }
+		if line.len > key.len && starts_with(line, key) && line[key.len] == ':' {
+			if n > 0 { out.push('\n'); }
+			out.append(trim(line[key.len + 1..]));
+			n++;
+		}
+	}
+	n
+}
+fn entry_get(src const byte[:], key const byte[:], out byte[>..]&) bool {
+	var all byte[>..] = [];
+	let n = entry_all(src, key, all);
+	if n == 0 { return false; }
+	let parts = split(all, '\n');
+	out.append(parts[0]);
+	true
+}
+// kind of a declared slot, or "" when undeclared
+fn slot_kind(src const byte[:], name const byte[:], out byte[>..]&) bool {
+	var slots byte[>..] = [];
+	entry_all(src, "slot", slots);
+	for s in split(slots, '\n') {
+		let w = words(s);
+		if w.len == 2 && w[0] == name { out.append(w[1]); return true; }
+	}
+	false
+}
+
+// value of key=... in a test line ("quoted values" keep their quotes)
+fn test_get(line const byte[:], key const byte[:], out byte[>..]&) bool {
+	var i = 0;
+	while i < line.len {
+		while i < line.len && line[i] == ' ' { i++; }
+		var j = i;
+		while j < line.len && line[j] != '=' && line[j] != ' ' { j++; }
+		let k_s = i;
+		let k_e = j;
+		var v_s = j;
+		var v_e = j;
+		if j < line.len && line[j] == '=' {
+			v_s = j + 1;
+			if v_s < line.len && line[v_s] == '"' {
+				var q = v_s + 1;
+				while q < line.len && line[q] != '"' { q++; }
+				v_e = min(q + 1, line.len);
+			} else {
+				var q = v_s;
+				while q < line.len && line[q] != ' ' { q++; }
+				v_e = q;
+			}
+		}
+		if line[k_s..k_e] == key && v_e > v_s { out.append(line[v_s..v_e]); return true; }
+		i = max(v_e, j + 1);
+	}
+	false
+}
+
+fn lower_copy(s const byte[:], out byte[>..]&) { out.append(s); to_lower(out); }
+let ALLOWED_IMPORTS = " math vec json dictionary regex ";
+// `import X;` lines are allowed only for the std modules above. They are stripped from entry code
+// and hoisted to the top of the generated program (see entry_imports).
+fn import_name(t const byte[:], out byte[>..]&) {
+	var m = trim(t[7..]);
+	if m.len > 0 && m[m.len - 1] == ';' { m = trim(m[..m.len - 1]); }
+	out.append(m);
+}
+fn strip_imports(src const byte[:], out byte[>..]&, why byte[>..]&) bool {
+	for line in split(src, '\n') {
+		let t = trim(line);
+		if starts_with(t, "import ") {
+			var m byte[>..] = [];
+			import_name(t, m);
+			if !has_word(ALLOWED_IMPORTS, m) { why.append("import_not_allowed:"); why.append(m); return false; }
+			continue;
+		}
+		out.append(line);
+		out.push('\n');
+	}
+	true
+}
+fn entry_imports(src const byte[:], out byte[>..]&) {
+	for line in split(src, '\n') {
+		let t = trim(line);
+		if !starts_with(t, "import ") { continue; }
+		var m byte[>..] = [];
+		import_name(t, m);
+		if !has_word(ALLOWED_IMPORTS, m) { continue; }
+		var l byte[>..] = [];
+		format(l, "import ", m, ";\n");
+		if find(out, l) < 0 { out.append(l); }
+	}
+}
+
+// ---------- check ----------
+fn forbidden(text const byte[:], why byte[>..]&) bool {
+	var low byte[>..] = [];
+	lower_copy(text, low);
+	let bad = ["python", "subprocess", "run_command", "system(", "popen", "exec(", "execv", "extern", "import ", "embed_file", "read_file", "write_file", "append_file", "delete_file", "#include", "/bin/", "sh -c", "ffi(", "@ffi", "thread_spawn", "lut fn", "gpu fn", "getenv", "env("];
+	for b in bad {
+		if find(low, b) >= 0 { why.append("forbidden:"); why.append(b); return true; }
+	}
+	false
+}
+// precomputed-answer heuristics: big literal arrays, digit-heavy string literals
+fn answer_table(code const byte[:]) bool {
+	var depth = 0;
+	var commas = 0;
+	var in_str = false;
+	var digits = 0;
+	for c in code {
+		if in_str {
+			if c == '"' { in_str = false; if digits >= 3 { return true; } }
+			else if is_digit(c) { digits++; }
+			continue;
+		}
+		if c == '"' { in_str = true; digits = 0; continue; }
+		if c == '[' { depth++; if depth == 1 { commas = 0; } }
+		else if c == ']' { if depth > 0 { depth--; } }
+		else if c == ',' && depth > 0 { commas++; if commas >= 16 { return true; } }
+	}
+	false
+}
+
+fn cmd_check(src const byte[:]) int {
+	var why byte[>..] = [];
+	var kind byte[>..] = [];
+	if !entry_get(src, "kind", kind) { print("reject no_kind"); return 1; }
+	if !(kind == "step" || kind == "fn" || kind == "pred") { print("reject bad_kind"); return 1; }
+	var code byte[>..] = [];
+	entry_code(src, code);
+	var stripped byte[>..] = [];
+	if !strip_imports(src, stripped, why) { print("reject ", why); return 1; }
+	if forbidden(stripped, why) { print("reject ", why); return 1; }
+	let lines = split(code, '\n');
+	var nl = 0;
+	for l in lines { if trim(l).len > 0 { nl++; } }
+	if nl < 3 { print("reject trivial_code"); return 1; }
+	if nl > 220 { print("reject code_too_long"); return 1; }
+	var sig byte[>..] = [];
+	if kind == "step" { sig.append("fn ${ID}(g Gold&, v Val) Val"); }
+	else if kind == "fn" { sig.append("fn ${ID}(n int) int"); }
+	else { sig.append("fn ${ID}(n int) bool"); }
+	if find(code, sig) < 0 { print("reject bad_signature"); return 1; }
+	if answer_table(code) { print("reject answer_table"); return 1; }
+	var meta byte[>..] = [];
+	for k in ["verb", "noun", "modifier", "context"] {
+		var v byte[>..] = [];
+		if !entry_get(src, k, v) { print("reject missing_", k); return 1; }
+		var lv byte[>..] = [];
+		lower_copy(trim(v), lv);
+		if lv.len == 0 || lv.len > 24 { print("reject bad_", k); return 1; }
+		if meta.len > 0 { meta.push('|'); }
+		meta.append(lv);
+	}
+	// slots must be declared with a known kind; ${name} in code must be declared
+	var slots byte[>..] = [];
+	entry_all(src, "slot", slots);
+	for s in split(slots, '\n') {
+		if trim(s).len == 0 { continue; }
+		let w = words(s);
+		if w.len != 2 || !is_ident(w[0]) { print("reject bad_slot"); return 1; }
+		if !(w[1] == "fn" || w[1] == "pred" || w[1] == "int" || w[1] == "text" || w[1] == "real") { print("reject bad_slot_kind"); return 1; }
+		if kind != "step" && (w[1] == "fn" || w[1] == "pred") { print("reject nested_fn_slot"); return 1; }
+	}
+	var i = 0;
+	while i + 1 < code.len {
+		if code[i] == '$' && code[i + 1] == '{' {
+			var j = i + 2;
+			while j < code.len && code[j] != '}' { j++; }
+			let nm = code[i + 2..j];
+			if nm != "ID" {
+				var sk byte[>..] = [];
+				if !slot_kind(src, nm, sk) { print("reject undeclared_slot"); return 1; }
+			}
+			i = j;
+		}
+		i++;
+	}
+	// phrases: at least two variants, each with real words, slots declared, all distinct
+	var phrases byte[>..] = [];
+	let np = entry_all(src, "phrase", phrases);
+	if np < 2 { print("reject need_2_phrases"); return 1; }
+	var shapes byte[>..] = [];
+	for p in split(phrases, '\n') {
+		var sh byte[>..] = [];
+		var ord byte[>..] = [];
+		let nw = phrase_shape(p, sh, ord);
+		if nw < 1 || words(sh).len > 14 { print("reject bad_phrase"); return 1; }
+		for tk in words(sh) { if is_number(tk) || tk[0] == 0x22 { print("reject literal_in_phrase"); return 1; } }
+		var sj byte[>..] = [];
+		format_replaced(sj, sh, "between {} and {}", "between {} {}");
+		if find(sj, " and ") >= 0 || find(sj, " then ") >= 0 || starts_with(sj, "and ") || starts_with(sj, "then ") { print("reject phrase_has_joiner"); return 1; }
+		if find(sh, "=") >= 0 { print("reject bad_phrase"); return 1; }
+		for o in split(ord, ',') {
+			if o.len == 0 { continue; }
+			var sk byte[>..] = [];
+			if !slot_kind(src, o, sk) { print("reject phrase_slot_undeclared"); return 1; }
+		}
+		var line byte[>..] = [];
+		format(line, "\n", sh, "\t");
+		if find(shapes, line) >= 0 { print("reject dup_phrase_in_entry"); return 1; }
+		shapes.append(line);
+	}
+	// tests: >= 2, each with expect lines; outputs must differ between tests
+	var outs byte[>..] = [];
+	var ntest = 0;
+	var cur byte[>..] = [];
+	var first byte[>..] = [];
+	var differs = false;
+	var in_hdr = true;
+	for line0 in split(src, '\n') {
+		let line = trim(line0);
+		if line == "code:" { break; }
+		if starts_with(line, "test:") {
+			if ntest > 0 { if ntest == 1 { first.append(cur); } else if cur != first { differs = true; } }
+			if ntest == 1 { } 
+			ntest++;
+			cur.clear();
+		} else if starts_with(line, "expect:") {
+			if ntest == 0 { print("reject expect_before_test"); return 1; }
+			cur.append(line[7..]);
+			cur.push('\n');
+		}
+	}
+	if ntest >= 2 && cur != first { differs = true; }
+	if ntest < 2 { print("reject need_2_tests"); return 1; }
+	if !differs { print("reject constant_output"); return 1; }
+	// keys: exact (code+phrases) and near-duplicate (code without digits/space/case)
+	var norm byte[>..] = [];
+	var near byte[>..] = [];
+	for c in code {
+		if c == ' ' || c == '\t' || c == '\n' || c == '\r' { continue; }
+		norm.push(c);
+		if !is_digit(c) { near.push(c); }
+	}
+	to_lower(near);
+	var kh byte[>..] = [];
+	hex64(kh, hash_combine(hash(norm), hash(shapes)));
+	var nh byte[>..] = [];
+	hex64(nh, hash(near));
+	print("ok ", kind);
+	print("key ", kh);
+	print("nkey ", nh);
+	print("combo ", kind, "|", meta);
+	for sl in split(shapes, '\n') {
+		if sl.len == 0 { continue; }
+		print("shape ", sl[..sl.len - 1]);
+	}
+	0
+}
+
+// ---------- harness ----------
+fn fill_slots(src const byte[:], code const byte[:], id const byte[:], test const byte[:], out byte[>..]&, err byte[>..]&) bool {
+	var cur byte[>..] = [];
+	format_replaced(cur, code, "${ID}", id);
+	var slots byte[>..] = [];
+	entry_all(src, "slot", slots);
+	for s in split(slots, '\n') {
+		if trim(s).len == 0 { continue; }
+		let w = words(s);
+		var val byte[>..] = [];
+		if !test_get(test, w[0], val) { err.append("test_missing_slot"); return false; }
+		var rep byte[>..] = [];
+		if w[1] == "fn" {
+			if !has_word(CORE_FN, val) { err.append("test_bad_fn"); return false; }
+			format(rep, "core_", val);
+		} else if w[1] == "pred" {
+			if !has_word(CORE_PRED, val) { err.append("test_bad_pred"); return false; }
+			format(rep, "core_", val);
+		} else if w[1] == "int" {
+			if !is_number(val) { err.append("test_bad_int"); return false; }
+			rep.append(val);
+		} else if w[1] == "real" {
+			if !is_real(val) { err.append("test_bad_real"); return false; }
+			rep.append(val);
+			if find(val, ".") < 0 { rep.append(".0"); }
+		} else {
+			if val.len < 2 || val[0] != '"' || find(val, "\\") >= 0 { err.append("test_bad_text"); return false; }
+			rep.append(val);
+		}
+		var pat byte[>..] = [];
+		format(pat, "${", w[0], "}");
+		var nxt byte[>..] = [];
+		format_replaced(nxt, cur, pat, rep);
+		cur = copy(nxt);
+	}
+	out.append(cur);
+	true
+}
+
+fn cmd_harness(src const byte[:], prelude const byte[:], outdir const byte[:]) int {
+	var kind byte[>..] = [];
+	entry_get(src, "kind", kind);
+	var code byte[>..] = [];
+	entry_code(src, code);
+	var ntest = 0;
+	var exp byte[>..] = [];
+	var prog byte[>..] = [];
+	var err byte[>..] = [];
+	fn flush_test() {
+		if ntest == 0 { return; }
+		var p byte[>..] = [];
+		format(p, outdir, "/t", ntest - 1, ".amni");
+		write_file(p, prog);
+		var e byte[>..] = [];
+		format(e, outdir, "/t", ntest - 1, ".expect");
+		write_file(e, exp);
+	}
+	for line0 in split(src, '\n') {
+		let line = trim(line0);
+		if line == "code:" { break; }
+		if starts_with(line, "test:") {
+			flush_test();
+			ntest++;
+			exp.clear();
+			prog.clear();
+			let t = line[5..];
+			entry_imports(src, prog);
+			prog.append(prelude);
+			prog.append("\n// ---- entry under test ----\n");
+			if !fill_slots(src, code, if kind == "step" { "gold_step" } else { "gold_fn" }, t, prog, err) { print("reject ", err); return 1; }
+			prog.append("\nfn main() {\n");
+			if kind == "step" {
+				prog.append("\tvar g = gold_new();\n\tvar v = gold_val();\n");
+				var iv byte[>..] = [];
+				if test_get(t, "input", iv) {
+					if !is_number(iv) { print("reject test_bad_input"); return 1; }
+					format(prog, "\tv.i = ", iv, ";\n");
+				}
+				var tv byte[>..] = [];
+				if test_get(t, "text", tv) {
+					if tv.len < 2 || tv[0] != '"' || find(tv, "\\") >= 0 { print("reject test_bad_text"); return 1; }
+					format(prog, "\tgold_text(v, ", tv, ");\n");
+				}
+				var lv byte[>..] = [];
+				if test_get(t, "list", lv) {
+					for x in split(lv, ',') {
+						if !is_number(x) { print("reject test_bad_list"); return 1; }
+						format(prog, "\tgold_push(g, ", x, ");\n");
+					}
+				}
+				var rv byte[>..] = [];
+				if test_get(t, "reals", rv) {
+					for x in split(rv, ',') {
+						if !is_real(x) { print("reject test_bad_reals"); return 1; }
+						format(prog, "\tgold_rpush(g, ", x, if find(x, ".") < 0 { ".0" } else { "" }, ");\n");
+					}
+				}
+				var wv byte[>..] = [];
+				if test_get(t, "words", wv) {
+					if wv.len >= 2 && wv[0] == '"' {
+						if find(wv, "\\") >= 0 { print("reject test_bad_words"); return 1; }
+						format(prog, "\tgold_words_of(g, ", wv, ");\n");
+					} else {
+						for x in split(wv, ',') {
+							if !is_ident(x) { print("reject test_bad_words"); return 1; }
+							format(prog, "\tgold_wpush(g, \"", x, "\");\n");
+						}
+					}
+				}
+				var vv byte[>..] = [];
+				if test_get(t, "vecs", vv) {
+					for x in split(vv, ',') {
+						let c = split(x, ':');
+						if c.len < 2 || c.len > 3 { print("reject test_bad_vecs"); return 1; }
+						for q in c { if !is_real(q) { print("reject test_bad_vecs"); return 1; } }
+						prog.append("\tgold_vpush(g, gold_v3(");
+						for q in 0..3 {
+							if q > 0 { prog.append(", "); }
+							if q < c.len { format(prog, c[q], if find(c[q], ".") < 0 { ".0" } else { "" }); } else { prog.append("0.0"); }
+						}
+						prog.append("));\n");
+					}
+				}
+				var mv byte[>..] = [];
+				if test_get(t, "map", mv) {
+					for x in split(mv, ',') {
+						let c = split(x, ':');
+						if c.len != 2 || !is_number(c[0]) || !is_number(c[1]) { print("reject test_bad_map"); return 1; }
+						format(prog, "\tgold_mput(g, ", c[0], ", ", c[1], ");\n");
+					}
+				}
+				var kv byte[>..] = [];
+				if test_get(t, "recs", kv) {
+					for x in split(kv, ',') {
+						let c = split(x, ':');
+						if c.len != 3 || !is_number(c[0]) || !is_real(c[1]) || !is_ident(c[2]) { print("reject test_bad_recs"); return 1; }
+						format(prog, "\tgold_kpush(g, ", c[0], ", ", c[1], if find(c[1], ".") < 0 { ".0" } else { "" }, ", \"", c[2], "\");\n");
+					}
+				}
+				var dv byte[>..] = [];
+				if test_get(t, "doc", dv) {
+					if dv.len < 2 || dv[0] != '"' || dv[dv.len - 1] != '"' || find(dv, "\\") >= 0 { print("reject test_bad_doc"); return 1; }
+					for x in split(dv[1..dv.len - 1], '|') {
+						format(prog, "\tgold_doc(g, \"", x, "\");\n");
+						let sp = find(x, " ");
+						if sp > 0 && x[0] != '@' { format(prog, "\tg.dname.clear();\n\tg.dname.append(\"", x[..sp], "\");\n"); }
+					}
+				}
+				var imv byte[>..] = [];
+				if test_get(t, "img", imv) {
+					if !is_number(imv) || parse_int(imv) < 2 || parse_int(imv) > 32 { print("reject test_bad_img"); return 1; }
+					format(prog, "\tgold_img_test(g, ", imv, ");\n");
+				}
+				prog.append("\tlet v0 = v;\n\tlet g0 = g;\n\tv = gold_step(g, v);\n\tgold_report(g, v);\n\tif v == v0 && g == g0 { exit(3); }\n}\n");
+			} else {
+				var av byte[>..] = [];
+				if !test_get(t, "arg", av) { print("reject test_missing_arg"); return 1; }
+				for x in split(av, ',') {
+					if !is_number(x) { print("reject test_bad_arg"); return 1; }
+					format(prog, "\tprint(gold_fn(", x, "));\n");
+				}
+				prog.append("}\n");
+			}
+		} else if starts_with(line, "expect:") {
+			var e = line[7..];
+			if e.len > 0 && e[0] == ' ' { e = e[1..]; }
+			exp.append(e);
+			exp.push('\n');
+		}
+	}
+	flush_test();
+	print(ntest);
+	0
+}
+
+// ---------- index ----------
+fn cmd_index(src const byte[:], rel const byte[:], id const byte[:]) int {
+	var kind byte[>..] = [];
+	entry_get(src, "kind", kind);
+	var phrases byte[>..] = [];
+	entry_all(src, "phrase", phrases);
+	for p in split(phrases, '\n') {
+		var sh byte[>..] = [];
+		var ord byte[>..] = [];
+		phrase_shape(p, sh, ord);
+		print(sh, "\t", kind, "\t", rel, "\t", id, "\t", ord);
+	}
+	0
+}
+
+// ---------- split ----------
+fn cmd_split(src const byte[:], outdir const byte[:]) int {
+	var n = 0;
+	var cur byte[>..] = [];
+	var inside = false;
+	var skips byte[>..] = [];
+	for line in split(src, '\n') {
+		let t = trim(line);
+		if starts_with(t, "@skip") { skips.append(t); skips.push('\n'); continue; }
+		if starts_with(t, "@entry") { cur.clear(); cur.append("@entry\n"); inside = true; continue; }
+		if !inside { continue; }
+		if t == "@end" {
+			cur.append("@end\n");
+			var p byte[>..] = [];
+			format(p, outdir, "/e", n, ".gold");
+			write_file(p, cur);
+			n++;
+			inside = false;
+			continue;
+		}
+		if starts_with(t, "```") { continue; }
+		cur.append(line);
+		cur.push('\n');
+	}
+	if skips.len > 0 {
+		var p byte[>..] = [];
+		format(p, outdir, "/skips.txt");
+		write_file(p, skips);
+	}
+	print(n);
+	0
+}
+
+// ---------- compose: canonical phrase matching ----------
+// synonym groups: canonical|members. Matching normalises both the index shapes and the clause
+// through this table, a light stemmer, drop-words and a few multi-word rules.
+let SYN = [
+	"results|result results number numbers item items element elements entry entries them those these they values list data elems nums ints integers",
+	"value|value it answer",
+	"sum|sum total summation",
+	"max|max maximum largest biggest highest greatest",
+	"min|min minimum smallest lowest least",
+	"average|average mean avg",
+	"find|find get compute calculate determine obtain work figure",
+	"take|take grab pick",
+	"keep|keep retain filter select preserve only",
+	"remove|remove drop delete discard strip eliminate exclude omit throw",
+	"duplicate|duplicate duplicates dupe dupes repeated doubles copies",
+	"dedupe|dedupe dedup deduplicate unique uniq uniquify distinct",
+	"sort|sort order arrange",
+	"descending|descending desc decreasing backwards reversed",
+	"ascending|ascending asc increasing",
+	"reverse|reverse flip invert",
+	"print|print show display output echo say emit",
+	"return|return give hand",
+	"count|count tally",
+	"word|word words token tokens",
+	"text|text string sentence str",
+	"first|first head top leading front",
+	"last|last tail bottom trailing",
+	"cache|cache memoize memo remember",
+	"error|error errors failure failures problem problems fault faults",
+	"check|check verify validate inspect",
+	"normalize|normalize normalise rescale",
+	"square|square squared",
+	"even|even evens",
+	"odd|odd odds",
+	"positive|positive positives",
+	"negative|negative negatives",
+	"char|char chars character characters letter letters",
+	"multiply|multiply times",
+	"add|add plus",
+	"subtract|subtract minus",
+	"divide|divide split",
+	"above|above over exceeding greater bigger more",
+	"below|below under less smaller fewer",
+];
+let DROPW = " of to in on at for from into by up out with all each every both its their this that is are be me us our your one ones so than there please just then also numerically ";
+
+fn lt_bytes(a const byte[:], b const byte[:]) bool {
+	let m = if a.len < b.len { a.len } else { b.len };
+	for i in m { if a[i] != b[i] { return a[i] < b[i]; } }
+	a.len < b.len
+}
+fn syn_try(syn dictionary<const byte[:], int>&, w const byte[:], out byte[>..]&) bool {
+	let x = syn.get(w);
+	if x { let grp = SYN[x]; out.append(grp[..find(grp, "|")]); return true; }
+	false
+}
+// canonical form of one token (appended to out); returns false for a drop-word
+fn canon_tok(syn dictionary<const byte[:], int>&, w const byte[:], out byte[>..]&) bool {
+	if has_word(DROPW, w) { return false; }
+	if syn_try(syn, w, out) { return true; }
+	let n = w.len;
+	var b byte[>..] = [];
+	if n > 4 && ends_with(w, "ies") { b.append(w[..n - 3]); b.push('y'); if syn_try(syn, b, out) { return true; } }
+	if n > 3 && ends_with(w, "es") { if syn_try(syn, w[..n - 2], out) { return true; } }
+	if n > 3 && ends_with(w, "s") && !ends_with(w, "ss") { if syn_try(syn, w[..n - 1], out) { return true; } }
+	if n > 5 && ends_with(w, "ing") {
+		if syn_try(syn, w[..n - 3], out) { return true; }
+		b.clear(); b.append(w[..n - 3]); b.push('e');
+		if syn_try(syn, b, out) { return true; }
+		if n > 6 && w[n - 4] == w[n - 5] { if syn_try(syn, w[..n - 4], out) { return true; } }
+	}
+	if n > 4 && ends_with(w, "ed") {
+		if syn_try(syn, w[..n - 2], out) { return true; }
+		if syn_try(syn, w[..n - 1], out) { return true; }
+		if n > 5 && w[n - 3] == w[n - 4] { if syn_try(syn, w[..n - 3], out) { return true; } }
+	}
+	// unknown word: primary stem so plural/singular still meet
+	if n > 4 && ends_with(w, "ies") { out.append(w[..n - 3]); out.push('y'); }
+	else if n > 3 && ends_with(w, "s") && !ends_with(w, "ss") { out.append(w[..n - 1]); }
+	else { out.append(w); }
+	true
+}
+fn rep_all(s byte[>..]&, a const byte[:], b const byte[:]) {
+	var t byte[>..] = [];
+	format_replaced(t, s, a, b);
+	s = copy(t);
+}
+// canonical form of a phrase shape (space separated tokens, {} for slots)
+fn canon_shape(syn dictionary<const byte[:], int>&, sh const byte[:], out byte[>..]&) {
+	var c byte[>..] = [];
+	c.push(' ');
+	let ts = split(sh, ' ');
+	var i = 0;
+	while i < ts.len {
+		let t = ts[i];
+		if t.len == 0 { i++; continue; }
+		if t == "how" && i + 1 < ts.len && ts[i + 1] == "many" { c.append("count "); i += 2; continue; }
+		if (t == "number" || t == "numbers" || t == "amount") && i + 1 < ts.len && ts[i + 1] == "of" { i += 2; continue; }
+		if t == "add" && i + 1 < ts.len && ts[i + 1] == "up" { c.append("sum "); i += 2; continue; }
+		if t == "add" && i + 1 < ts.len && ts[i + 1] == "one" { c.append("increment "); i += 2; continue; }
+		if (t == "subtract" || t == "minus") && i + 1 < ts.len && ts[i + 1] == "one" { c.append("decrement "); i += 2; continue; }
+		var w byte[>..] = [];
+		if canon_tok(syn, t, w) {
+			// collapse a repeated canonical token ("sort results results")
+			var k byte[>..] = [];
+			format(k, " ", w, " ");
+			if w == "{}" || find(c, k) < 0 { c.append(w); c.push(' '); }
+		}
+		i++;
+	}
+	rep_all(c, " remove duplicate ", " dedupe ");
+	rep_all(c, " dedupe duplicate ", " dedupe ");
+	rep_all(c, " keep dedupe ", " dedupe ");
+	if find(c, " sort ") >= 0 { rep_all(c, " reverse ", " descending "); }
+	if c == " add results " || c == " add " { c.clear(); c.append(" sum results "); }
+	if c == " sum " { c.clear(); c.append(" sum results "); }
+	// a bare list verb implies the results list
+	if c == " dedupe " || c == " sort " || c == " reverse " || c == " count " || c == " print " || c == " return " || c == " sort descending " || c == " sort ascending " {
+		rep_all(c, " dedupe ", " dedupe results ");
+		rep_all(c, " sort ", " sort results ");
+		rep_all(c, " reverse ", " reverse results ");
+		rep_all(c, " count ", " count results ");
+		rep_all(c, " print ", " print results ");
+		rep_all(c, " return ", " return results ");
+	}
+	out.append(trim(c));
+}
+// order-free key: canonical tokens sorted
+fn bag_key(c const byte[:], out byte[>..]&) {
+	let ts = split(c, ' ');
+	var used = [false; 48];
+	let n = if ts.len < 48 { ts.len } else { 48 };
+	for k in n {
+		var best = -1;
+		for j in n { if !used[j] && (best < 0 || lt_bytes(ts[j], ts[best])) { best = j; } }
+		used[best] = true;
+		if out.len > 0 { out.push(' '); }
+		out.append(ts[best]);
+	}
+}
+fn slot_count(sh const byte[:]) int {
+	var n = 0;
+	for t in split(sh, ' ') { if t == "{}" { n++; } }
+	n
+}
+// Jaccard similarity of two canonical token sets
+fn jacc(a const byte[:], b const byte[:]) real {
+	var pb byte[>..] = [];
+	format(pb, " ", b, " ");
+	var pa byte[>..] = [];
+	format(pa, " ", a, " ");
+	var na = 0;
+	var inter = 0;
+	for t in split(a, ' ') { if t.len > 0 { na++; if has_word(pb, t) { inter++; } } }
+	var nb = 0;
+	for t in split(b, ' ') { if t.len > 0 { nb++; } }
+	let u = na + nb - inter;
+	if u <= 0 { return 0.0; }
+	(inter as real) / (u as real)
+}
+fn first_tok(c const byte[:]) const byte[:] {
+	let s = find(c, " ");
+	if s < 0 { c } else { c[..s] }
+}
+fn load_entry(root const byte[:], rel const byte[:], id const byte[:], out byte[>..]&) bool {
+	var path byte[>..] = [];
+	format(path, root, "/", rel);
+	var all byte[>..] = [];
+	if !read_file(path, all) { return false; }
+	var head byte[>..] = [];
+	format(head, "@entry ", id);
+	var inside = false;
+	for line in split(all, '\n') {
+		if !inside {
+			if trim(line) == head { inside = true; out.append("@entry\n"); }
+			continue;
+		}
+		out.append(line);
+		out.push('\n');
+		if trim(line) == "@end" { return true; }
+	}
+	inside
+}
+// look up a binding: returns its kind ("fn","pred","int","text") and value
+fn bound(binds const byte[:], name const byte[:], kind byte[>..]&, val byte[>..]&) bool {
+	for row in split(binds, '\n') {
+		let f = split(row, '\t');
+		if f.len >= 3 && f[0] == name { kind.append(f[1]); val.append(f[2]); return true; }
+	}
+	false
+}
+// shape a clause: bound names, numbers and quoted text become {} and are captured in order
+fn clause_shape(clause const byte[:], binds const byte[:], shape byte[>..]&, caps byte[>..]&) {
+	var toks byte[>..] = [];
+	tokenize(clause, toks);
+	for t in split(toks, '\n') {
+		if t.len == 0 { continue; }
+		if shape.len > 0 { shape.push(' '); }
+		var bk byte[>..] = [];
+		var bv byte[>..] = [];
+		if is_real(t) || t[0] == '"' || bound(binds, t, bk, bv) {
+			shape.append("{}");
+			caps.append(t);
+			caps.push('\n');
+		} else {
+			shape.append(t);
+		}
+	}
+}
+// instantiate an entry's code with its slots filled from captures / bindings
+fn instantiate(src const byte[:], id const byte[:], order const byte[:], caps const byte[:], binds const byte[:], out byte[>..]&, err byte[>..]&) bool {
+	var code byte[>..] = [];
+	entry_code(src, code);
+	var cur byte[>..] = [];
+	format_replaced(cur, code, "${ID}", id);
+	var slots byte[>..] = [];
+	entry_all(src, "slot", slots);
+	let ords = split(order, ',');
+	let cps = split(caps, '\n');
+	for s in split(slots, '\n') {
+		if trim(s).len == 0 { continue; }
+		let w = words(s);
+		// which capture fills this slot? position of the slot name in the phrase order
+		var arg byte[>..] = [];
+		var pos = 0;
+		for o in ords {
+			if o == w[0] && pos < cps.len { arg.append(cps[pos]); }
+			pos++;
+		}
+		if arg.len == 0 { arg.append(w[0]); }
+		var rep byte[>..] = [];
+		var bk byte[>..] = [];
+		var bv byte[>..] = [];
+		let isb = bound(binds, arg, bk, bv);
+		if w[1] == "fn" || w[1] == "pred" {
+			if !isb || bk != w[1] { format(err, "slot ", w[0], " needs a ", w[1], " binding, got '", arg, "'"); return false; }
+			rep.append(bv);
+		} else if w[1] == "int" {
+			if is_number(arg) { rep.append(arg); }
+			else if isb && bk == "int" { rep.append(bv); }
+			else { format(err, "slot ", w[0], " needs a number, got '", arg, "'"); return false; }
+		} else if w[1] == "real" {
+			var rv byte[>..] = [];
+			if is_real(arg) { rv.append(arg); }
+			else if isb && (bk == "int" || bk == "real") { rv.append(bv); }
+			else { format(err, "slot ", w[0], " needs a number, got '", arg, "'"); return false; }
+			rep.append(rv);
+			if find(rv, ".") < 0 { rep.append(".0"); }
+		} else {
+			if arg.len > 0 && arg[0] == '"' { rep.append(arg); }
+			else if isb && bk == "text" { rep.append(bv); }
+			else { format(err, "slot ", w[0], " needs quoted text, got '", arg, "'"); return false; }
+		}
+		var pat byte[>..] = [];
+		format(pat, "${", w[0], "}");
+		var nxt byte[>..] = [];
+		format_replaced(nxt, cur, pat, rep);
+		cur = copy(nxt);
+	}
+	out.append(cur);
+	true
+}
+
+// ---------- compose (phase0) ----------
+// Hashed index: exact shape, canonical form (synonyms/stems/drop-words) and order-free bag.
+// Unknown clauses get a nearest-phrase "did you mean"; every unknown clause is reported.
+// Constructs: bindings usable anywhere in the script, `define NAME as: ...`, `NAME`/`run NAME N times`,
+// `if errors, ...` / `if NAME, ...` / `if no errors, ...`, `retry`, `repeat steps A-B until COND|N times`,
+// and the `with cache` / `with retry` wrappers on any step.
+let RET_ID = "22627c5de82f0988";
+
+fn kind_ok(k const byte[:], want_step bool) bool {
+	if want_step { k == "step" } else { k == "fn" || k == "pred" }
+}
+fn is_wrap_cache(a const byte[:], b const byte[:]) bool {
+	(a == "with" || a == "using" || a == "use" || a == "via") && (b == "cache" || b == "memo" || b == "memoization" || b == "caching")
+}
+fn cmd_compose(script const byte[:], root const byte[:], outp const byte[:]) int {
+	var prelude byte[>..] = [];
+	var pp byte[>..] = [];
+	format(pp, root, "/runtime/prelude.amni");
+	if !read_file(pp, prelude) { print("error: no prelude"); return 1; }
+	// ---- index: pack first (so short phrases win), then the generated index
+	var idx byte[>..] = [];
+	var ip byte[>..] = [];
+	format(ip, root, "/lib/pack/index.tsv");
+	var packidx byte[>..] = [];
+	if read_file(ip, packidx) { idx.append(packidx); if idx.len > 0 && idx[idx.len - 1] != '\n' { idx.push('\n'); } }
+	ip.clear();
+	format(ip, root, "/lib/index.tsv");
+	var mainidx byte[>..] = [];
+	if !read_file(ip, mainidx) { print("error: no index at ", ip); return 1; }
+	idx.append(mainidx);
+	var syn = dictionary<const byte[:], int> {};
+	for gi in SYN.len {
+		let grp = SYN[gi];
+		let bar = find(grp, "|");
+		for m in split(grp[bar + 1..], ' ') { if m.len > 0 { syn.insert(m, gi); } }
+	}
+	let rows = split(idx, '\n');
+	var exact = dictionary<const byte[:], int> {};
+	var cmap = dictionary<uint, int> {};
+	var bmap = dictionary<uint, int> {};
+	var arena byte[>..] = [];
+	for r in rows.len {
+		let f = split(rows[r], '\t');
+		var c byte[>..] = [];
+		if f.len >= 5 {
+			if !exact.contains(f[0]) { exact.insert(f[0], r + 1); }
+			canon_shape(syn, f[0], c);
+			var kc byte[>..] = [];
+			format(kc, f[1], "|", c);
+			let hc = hash(kc);
+			if !cmap.contains(hc) { cmap.insert(hc, r + 1); }
+			if slot_count(f[0]) <= 1 {
+				var bk byte[>..] = [];
+				bag_key(c, bk);
+				var kb byte[>..] = [];
+				format(kb, f[1], "|", bk);
+				let hb = hash(kb);
+				let old = bmap.get(hb);
+				if old {
+					// two different entries share a bag: ambiguous, never auto-match on it
+					if old > 0 && split(rows[old - 1], '\t')[3] != f[3] { bmap.update(hb, 0) { it = 0; } }
+				} else { bmap.insert(hb, r + 1); }
+			}
+		}
+		arena.append(c);
+		arena.push('\n');
+	}
+	let canons = split(arena, '\n');
+
+	var errs byte[>..] = [];
+	var nerr = 0;
+	var notes byte[>..] = [];
+	// resolve a clause shape; how: 0 exact, 1 canonical, 2 word order, 3 near match. 0 = none.
+	fn resolve(sh const byte[:], want_step bool, how int&, sugg byte[>..]&) int {
+		let e = exact.get(sh);
+		if e { if kind_ok(split(rows[e - 1], '\t')[1], want_step) { how = 0; return e; } }
+		var c byte[>..] = [];
+		canon_shape(syn, sh, c);
+		var bk byte[>..] = [];
+		bag_key(c, bk);
+		for q in 0..3 {
+			if want_step && q > 0 { break; }
+			if !want_step && q > 1 { break; }
+			let kd = if want_step { "step" } else if q == 0 { "fn" } else { "pred" };
+			var kc byte[>..] = [];
+			format(kc, kd, "|", c);
+			let x = cmap.get(hash(kc));
+			if x { if canons[x - 1] == c { how = 1; return x; } }
+			if slot_count(sh) <= 1 {
+				var kb byte[>..] = [];
+				format(kb, kd, "|", bk);
+				let y = bmap.get(hash(kb));
+				if y { if y > 0 { how = 2; return y; } }
+			}
+		}
+		// nearest phrases by token overlap
+		let ns = slot_count(sh);
+		var bs = [0.0; 3];
+		var br = [0; 3];
+		for r in rows.len {
+			if canons[r].len == 0 { continue; }
+			let f = split(rows[r], '\t');
+			if f.len < 5 || !kind_ok(f[1], want_step) || slot_count(f[0]) != ns { continue; }
+			let s = jacc(c, canons[r]);
+			if s <= bs[2] { continue; }
+			// skip a second row of the same entry/canon already in the top list
+			var dup = false;
+			for k in 3 { if br[k] > 0 && canons[br[k] - 1] == canons[r] { dup = true; } }
+			if dup { continue; }
+			if s > bs[0] { bs[2] = bs[1]; br[2] = br[1]; bs[1] = bs[0]; br[1] = br[0]; bs[0] = s; br[0] = r + 1; }
+			else if s > bs[1] { bs[2] = bs[1]; br[2] = br[1]; bs[1] = s; br[1] = r + 1; }
+			else { bs[2] = s; br[2] = r + 1; }
+		}
+		if br[0] > 0 && bs[0] >= 0.75 && bs[0] > bs[1] && ns <= 1 && first_tok(c) == first_tok(canons[br[0] - 1]) {
+			how = 3;
+			return br[0];
+		}
+		for k in 3 {
+			if br[k] == 0 { continue; }
+			if k > 0 { sugg.append(" | "); }
+			format(sugg, "'", split(rows[br[k] - 1], '\t')[0], "' ");
+			format_int(sugg, (bs[k] * 100.0) as! int, 10, 0, ' ');
+			sugg.append("%");
+		}
+		0
+	}
+
+	// ---- pass 1: classify lines
+	var binds byte[>..] = [];   // name \t kind \t value   (fn/pred are "?" until pass 2)
+	var pend byte[>..] = [];    // name \t lineno \t rhs
+	var dnames byte[>..] = [];  // " name name "
+	var dlist byte[>..] = [];   // name \t lineno \t body
+	var acts byte[>..] = [];    // lineno \t line
+	var init byte[>..] = [];
+	var textmode = false;
+	dnames.push(' ');
+	var lineno = 0;
+	for raw in split(script, '\n') {
+		lineno++;
+		let line = trim(raw);
+		if line.len == 0 || line[0] == '#' { continue; }
+		var low byte[>..] = [];
+		lower_copy(line, low);
+		// define NAME as: body   |   to NAME: body
+		if starts_with(low, "define ") || (starts_with(low, "to ") && find(low, ":") > 3) {
+			let st = if starts_with(low, "define ") { 7 } else { 3 };
+			var rest = trim(low[st..]);
+			var nm byte[>..] = [];
+			var k = 0;
+			while k < rest.len && is_alnum(rest[k]) { nm.push(rest[k]); k++; }
+			var body = trim(rest[k..]);
+			if starts_with(body, "as:") { body = trim(body[3..]); }
+			else if starts_with(body, "as ") { body = trim(body[3..]); }
+			else if starts_with(body, "to mean ") { body = trim(body[8..]); }
+			else if starts_with(body, ":") { body = trim(body[1..]); }
+			if nm.len == 0 || !is_ident(nm) || body.len == 0 { format(errs, "error line ", lineno, ": bad define (use `define NAME as: step, step`)\n"); nerr++; continue; }
+			format(dnames, nm, " ");
+			format(dlist, nm, "\t", lineno, "\t", body, "\n");
+			continue;
+		}
+		var name byte[>..] = [];
+		var rhs byte[>..] = [];
+		let eq = find(line, "=");
+		if eq > 0 && !starts_with(low, "if ") && !starts_with(low, "repeat ") {
+			lower_copy(trim(line[..eq]), name);
+			rhs.append(trim(line[eq + 1..]));
+		} else if starts_with(low, "let ") && find(low, " be ") > 4 {
+			let b = find(low, " be ");
+			lower_copy(trim(line[4..b]), name);
+			rhs.append(trim(line[b + 4..]));
+		}
+		if name.len > 0 {
+			if !is_ident(name) { format(errs, "error line ", lineno, ": bad name '", name, "'\n"); nerr++; continue; }
+			if name == "input" || name == "start" {
+				if !is_number(rhs) { format(errs, "error line ", lineno, ": input must be a number\n"); nerr++; continue; }
+				format(init, "\tv.i = ", rhs, ";\n");
+				continue;
+			}
+			if name == "text" {
+				if rhs.len < 2 || rhs[0] != '"' || find(rhs, "\\") >= 0 { format(errs, "error line ", lineno, ": text must be quoted\n"); nerr++; continue; }
+				format(init, "\tgold_text(v, ", rhs, ");\n\tgold_words_of(g, ", rhs, ");\n");
+				textmode = true;
+				continue;
+			}
+			if name == "list" || name == "reals" || name == "words" {
+				for x0 in split(rhs, ',') {
+					let x = trim(x0);
+					if name == "list" {
+						if !is_number(x) { format(errs, "error line ", lineno, ": list must be numbers, got '", x, "'\n"); nerr++; break; }
+						format(init, "\tgold_push(g, ", x, ");\n");
+					} else if name == "reals" {
+						if !is_real(x) { format(errs, "error line ", lineno, ": reals must be numbers, got '", x, "'\n"); nerr++; break; }
+						format(init, "\tgold_rpush(g, ", x, if find(x, ".") < 0 { ".0" } else { "" }, ");\n");
+					} else {
+						var wl byte[>..] = [];
+						lower_copy(x, wl);
+						if !is_ident(wl) { format(errs, "error line ", lineno, ": words must be plain words, got '", x, "'\n"); nerr++; break; }
+						format(init, "\tgold_wpush(g, \"", wl, "\");\n");
+					}
+				}
+				continue;
+			}
+			if is_number(rhs) { format(binds, name, "\tint\t", rhs, "\n"); continue; }
+			if is_real(rhs) { format(binds, name, "\treal\t", rhs, "\n"); continue; }
+			if rhs.len > 1 && rhs[0] == '"' { format(binds, name, "\ttext\t", rhs, "\n"); continue; }
+			format(binds, name, "\t?\t?\n");
+			format(pend, name, "\t", lineno, "\t", rhs, "\n");
+			continue;
+		}
+		format(acts, lineno, "\t", line, "\n");
+	}
+
+	// ---- pass 2: resolve fn/pred bindings now that every name is known
+	var defs byte[>..] = [];
+	var imports byte[>..] = [];
+	fn bind_entry(name const byte[:], ln const byte[:], rhs const byte[:]) bool {
+		var sh byte[>..] = [];
+		var caps byte[>..] = [];
+		// the name being defined is not a capture inside its own right-hand side ("sum = sum of digits")
+		var selfrow byte[>..] = [];
+		format(selfrow, name, "\t?\t?\n");
+		var others byte[>..] = [];
+		format_replaced(others, binds, selfrow, "");
+		clause_shape(rhs, others, sh, caps);
+		var how = 0;
+		var sugg byte[>..] = [];
+		let r = resolve(sh, false, how, sugg);
+		if r == 0 {
+			format(errs, "error line ", ln, ": no fn/pred entry for '", sh, "'");
+			if sugg.len > 0 { format(errs, " (did you mean: ", sugg, ")"); }
+			errs.push('\n');
+			nerr++;
+			return false;
+		}
+		let f = split(rows[r - 1], '\t');
+		if how == 3 { format(notes, "note line ", ln, ": read '", sh, "' as '", f[0], "'\n"); }
+		var src byte[>..] = [];
+		if !load_entry(root, f[2], f[3], src) { format(errs, "error line ", ln, ": entry ", f[3], " missing\n"); nerr++; return false; }
+		var inst byte[>..] = [];
+		format(inst, "gold_", name);
+		var err byte[>..] = [];
+		format(defs, "// ", name, " = ", rhs, "   [", f[2], " ", f[3], "]\n");
+		entry_imports(src, imports);
+		if !instantiate(src, inst, f[4], caps, binds, defs, err) { format(errs, "error line ", ln, ": ", err, "\n"); nerr++; return false; }
+		var o byte[>..] = [];
+		format(o, name, "\t?\t?\n");
+		var nw byte[>..] = [];
+		format(nw, name, "\t", f[1], "\tgold_", name, "\n");
+		rep_all(binds, o, nw);
+		true
+	}
+	// resolve in dependency order: repeat passes while progress is made
+	var left = 0;
+	for rnd in 0..8 {
+		left = 0;
+		for row in split(pend, '\n') {
+			let f = split(row, '\t');
+			if f.len < 3 { continue; }
+			var bk byte[>..] = [];
+			var bv byte[>..] = [];
+			if bound(binds, f[0], bk, bv) && bk != "?" { continue; }
+			// wait for other pending names this rhs mentions
+			var waits = false;
+			var toks byte[>..] = [];
+			tokenize(f[2], toks);
+			for t in split(toks, '\n') {
+				var k2 byte[>..] = [];
+				var v2 byte[>..] = [];
+				if t != f[0] && bound(binds, t, k2, v2) && k2 == "?" { waits = true; }
+			}
+			if waits && rnd < 7 { left++; continue; }
+			bind_entry(f[0], f[1], f[2]);
+		}
+		if left == 0 { break; }
+	}
+
+	// ---- pass 3: actions
+	var steps byte[>..] = [];
+	var globals byte[>..] = [];
+	var deffns byte[>..] = [];
+	var calls byte[>..] = [];
+	var ustmt byte[>..] = [];   // user step number \t statement (top level, for `repeat steps`)
+	var nfn = 0;                // unique step-function counter
+	var nuser = 0;              // user-visible step counter (top level)
+	var ncond = 0;
+	var lastcall byte[>..] = [];
+	var lastk = 0;
+	var indef = false;
+
+	// condition text -> Helium boolean expression
+	fn cond_code(ct const byte[:], ln const byte[:], out byte[>..]&) bool {
+		var toks byte[>..] = [];
+		tokenize(ct, toks);
+		var c byte[>..] = [];
+		for t in split(toks, '\n') { if t.len > 0 { if c.len > 0 { c.push(' '); } c.append(t); } }
+		var neg = false;
+		if starts_with(c, "not ") { neg = true; c = copy(c[4..]); }
+		if starts_with(c, "no ") && (find(c, "error") >= 0 || find(c, "fail") >= 0 || find(c, "problem") >= 0) { out.append("(g.errors == 0)"); return true; }
+		if find(c, "error") >= 0 || find(c, "fail") >= 0 || find(c, "problem") >= 0 || find(c, "wrong") >= 0 {
+			out.append(if neg { "(g.errors == 0)" } else { "(g.errors > 0)" });
+			return true;
+		}
+		if c == "empty" || c == "results empty" || c == "nothing left" || c == "no results" || c == "list empty" { out.append(if neg { "(g.n > 0)" } else { "(g.n == 0)" }); return true; }
+		if c == "found" || c == "found any" || c == "it found any" || c == "anything found" || c == "found it" { out.append(if neg { "(!g.flag)" } else { "(g.flag)" }); return true; }
+		var bk byte[>..] = [];
+		var bv byte[>..] = [];
+		if bound(binds, c, bk, bv) && bk == "pred" {
+			format(out, if neg { "(!" } else { "(" }, bv, "(v.i))");
+			return true;
+		}
+		// a pred phrase: bind it to an anonymous predicate
+		var nm byte[>..] = [];
+		format(nm, "c", ncond);
+		ncond++;
+		var sh byte[>..] = [];
+		var caps byte[>..] = [];
+		clause_shape(c, binds, sh, caps);
+		var how = 0;
+		var sugg byte[>..] = [];
+		let r = resolve(sh, false, how, sugg);
+		if r == 0 || split(rows[r - 1], '\t')[1] != "pred" {
+			format(errs, "error line ", ln, ": unknown condition '", c, "' (use errors, no errors, empty, found, a pred name or a pred phrase)");
+			if sugg.len > 0 { format(errs, " (did you mean: ", sugg, ")"); }
+			errs.push('\n');
+			nerr++;
+			return false;
+		}
+		let rw = c.len;
+		if !bind_entry(nm, ln, c) { return false; }
+		format(out, if neg { "(!gold_" } else { "(gold_" }, nm, "(v.i))");
+		rw > 0
+	}
+
+	// one clause -> one statement line appended to tgt; returns false on error
+	fn do_clause(clause const byte[:], ln const byte[:], tgt byte[>..]&, dk int&) bool {
+		var toks byte[>..] = [];
+		tokenize(clause, toks);
+		var tw byte[>..] = [];
+		for t in split(toks, '\n') { if t.len > 0 { if tw.len > 0 { tw.push(' '); } tw.append(t); } }
+		if tw.len == 0 { return true; }
+		let ws = split(tw, ' ');
+		// retry the previous step
+		if ws[0] == "retry" || (ws.len >= 2 && ws[0] == "try" && ws[1] == "again") {
+			if lastcall.len == 0 { format(errs, "error line ", ln, ": nothing to retry yet\n"); nerr++; return false; }
+			format(tgt, "\t{ var att = 0; while g.errors > gp.errors && att < 3 { att++; g = gp; v = vp; ", lastcall, " } if att > 0 { print(\"retried step ", lastk, " \", att, \" time(s)\"); } }\n");
+			return true;
+		}
+		// call a define'd sub-chain: NAME | run NAME | run NAME N times
+		var w0 = 0;
+		if ws.len > 1 && (ws[0] == "run" || ws[0] == "do" || ws[0] == "call" || ws[0] == "perform" || ws[0] == "apply") { w0 = 1; }
+		if has_word(dnames, ws[w0]) {
+			var times byte[>..] = [];
+			if ws.len == w0 + 3 && is_number(ws[w0 + 1]) && (ws[w0 + 2] == "times" || ws[w0 + 2] == "time") { times.append(ws[w0 + 1]); }
+			else if ws.len == w0 + 2 && ws[w0 + 1] == "twice" { times.append("2"); }
+			else if ws.len != w0 + 1 { format(errs, "error line ", ln, ": after '", ws[w0], "' expected nothing or 'N times'\n"); nerr++; return false; }
+			dk++;
+			var core byte[>..] = [];
+			if times.len > 0 { format(core, "for it in ", times, " { v = gold_def_", ws[w0], "(g, v); } gold_flow(g, v, gp, ", dk, ");"); }
+			else { format(core, "v = gold_def_", ws[w0], "(g, v); gold_flow(g, v, gp, ", dk, ");"); }
+			format(tgt, "\tgp = g; vp = v; ", core, "\n");
+			lastcall = copy(core);
+			lastk = dk;
+			return true;
+		}
+		// resolve; strip `with cache` / `with retry` wrappers only if the full clause has no entry
+		var sh byte[>..] = [];
+		var caps byte[>..] = [];
+		clause_shape(tw, binds, sh, caps);
+		var how = 0;
+		var sugg byte[>..] = [];
+		var r = resolve(sh, true, how, sugg);
+		var wcache = false;
+		var wretry = false;
+		if r == 0 || how == 3 {
+			var core byte[>..] = [];
+			var i = 0;
+			while i < ws.len {
+				if i + 1 < ws.len && is_wrap_cache(ws[i], ws[i + 1]) { wcache = true; i += 2; continue; }
+				if i + 2 < ws.len && is_wrap_cache(ws[i], ws[i + 2]) && ws[i + 1] == "the" { wcache = true; i += 3; continue; }
+				if ws[i] == "cached" || ws[i] == "memoized" || ws[i] == "memoised" { wcache = true; i++; continue; }
+				if i + 1 < ws.len && (ws[i] == "with" || ws[i] == "and") && (ws[i + 1] == "retry" || ws[i + 1] == "retries" || ws[i + 1] == "retrying") { wretry = true; i += 2; continue; }
+				if core.len > 0 { core.push(' '); }
+				core.append(ws[i]);
+				i++;
+			}
+			if (wcache || wretry) && core.len > 0 {
+				var sh2 byte[>..] = [];
+				var caps2 byte[>..] = [];
+				clause_shape(core, binds, sh2, caps2);
+				var how2 = 0;
+				var sugg2 byte[>..] = [];
+				let r2 = resolve(sh2, true, how2, sugg2);
+				if r2 > 0 { r = r2; how = how2; sh = copy(sh2); caps = copy(caps2); }
+				else { wcache = false; wretry = false; }
+			} else { wcache = false; wretry = false; }
+		}
+		if r == 0 {
+			format(errs, "error line ", ln, ": no step entry for '", sh, "'");
+			if sugg.len > 0 { format(errs, " (did you mean: ", sugg, ")"); }
+			errs.push('\n');
+			nerr++;
+			return false;
+		}
+		let f = split(rows[r - 1], '\t');
+		if how == 3 { format(notes, "note line ", ln, ": read '", sh, "' as '", f[0], "'\n"); }
+		var src byte[>..] = [];
+		if !load_entry(root, f[2], f[3], src) { format(errs, "error line ", ln, ": entry ", f[3], " missing\n"); nerr++; return false; }
+		var inst byte[>..] = [];
+		format(inst, "gold_s", nfn);
+		var err byte[>..] = [];
+		format(steps, "// step ", nfn, ": ", tw, "   [", f[2], " ", f[3], "]\n");
+		entry_imports(src, imports);
+		if !instantiate(src, inst, f[4], caps, binds, steps, err) { format(errs, "error line ", ln, ": ", err, "\n"); nerr++; return false; }
+		dk++;
+		var core byte[>..] = [];
+		if textmode && f[3] == RET_ID { core.append("gold_show_text(g, v); "); }
+		if wcache {
+			format(globals, "var gold_m", nfn, " = gold_memo_new();\n");
+			format(core, "{ let mk = gold_fp(g, v); if gold_m", nfn, ".has && gold_m", nfn, ".key == mk { gold_memo_load(g, v, gold_m", nfn, "); } else { g.misses++; v = ", inst, "(g, v); gold_memo_save(g, v, gold_m", nfn, ", mk); } }");
+		} else {
+			format(core, "v = ", inst, "(g, v);");
+		}
+		format(core, " gold_flow(g, v, gp, ", dk, ");");
+		format(tgt, "\tgp = g; vp = v; ", core, "\n");
+		lastcall = copy(core);
+		lastk = dk;
+		nfn++;
+		if wretry {
+			format(tgt, "\t{ var att = 0; while g.errors > gp.errors && att < 3 { att++; g = gp; v = vp; ", core, " } if att > 0 { print(\"retried step ", dk, " \", att, \" time(s)\"); } }\n");
+		}
+		true
+	}
+
+	// split a line into clauses on and/then/,/; (keeping `between X and Y` together)
+	fn do_line(line const byte[:], ln const byte[:], tgt byte[>..]&, dk int&, top bool) {
+		var l2 byte[>..] = [];
+		format_replaced(l2, line, ",", " and ");
+		var l3 byte[>..] = [];
+		format_replaced(l3, l2, ";", " and ");
+		var l4 byte[>..] = [];
+		format_replaced(l4, l3, ". ", " and ");
+		var toks byte[>..] = [];
+		tokenize(l4, toks);
+		let ts = split(toks, '\n');
+		var clause byte[>..] = [];
+		var i = 0;
+		while i <= ts.len {
+			let t = if i < ts.len { ts[i] } else { "and" };
+			i++;
+			if t.len == 0 { continue; }
+			if t == "and" || t == "then" {
+				// between X and Y: X, Y numbers or bound names
+				if t == "and" && i < ts.len && find(clause, "between ") >= 0 {
+					let nx = ts[i];
+					var k2 byte[>..] = [];
+					var v2 byte[>..] = [];
+					if (is_number(nx) || bound(binds, nx, k2, v2)) && !ends_with(clause, "between") { clause.append(" and"); continue; }
+				}
+				if clause.len == 0 { continue; }
+				let before = dk;
+				if do_clause(clause, ln, tgt, dk) && top && dk > before {
+					var lines = split(tgt, '\n');
+					// remember this statement for `repeat steps`
+					var lastl byte[>..] = [];
+					var p = tgt.len - 1;
+					while p > 0 && tgt[p - 1] != '\n' { p--; }
+					// a retry wrapper line may follow: take the statement line(s) since the step began
+					lastl.append(trim(tgt[p..]));
+					if starts_with(lastl, "{ var att") {
+						var p2 = p - 1;
+						while p2 > 0 && tgt[p2 - 1] != '\n' { p2--; }
+						var both byte[>..] = [];
+						format(both, trim(tgt[p2..p]), " ", lastl);
+						lastl = copy(both);
+					}
+					format(ustmt, dk, "\t", lastl, "\n");
+					let unused = lines.len;
+				}
+				clause.clear();
+				continue;
+			}
+			if clause.len > 0 { clause.push(' '); }
+			clause.append(t);
+		}
+	}
+
+	// defines become functions
+	for row in split(dlist, '\n') {
+		let f = split(row, '\t');
+		if f.len < 3 { continue; }
+		var body byte[>..] = [];
+		var dk = 0;
+		lastcall.clear();
+		do_line(f[2], f[1], body, dk, false);
+		format(deffns, "// define ", f[0], ": ", f[2], "\nfn gold_def_", f[0], "(g Gold&, v0 Val) Val {\n\tvar v = v0;\n\tvar gp = g;\n\tvar vp = v;\n", body, "\tv\n}\n");
+	}
+	lastcall.clear();
+
+	// top-level actions
+	var nuk = 0;
+	for row in split(acts, '\n') {
+		let tab = find(row, "\t");
+		if tab < 0 { continue; }
+		let ln = row[..tab];
+		let line = row[tab + 1..];
+		var low byte[>..] = [];
+		lower_copy(line, low);
+		// repeat steps A-B until COND | N times
+		if starts_with(low, "repeat step") {
+			var l2 byte[>..] = [];
+			format_replaced(l2, low, "-", " to ");
+			var toks byte[>..] = [];
+			tokenize(l2, toks);
+			var tw byte[>..] = [];
+			for t in split(toks, '\n') { if t.len > 0 { if tw.len > 0 { tw.push(' '); } tw.append(t); } }
+			let ws = split(tw, ' ');
+			var a = -1;
+			var b = -1;
+			var k = 2;
+			if k < ws.len && is_number(ws[k]) { a = parse_int(ws[k]); b = a; k++; }
+			if k + 1 < ws.len && (ws[k] == "to" || ws[k] == "through" || ws[k] == "thru") && is_number(ws[k + 1]) { b = parse_int(ws[k + 1]); k += 2; }
+			if a < 1 || b < a || b > nuk {
+				format(errs, "error line ", ln, ": repeat needs existing steps A-B (have 1-", nuk, ")\n"); nerr++; continue;
+			}
+			var body byte[>..] = [];
+			for s in split(ustmt, '\n') {
+				let st = find(s, "\t");
+				if st < 0 { continue; }
+				let sn = parse_int(s[..st]);
+				if sn >= a && sn <= b { format(body, "\t\t", s[st + 1..], "\n"); }
+			}
+			if k < ws.len && ws[k] == "until" {
+				var rest byte[>..] = [];
+				for q in k + 1..ws.len { if rest.len > 0 { rest.push(' '); } rest.append(ws[q]); }
+				var cc byte[>..] = [];
+				if !cond_code(rest, ln, cc) { continue; }
+				format(calls, "\t{ var rep = 0; while !", cc, " && rep < 1000 {\n", body, "\t\trep++;\n\t} if rep >= 1000 { gold_fail(g, \"repeat cap 1000 hit\"); v.ok = false; } }\n");
+			} else if k + 1 < ws.len && is_number(ws[k]) && (ws[k + 1] == "times" || ws[k + 1] == "time") {
+				format(calls, "\tfor rep in ", ws[k], " {\n", body, "\t}\n");
+			} else if k < ws.len && ws[k] == "twice" {
+				format(calls, "\tfor rep in 2 {\n", body, "\t}\n");
+			} else {
+				format(errs, "error line ", ln, ": repeat needs 'until COND' or 'N times'\n"); nerr++;
+			}
+			continue;
+		}
+		// if COND, body  |  on error(s), body  |  if COND then body
+		var cond byte[>..] = [];
+		var body byte[>..] = [];
+		var isif = false;
+		if starts_with(low, "if ") || starts_with(low, "when ") || starts_with(low, "on error") || starts_with(low, "on failure") {
+			let st = if starts_with(low, "if ") { 3 } else if starts_with(low, "when ") { 5 } else { 3 };
+			let rest = low[st..];
+			var cut = find(rest, ",");
+			var skip = 1;
+			let th = find(rest, " then ");
+			if th >= 0 && (cut < 0 || th < cut) { cut = th; skip = 6; }
+			if cut < 0 {
+				// "if errors retry", "if errors sort results": condition is the first word
+				let sp = find(rest, " ");
+				if sp > 0 { cut = sp; skip = 1; }
+			}
+			if cut > 0 {
+				isif = true;
+				cond.append(trim(rest[..cut]));
+				body.append(trim(rest[cut + skip..]));
+				if starts_with(body, "then ") { body = copy(trim(body[5..])); }
+			}
+		}
+		if isif {
+			var cc byte[>..] = [];
+			if !cond_code(cond, ln, cc) { continue; }
+			var inner byte[>..] = [];
+			do_line(body, ln, inner, nuk, false);
+			format(calls, "\tif ", cc, " {\n", inner, "\t}\n");
+			continue;
+		}
+		do_line(line, ln, calls, nuk, true);
+	}
+	if nerr > 0 {
+		print(notes);
+		print(errs);
+		print("error: ", nerr, " problem(s); nothing written");
+		return 1;
+	}
+	if nuk == 0 { print("error: script has no steps"); return 1; }
+	var prog byte[>..] = [];
+	prog.append(imports);
+	prog.append(prelude);
+	prog.append("\n// ===== Gold bindings =====\n");
+	prog.append(defs);
+	prog.append("\n// ===== Gold steps =====\n");
+	prog.append(globals);
+	prog.append(steps);
+	prog.append("\n// ===== Gold sub-chains =====\n");
+	prog.append(deffns);
+	prog.append("\nfn main() {\n\tvar g = gold_new();\n\tvar v = gold_val();\n");
+	prog.append(init);
+	prog.append("\tvar gp = g;\n\tvar vp = v;\n");
+	prog.append(calls);
+	prog.append("\tgold_report(g, v);\n}\n");
+	write_file(outp, prog);
+	if notes.len > 0 { print(notes); }
+	print("ok ", nuk, " steps");
+	0
+}
+
+fn main() {
+	let n = arg_count();
+	var cmd byte[>..] = [];
+	if n > 1 { arg(1, cmd); }
+	var a2 byte[>..] = [];
+	var a3 byte[>..] = [];
+	var a4 byte[>..] = [];
+	if n > 2 { arg(2, a2); }
+	if n > 3 { arg(3, a3); }
+	if n > 4 { arg(4, a4); }
+	if cmd == "canon" && n == 3 {
+		var syn = dictionary<const byte[:], int> {};
+		for gi in SYN.len {
+			let grp = SYN[gi];
+			let bar = find(grp, "|");
+			for m in split(grp[bar + 1..], ' ') { if m.len > 0 { syn.insert(m, gi); } }
+		}
+		var sh byte[>..] = [];
+		var o byte[>..] = [];
+		phrase_shape(a2, sh, o);
+		var c byte[>..] = [];
+		canon_shape(syn, sh, c);
+		print(c);
+		exit(0);
+	}
+	var src byte[>..] = [];
+	if n > 2 && !read_file(a2, src) { print("error: cannot read ", a2); exit(2); }
+	var rc = 2;
+	if cmd == "check" && n == 3 { rc = cmd_check(src); }
+	else if cmd == "harness" && n == 5 {
+		var pre byte[>..] = [];
+		if !read_file(a3, pre) { print("error: no prelude"); exit(2); }
+		rc = cmd_harness(src, pre, a4);
+	}
+	else if cmd == "index" && n == 5 { rc = cmd_index(src, a3, a4); }
+	else if cmd == "split" && n == 4 { rc = cmd_split(src, a3); }
+	else if cmd == "compose" && n == 5 { rc = cmd_compose(src, a3, a4); }
+	else { print("usage: goldc check|harness|index|split|compose|canon ..."); }
+	exit(rc);
+}

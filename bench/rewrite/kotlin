@@ -1,0 +1,2 @@
+#!/bin/sh
+j=$1; shift; exec java -cp "$j:/home/anmire/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.20/94c1451890d164aed65d43b3db0b7ecef7c183e7/kotlin-stdlib-2.4.20.jar" "$@"

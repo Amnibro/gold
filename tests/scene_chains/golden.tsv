@@ -1,0 +1,4 @@
+c1_studio	6	22956	45908	0	0	plastic/matte/gold/glass	nodes=3 skins=0 anims=0 yup=yes docZ=3.1 glbY=3.1 png_sha=9d9cf0e2013289ec doc_sha=6785ee6744ad1e3e
+c2_env	18	22090	44184	0	0	plastic/matte/glass/matte/matte/matte/matte	nodes=3 skins=0 anims=0 yup=yes docZ=6.03 glbY=6.03 png_sha=3c609a0d32478ef7 doc_sha=c2f76d490b9a7cfa
+c3_char	13	46904	93804	8	4	plastic/plastic	nodes=9 skins=1 anims=3 yup=yes docZ=0.32 glbY=0.32 png_sha=ef14e65d39bffb4e doc_sha=7e08331d390c6f2c
+c4_cad	6	15898	31808	0		plastic/brushed/metal	nodes=1 skins=0 anims=0 yup=yes docZ=0.11 glbY=0.11 png_sha=04ec044464f23ff5 doc_sha=7b9ce3d2c5c0fe20

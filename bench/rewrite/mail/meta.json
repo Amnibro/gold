@@ -1,0 +1,26 @@
+{
+ "product": "Amni-Mail",
+ "module": "Mail rules engine: rule parsing, validation, matching and explanations",
+ "orig_lang": "Python",
+ "orig_src": [
+  "ref/rules_core.py"
+ ],
+ "gold": [
+  "he/rules_core.gold"
+ ],
+ "helium": [
+  "he/rules.he"
+ ],
+ "run_orig": "python3 ref/run.py",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 40,
+ "runs": 5,
+ "norm": [
+  [
+   "invalid regex: [^;|\"]*",
+   "invalid regex: E"
+  ]
+ ],
+ "norm_note": "11 cases with a broken user regex: both reject it, but the regex libraries word the error differently"
+}

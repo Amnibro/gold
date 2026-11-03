@@ -1,0 +1,29 @@
+import os;
+import units;
+fn num(s const byte[:]) real { if s == "inf" { return 1.0 / 0.0; } let v, ok = parse_flt(s); v }
+fn run(c0 const byte[:], c1 const byte[:], c2 const byte[:], c3 const byte[:], c4 const byte[:], out byte[>..]&) {
+	if c0 == "nf" { let d, ok = parse_int(c2); out.append(nf(num(c1), d)); }
+	else if c0 == "one" { let d, ok = parse_int(c4); out.append(one(c1, num(c2), c3, d)); }
+	else { let d, ok = parse_int(c3); out.append(dual(c1, num(c2), d)); }
+}
+fn main() {
+	var e byte[>..] = [];
+	var reps = 0;
+	if env("REPS", e) { let v, ok = parse_int(e); if ok { reps = v; } }
+	var txt byte[>..] = [];
+	read_stdin(txt);
+	var ls = split(trim(txt), '\n');
+	var out byte[>..] = [];
+	var tot = 0;
+	for r in max(1, reps) {
+		for l in ls {
+			var k = 0;
+			var c0 byte[>..] = []; var c1 byte[>..] = []; var c2 byte[>..] = []; var c3 byte[>..] = []; var c4 byte[>..] = [];
+			for x in split(l, '\t') { if k == 0 { c0.append(x); } else if k == 1 { c1.append(x); } else if k == 2 { c2.append(x); } else if k == 3 { c3.append(x); } else { c4.append(x); } k++; }
+			var o byte[>..] = [];
+			run(c0, c1, c2, c3, c4, o);
+			if reps == 0 { out.append(o); out.push('\n'); } else { tot += o.len; }
+		}
+	}
+	if reps == 0 { write_stdout(out); } else { print(tot); }
+}

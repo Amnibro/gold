@@ -1,0 +1,26 @@
+{
+ "product": "Amni-Crypt",
+ "module": "Reffelt-Shadow block cipher layer (encrypt, decrypt, shadow walk)",
+ "orig_lang": "Python (numpy)",
+ "orig_src": [
+  "ref/ref_core.py"
+ ],
+ "gold": [
+  "he/reffelt.gold"
+ ],
+ "helium": [
+  "he/reffelt.he"
+ ],
+ "run_orig": "python3 ref/run.py",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 3,
+ "runs": 3,
+ "extra": [
+  {
+   "name": "c",
+   "cmd": "c/ref_c"
+  }
+ ],
+ "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too."
+}

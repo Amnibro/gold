@@ -1,0 +1,11 @@
+build spine of 3 bones from height 1 to 1.5
+add head on neck at height 1.6
+add arm chain of length 0.6 at shoulder height 1.45
+make last bone reach for 0.5 -0.4 1.2 with ik
+add leg chain at hip height 1
+add walk swing of 25 degrees on last bone every 1 seconds
+record action "wave" turning last bone by 60 degrees
+schedule action "wave" at 1.5 seconds repeating 2 times
+set frame rate to 30
+make animation 4 seconds long
+export animation curves as "quat"

@@ -1,0 +1,19 @@
+{
+ "product": "Amni-Type",
+ "module": "Swipe-typing letter decoder (SwipeLetterDecoder)",
+ "orig_lang": "Java",
+ "orig_src": [
+  "ref/ai/amni/type/SwipeLetterDecoder.java"
+ ],
+ "gold": [
+  "he/SwipeLetterDecoder.gold"
+ ],
+ "helium": [
+  "he/swipe.he"
+ ],
+ "run_orig": "java -cp ref/out ai.amni.type.Main",
+ "run_he": "he/drive",
+ "cases": "cases.txt",
+ "reps": 300,
+ "runs": 5
+}

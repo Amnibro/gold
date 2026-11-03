@@ -1,0 +1,5 @@
+start a blank texture 32 by 32 pixels
+layer 3 octaves of noise from cell 16 seed 5
+raise texture contrast by factor 1.5
+normalize the texture to full range
+measure the texture seam

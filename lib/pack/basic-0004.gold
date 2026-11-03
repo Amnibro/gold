@@ -1,0 +1,6574 @@
+@entry df85d7baa18e018f
+kind: step
+verb: replace
+noun: results
+modifier: below
+context: query
+phrase: replace results below {t} with {k}
+phrase: set numbers less than {t} to {k}
+slot: k int
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 k=3 t=10
+expect: => i=0 r=0.0 ok=true s="replace below" errors=0 n=9 res=[3,3,10,3,121,3,25,3,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4 t=7
+expect: => i=0 r=0.0 ok=true s="replace below" errors=0 n=9 res=[4,9,4,36,100,11,4,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n { let x = g.res[q]; if x < ${t} { g.res[q] = ${k}; } }
+	out.s.clear();
+	format(out.s, "replace below");
+	out
+}
+@end
+
+@entry df97d2779c4e3b79
+kind: step
+verb: subk
+noun: results
+modifier: prime
+context: list
+phrase: subtract {k} from the prime results
+phrase: decrease only numbers that are prime by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="subk prime" errors=0 n=9 res=[0,-4,10,4,121,0,25,8,10] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="subk prime" errors=0 n=9 res=[-2,9,-15,36,100,7,1,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_prime(x) { g.res[q] = x - ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "subk prime");
+	out
+}
+@end
+
+@entry dfb5c28e2665342d
+kind: step
+verb: sign
+noun: results
+modifier: square
+context: list
+phrase: replace the perfect square results with their signs
+phrase: take the sign of only numbers that are perfect squares
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="sign square" errors=0 n=9 res=[3,-4,10,7,1,0,1,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="sign square" errors=0 n=9 res=[2,1,-15,1,1,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	}
+	out.s.clear();
+	format(out.s, "sign square");
+	out
+}
+@end
+
+@entry dfcbda9883382480
+kind: step
+verb: all
+noun: results
+modifier: overhundred
+context: query
+phrase: are all results over a hundred
+phrase: check whether every number is over a hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=false s="all overhundred" errors=0 n=9 res=[3,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="all overhundred" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for q in g.n { let x = g.res[q]; if x > 100 { c++; } }
+	out.ok = c == g.n;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "all overhundred");
+	out
+}
+@end
+
+@entry dfe2e151d02a3bce
+kind: step
+verb: index
+noun: results
+modifier: even
+context: query
+phrase: index of the first even results
+phrase: position of the first of the numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1 r=0.0 ok=true s="index even" errors=0 n=1 res=[1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="index even" errors=0 n=1 res=[0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var at = -1;
+	for q in g.n { let x = g.res[q]; if at < 0 && x % 2 == 0 { at = q; } }
+	gold_clear(g);
+	gold_push(g, at);
+	out.i = at;
+	out.s.clear();
+	format(out.s, "index even");
+	out
+}
+@end
+
+@entry e000edd7ccaf5d00
+kind: step
+verb: max
+noun: results
+modifier: zero digitsum
+context: aggregate
+phrase: maximum of digit summed zero results
+phrase: largest of the digit summed values of the numbers equal to zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="max digitsum zero" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="max digitsum zero none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 == 0 {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max digitsum zero none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max digitsum zero");
+	out
+}
+@end
+
+@entry e00d6a4ba5fb996a
+kind: step
+verb: digitsum
+noun: value
+modifier: prime
+context: scalar
+phrase: replace it with digit sums if it is prime
+phrase: take the digit sum of the value when it is prime
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value digitsum prime" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value digitsum prime" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_prime(x) { out.i = core_digit_sum(x); }
+	out.s.clear();
+	format(out.s, "value digitsum prime");
+	out
+}
+@end
+
+@entry e018ca9424b13556
+kind: step
+verb: double
+noun: results
+modifier: negative
+context: list
+phrase: double the negative results
+phrase: multiply only numbers below zero by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="double negative" errors=0 n=9 res=[3,-8,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="double negative" errors=0 n=9 res=[2,9,-30,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 0 { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double negative");
+	out
+}
+@end
+
+@entry e027e085fba41027
+kind: step
+verb: all
+noun: results
+modifier: square
+context: query
+phrase: are all results a perfect square
+phrase: check whether every number is a perfect square
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=false s="all square" errors=0 n=9 res=[3,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="all square" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for q in g.n { let x = g.res[q]; if core_is_square(x) { c++; } }
+	out.ok = c == g.n;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "all square");
+	out
+}
+@end
+
+@entry e05e7468d8e4e6e1
+kind: step
+verb: cube
+noun: value
+modifier: mult3
+context: scalar
+phrase: cube it if it is divisible by three
+phrase: raise the value to the third power when it is divisible by three
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value cube mult3" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=1728 r=0.0 ok=true s="value cube mult3" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x % 3 == 0 { out.i = x * x * x; }
+	out.s.clear();
+	format(out.s, "value cube mult3");
+	out
+}
+@end
+
+@entry e074bd07aedf2410
+kind: step
+verb: min
+noun: results
+modifier: below digitsum
+context: aggregate
+phrase: minimum of digit summed results below {t}
+phrase: smallest of the digit summed values of the numbers less than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="min digitsum below" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=1 r=0.0 ok=true s="min digitsum below" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < ${t} {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min digitsum below none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min digitsum below");
+	out
+}
+@end
+
+@entry e0af44d7b95a97e6
+kind: step
+verb: divk
+noun: results
+modifier: each
+context: list
+phrase: divide each result by {k}
+phrase: split every number by a factor of {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="divk" errors=0 n=9 res=[1,-1,3,2,40,0,8,2,4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="divk" errors=0 n=9 res=[0,2,-3,9,25,2,1,0,11] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		g.res[q] = x / ${k};
+	}
+	out.s.clear();
+	format(out.s, "divk");
+	out
+}
+@end
+
+@entry e0baa112bed6c47d
+kind: step
+verb: subk
+noun: results
+modifier: square
+context: list
+phrase: subtract {k} from the perfect square results
+phrase: decrease only numbers that are perfect squares by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="subk square" errors=0 n=9 res=[3,-4,10,7,118,-3,22,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="subk square" errors=0 n=9 res=[2,5,-15,32,96,11,5,-3,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = x - ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "subk square");
+	out
+}
+@end
+
+@entry e0d9569f85ecc680
+kind: step
+verb: double
+noun: results
+modifier: twodigit
+context: list
+phrase: double the two digit results
+phrase: multiply only numbers with two digits by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="double twodigit" errors=0 n=9 res=[3,-4,20,7,121,0,50,8,26] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="double twodigit" errors=0 n=9 res=[2,9,-30,72,100,22,5,1,88] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_abs_val(x) >= 10 && core_abs_val(x) <= 99 { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double twodigit");
+	out
+}
+@end
+
+@entry e0fba9a0e6f22986
+kind: step
+verb: min
+noun: results
+modifier: mult3
+context: aggregate
+phrase: minimum of results divisible by three
+phrase: smallest of the numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min mult3" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=-15 r=0.0 ok=true s="min mult3" errors=0 n=1 res=[-15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 3 == 0 {
+			let x = x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min mult3 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min mult3");
+	out
+}
+@end
+
+@entry e109f42e816a3c41
+kind: step
+verb: average
+noun: results
+modifier: all negate
+context: aggregate
+phrase: average of negated results
+phrase: mean of the negated values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=-20 r=-20.333333333333332 ok=true s="average negate" errors=0 n=1 res=[-20] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=-21 r=-21.444444444444443 ok=true s="average negate" errors=0 n=1 res=[-21] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = -x0;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average negate none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average negate");
+	out
+}
+@end
+
+@entry e11ff3dfd35ef61d
+kind: step
+verb: square
+noun: results
+modifier: nonzero
+context: list
+phrase: square the nonzero results
+phrase: raise only numbers that are not zero to the second power
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="square nonzero" errors=0 n=9 res=[9,16,100,49,14641,0,625,64,169] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="square nonzero" errors=0 n=9 res=[4,81,225,1296,10000,121,25,1,1936] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x != 0 { g.res[q] = x * x; }
+	}
+	out.s.clear();
+	format(out.s, "square nonzero");
+	out
+}
+@end
+
+@entry e1202d16dcca7a50
+kind: step
+verb: digitsum
+noun: value
+modifier: mult3
+context: scalar
+phrase: replace it with digit sums if it is divisible by three
+phrase: take the digit sum of the value when it is divisible by three
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value digitsum mult3" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=3 r=0.0 ok=true s="value digitsum mult3" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x % 3 == 0 { out.i = core_digit_sum(x); }
+	out.s.clear();
+	format(out.s, "value digitsum mult3");
+	out
+}
+@end
+
+@entry e12a2c102dc7fe16
+kind: step
+verb: average
+noun: results
+modifier: negative abs
+context: aggregate
+phrase: average of absolute negative results
+phrase: mean of the absolute values of the numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=4.0 ok=true s="average abs negative" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=15 r=15.0 ok=true s="average abs negative" errors=0 n=1 res=[15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 0 {
+			let x = core_abs_val(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average abs negative none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average abs negative");
+	out
+}
+@end
+
+@entry e155a7a6771c22e4
+kind: step
+verb: last
+noun: results
+modifier: all square
+context: aggregate
+phrase: last of squared results
+phrase: latest of the squared values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=169 r=0.0 ok=true s="last square" errors=0 n=1 res=[169] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1936 r=0.0 ok=true s="last square" errors=0 n=1 res=[1936] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0 * x0;
+			acc = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "last square none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "last square");
+	out
+}
+@end
+
+@entry e15c363b8fbc1e69
+kind: step
+verb: index
+noun: results
+modifier: atleast
+context: query
+phrase: index of the first results at least {t}
+phrase: position of the first of the numbers no smaller than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=2 r=0.0 ok=true s="index atleast" errors=0 n=1 res=[2] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=1 r=0.0 ok=true s="index atleast" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var at = -1;
+	for q in g.n { let x = g.res[q]; if at < 0 && x >= ${t} { at = q; } }
+	gold_clear(g);
+	gold_push(g, at);
+	out.i = at;
+	out.s.clear();
+	format(out.s, "index atleast");
+	out
+}
+@end
+
+@entry e1823183578c5e57
+kind: step
+verb: firstk
+noun: results
+modifier: under10
+context: query
+phrase: take the first {k} results under ten
+phrase: keep the first {k} of the numbers less than ten
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="firstk under10" errors=0 n=3 res=[3,-4,7] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="firstk under10" errors=0 n=4 res=[2,9,-15,5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n { let x = g.res[q]; if m < ${k} && x < 10 { g.res[m] = x; m++; } }
+	g.n = m;
+	out.s.clear();
+	format(out.s, "firstk under10");
+	out
+}
+@end
+
+@entry e199e46459c26ff2
+kind: step
+verb: digitsum
+noun: results
+modifier: each
+context: list
+phrase: replace each result with digit sums
+phrase: take the digit sum of every number
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="digitsum" errors=0 n=9 res=[3,4,1,7,4,0,7,8,4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="digitsum" errors=0 n=9 res=[2,9,6,9,1,2,5,1,8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		g.res[q] = core_digit_sum(x);
+	}
+	out.s.clear();
+	format(out.s, "digitsum");
+	out
+}
+@end
+
+@entry e1e1370097f0e1bc
+kind: step
+verb: sign
+noun: results
+modifier: even
+context: list
+phrase: replace the even results with their signs
+phrase: take the sign of only numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="sign even" errors=0 n=9 res=[3,-1,1,7,121,0,25,1,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="sign even" errors=0 n=9 res=[1,9,-15,1,1,11,5,1,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 2 == 0 { g.res[q] = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	}
+	out.s.clear();
+	format(out.s, "sign even");
+	out
+}
+@end
+
+@entry e1f4b2e24f0f7f08
+kind: step
+verb: max
+noun: results
+modifier: odd abs
+context: aggregate
+phrase: maximum of absolute odd results
+phrase: largest of the absolute values of the numbers that are odd
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=121 r=0.0 ok=true s="max abs odd" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=15 r=0.0 ok=true s="max abs odd" errors=0 n=1 res=[15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 != 0 {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max abs odd none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max abs odd");
+	out
+}
+@end
+
+@entry e27f831fb58fb7b4
+kind: step
+verb: halve
+noun: results
+modifier: mult10
+context: list
+phrase: halve the results divisible by ten
+phrase: divide only numbers that are multiples of ten by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="halve mult10" errors=0 n=9 res=[3,-4,5,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="halve mult10" errors=0 n=9 res=[2,9,-15,36,50,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 10 == 0 { g.res[q] = x / 2; }
+	}
+	out.s.clear();
+	format(out.s, "halve mult10");
+	out
+}
+@end
+
+@entry e2e516d31a377780
+kind: step
+verb: revdigits
+noun: value
+modifier: palindrome
+context: scalar
+phrase: reverse the digits of it if it is a palindrome
+phrase: mirror the digits of the value when it is a palindrome
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value revdigits palindrome" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value revdigits palindrome" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_palindrome(x) { out.i = core_reverse_digits(x); }
+	out.s.clear();
+	format(out.s, "value revdigits palindrome");
+	out
+}
+@end
+
+@entry e33d479acd0b1027
+kind: step
+verb: capk
+noun: results
+modifier: mult5
+context: list
+phrase: cap the results divisible by five at {k}
+phrase: limit only numbers that are multiples of five to at most {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="capk mult5" errors=0 n=9 res=[3,-4,3,7,121,0,3,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="capk mult5" errors=0 n=9 res=[2,9,-15,36,4,11,4,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 5 == 0 { g.res[q] = if x > ${k} { ${k} } else { x }; }
+	}
+	out.s.clear();
+	format(out.s, "capk mult5");
+	out
+}
+@end
+
+@entry e36367440cede881
+kind: step
+verb: capitalize
+noun: text
+modifier: capitalize
+context: text
+phrase: capitalize each word
+phrase: title case the text
+test: text="the quick brown fox"
+expect: => i=0 r=0.0 ok=true s="The Quick Brown Fox" errors=0 n=0 res=[] cache=0 hits=0
+test: text="hello world"
+expect: => i=0 r=0.0 ok=true s="Hello World" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var prev = ' ';
+	for q in out.s.len { let b = out.s[q]; if prev == ' ' && b >= 'a' && b <= 'z' { out.s[q] = b - 32; } prev = b; }
+	out.i = 0;
+	out
+}
+@end
+
+@entry e36a40cac6cf54b6
+kind: step
+verb: negate
+noun: value
+modifier: palindrome
+context: scalar
+phrase: negate it if it is a palindrome
+phrase: flip the sign of the value when it is a palindrome
+test: input=7
+expect: => i=-7 r=0.0 ok=true s="value negate palindrome" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value negate palindrome" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_palindrome(x) { out.i = -x; }
+	out.s.clear();
+	format(out.s, "value negate palindrome");
+	out
+}
+@end
+
+@entry e3835232df41d48e
+kind: step
+verb: index
+noun: results
+modifier: negative
+context: query
+phrase: index of the first negative results
+phrase: position of the first of the numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1 r=0.0 ok=true s="index negative" errors=0 n=1 res=[1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=2 r=0.0 ok=true s="index negative" errors=0 n=1 res=[2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var at = -1;
+	for q in g.n { let x = g.res[q]; if at < 0 && x < 0 { at = q; } }
+	gold_clear(g);
+	gold_push(g, at);
+	out.i = at;
+	out.s.clear();
+	format(out.s, "index negative");
+	out
+}
+@end
+
+@entry e3a3a4bac166d080
+kind: step
+verb: product
+noun: results
+modifier: mult10
+context: aggregate
+phrase: product of results divisible by ten
+phrase: multiply together the numbers that are multiples of ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="product mult10" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=100 r=0.0 ok=true s="product mult10" errors=0 n=1 res=[100] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 10 == 0 {
+			let x = x0;
+			if cnt == 0 { acc = x; } else { acc *= x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { acc = 1; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "product mult10");
+	out
+}
+@end
+
+@entry e3af5fe56e33da0c
+kind: step
+verb: min
+noun: results
+modifier: all square
+context: aggregate
+phrase: minimum of squared results
+phrase: smallest of the squared values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min square" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1 r=0.0 ok=true s="min square" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min square none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min square");
+	out
+}
+@end
+
+@entry e3b42a6037850af3
+kind: step
+verb: divk
+noun: results
+modifier: square
+context: list
+phrase: divide the perfect square results by {k}
+phrase: split only numbers that are perfect squares by a factor of {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="divk square" errors=0 n=9 res=[3,-4,10,7,40,0,8,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="divk square" errors=0 n=9 res=[2,2,-15,9,25,11,5,0,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = x / ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "divk square");
+	out
+}
+@end
+
+@entry e3e855d448f5e476
+kind: step
+verb: remove
+noun: results
+modifier: twodigit
+context: filter
+phrase: remove two digit results
+phrase: throw away numbers with two digits
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="removed twodigit" errors=0 n=6 res=[3,-4,7,121,0,8] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="removed twodigit" errors=0 n=5 res=[2,9,100,5,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if !(core_abs_val(x) >= 10 && core_abs_val(x) <= 99) { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "removed twodigit");
+	out
+}
+@end
+
+@entry e3f1094b10e72a59
+kind: step
+verb: sum
+noun: results
+modifier: even digitsum
+context: aggregate
+phrase: sum of digit summed even results
+phrase: add up the digit summed values of the numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=13 r=0.0 ok=true s="sum digitsum even" errors=0 n=1 res=[13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=20 r=0.0 ok=true s="sum digitsum even" errors=0 n=1 res=[20] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 == 0 {
+			let x = core_digit_sum(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum digitsum even");
+	out
+}
+@end
+
+@entry e4459b08ac12711b
+kind: step
+verb: last
+noun: results
+modifier: atmost
+context: aggregate
+phrase: last of results at most {t}
+phrase: latest of the numbers no larger than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=8 r=0.0 ok=true s="last atmost" errors=0 n=1 res=[8] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=1 r=0.0 ok=true s="last atmost" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 <= ${t} {
+			let x = x0;
+			acc = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "last atmost none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "last atmost");
+	out
+}
+@end
+
+@entry e47dbde5272b9098
+kind: step
+verb: median
+noun: results
+modifier: square
+context: aggregate
+phrase: median of perfect square results
+phrase: middle value of the numbers that are perfect squares
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=25 r=25.0 ok=true s="median square" errors=0 n=1 res=[25] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=9 r=22.5 ok=true s="median square" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_square(x0) {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median square none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median square");
+	out
+}
+@end
+
+@entry e4b29f005e2234fb
+kind: step
+verb: min
+noun: results
+modifier: prime double
+context: aggregate
+phrase: minimum of doubled prime results
+phrase: smallest of the doubled values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=6 r=0.0 ok=true s="min double prime" errors=0 n=1 res=[6] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=4 r=0.0 ok=true s="min double prime" errors=0 n=1 res=[4] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = x0 * 2;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min double prime none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min double prime");
+	out
+}
+@end
+
+@entry e4daacb2494df95d
+kind: step
+verb: average
+noun: results
+modifier: under10
+context: aggregate
+phrase: average of results under ten
+phrase: mean of the numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=2 r=2.8 ok=true s="average under10" errors=0 n=1 res=[2] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.4 ok=true s="average under10" errors=0 n=1 res=[0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 10 {
+			let x = x0;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average under10 none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average under10");
+	out
+}
+@end
+
+@entry e5256f4269aa436d
+kind: step
+verb: remove
+noun: results
+modifier: under10
+context: filter
+phrase: remove results under ten
+phrase: throw away numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="removed under10" errors=0 n=4 res=[10,121,25,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="removed under10" errors=0 n=4 res=[36,100,11,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if !(x < 10) { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "removed under10");
+	out
+}
+@end
+
+@entry e55201ac42b2e27a
+kind: step
+verb: dec
+noun: results
+modifier: divby
+context: list
+phrase: decrement the results divisible by {t}
+phrase: subtract one from only numbers that are multiples of {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="dec divby" errors=0 n=9 res=[3,-4,9,7,121,-1,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="dec divby" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if ${t} != 0 && x % ${t} == 0 { g.res[q] = x - 1; }
+	}
+	out.s.clear();
+	format(out.s, "dec divby");
+	out
+}
+@end
+
+@entry e557e04f3a2f57f9
+kind: step
+verb: min
+noun: results
+modifier: between digitsum
+context: aggregate
+phrase: minimum of digit summed results between {lo} and {hi}
+phrase: smallest of the digit summed values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=0 r=0.0 ok=true s="min digitsum between" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=2 r=0.0 ok=true s="min digitsum between" errors=0 n=1 res=[2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min digitsum between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min digitsum between");
+	out
+}
+@end
+
+@entry e58cf8fb0f0251d1
+kind: step
+verb: capk
+noun: results
+modifier: palindrome
+context: list
+phrase: cap the palindromic results at {k}
+phrase: limit only numbers that read the same reversed to at most {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="capk palindrome" errors=0 n=9 res=[3,-4,10,3,3,0,25,3,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="capk palindrome" errors=0 n=9 res=[2,4,-15,36,100,4,4,1,4] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_palindrome(x) { g.res[q] = if x > ${k} { ${k} } else { x }; }
+	}
+	out.s.clear();
+	format(out.s, "capk palindrome");
+	out
+}
+@end
+
+@entry e5a49de9a4901964
+kind: step
+verb: average
+noun: results
+modifier: prime cube
+context: aggregate
+phrase: average of cubed prime results
+phrase: mean of the cubed values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=855 r=855.6666666666666 ok=true s="average cube prime" errors=0 n=1 res=[855] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=488 r=488.0 ok=true s="average cube prime" errors=0 n=1 res=[488] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = x0 * x0 * x0;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average cube prime none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average cube prime");
+	out
+}
+@end
+
+@entry e5c0b5038efa4a9e
+kind: step
+verb: subk
+noun: results
+modifier: twodigit
+context: list
+phrase: subtract {k} from the two digit results
+phrase: decrease only numbers with two digits by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="subk twodigit" errors=0 n=9 res=[3,-4,7,7,121,0,22,8,10] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="subk twodigit" errors=0 n=9 res=[2,9,-19,32,100,7,5,1,40] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_abs_val(x) >= 10 && core_abs_val(x) <= 99 { g.res[q] = x - ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "subk twodigit");
+	out
+}
+@end
+
+@entry e5f87c524932e66a
+kind: step
+verb: digitsum
+noun: results
+modifier: negative
+context: list
+phrase: replace the negative results with digit sums
+phrase: take the digit sum of only numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="digitsum negative" errors=0 n=9 res=[3,4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="digitsum negative" errors=0 n=9 res=[2,9,6,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 0 { g.res[q] = core_digit_sum(x); }
+	}
+	out.s.clear();
+	format(out.s, "digitsum negative");
+	out
+}
+@end
+
+@entry e68955a335390905
+kind: step
+verb: sum
+noun: results
+modifier: below abs
+context: aggregate
+phrase: sum of absolute results below {t}
+phrase: add up the absolute values of the numbers less than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=22 r=0.0 ok=true s="sum abs below" errors=0 n=1 res=[22] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=23 r=0.0 ok=true s="sum abs below" errors=0 n=1 res=[23] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < ${t} {
+			let x = core_abs_val(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum abs below");
+	out
+}
+@end
+
+@entry e6c580871455ff88
+kind: step
+verb: min
+noun: results
+modifier: all abs
+context: aggregate
+phrase: minimum of absolute results
+phrase: smallest of the absolute values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min abs" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1 r=0.0 ok=true s="min abs" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min abs none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min abs");
+	out
+}
+@end
+
+@entry e71f5723fe266eec
+kind: step
+verb: square
+noun: results
+modifier: atmost
+context: list
+phrase: square the results at most {t}
+phrase: raise only numbers no larger than {t} to the second power
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="square atmost" errors=0 n=9 res=[9,16,100,49,121,0,25,64,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="square atmost" errors=0 n=9 res=[4,9,225,36,100,11,25,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x <= ${t} { g.res[q] = x * x; }
+	}
+	out.s.clear();
+	format(out.s, "square atmost");
+	out
+}
+@end
+
+@entry e72aa28290fe169b
+kind: step
+verb: range
+noun: results
+modifier: all revdigits
+context: aggregate
+phrase: range of digit reversed results
+phrase: spread of the digit reversed values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=121 r=0.0 ok=true s="range revdigits" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=62 r=0.0 ok=true s="range revdigits" errors=0 n=1 res=[62] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = core_reverse_digits(x0);
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "range revdigits none"); return out; }
+	var mx = tmp[0];
+	var mn = tmp[0];
+	for a in cnt { if tmp[a] > mx { mx = tmp[a]; } if tmp[a] < mn { mn = tmp[a]; } }
+	acc = mx - mn;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "range revdigits");
+	out
+}
+@end
+
+@entry e72da2053755f477
+kind: step
+verb: count
+noun: records
+modifier: ktagcount
+context: records
+phrase: count records tagged {w}
+phrase: how many records have tag {w}
+slot: w text
+test: recs=1:2.5:ab,2:0.5:cd,3:7.25:ab w="ab"
+expect: => i=2 r=0.0 ok=true s="ktagcount" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{1 2.5 ab},{2 0.5 cd},{3 7.25 ab}]
+test: recs=4:1.0:x,5:3.5:y w="y"
+expect: => i=1 r=0.0 ok=true s="ktagcount" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{4 1.0 x},{5 3.5 y}]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for q in g.kn { if g.kl[q].tag == ${w} { c++; } }
+	out.i = c;
+	out.s.clear();
+	format(out.s, "ktagcount");
+	out
+}
+@end
+
+@entry e77949fe05e06655
+kind: step
+verb: replace
+noun: results
+modifier: prime
+context: query
+phrase: replace prime results with {k}
+phrase: set numbers that are prime to {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="replace prime" errors=0 n=9 res=[3,-4,10,3,121,0,25,8,3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="replace prime" errors=0 n=9 res=[4,9,-15,36,100,4,4,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n { let x = g.res[q]; if core_is_prime(x) { g.res[q] = ${k}; } }
+	out.s.clear();
+	format(out.s, "replace prime");
+	out
+}
+@end
+
+@entry e781aa2aedeb74d2
+kind: step
+verb: sum
+noun: results
+modifier: nonzero cube
+context: aggregate
+phrase: sum of cubed nonzero results
+phrase: add up the cubed values of the numbers that are not zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1791201 r=0.0 ok=true s="sum cube nonzero" errors=0 n=1 res=[1791201] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1130659 r=0.0 ok=true s="sum cube nonzero" errors=0 n=1 res=[1130659] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 != 0 {
+			let x = x0 * x0 * x0;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum cube nonzero");
+	out
+}
+@end
+
+@entry e7ad20c3e57afdfb
+kind: step
+verb: min
+noun: results
+modifier: overhundred cube
+context: aggregate
+phrase: minimum of cubed results over a hundred
+phrase: smallest of the cubed values of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1771561 r=0.0 ok=true s="min cube overhundred" errors=0 n=1 res=[1771561] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="min cube overhundred none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 100 {
+			let x = x0 * x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min cube overhundred none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min cube overhundred");
+	out
+}
+@end
+
+@entry e7cc076e896f17a0
+kind: pred
+verb: test
+noun: number
+modifier: under10
+context: predicate
+phrase: small
+phrase: under ten
+test: arg=3,-4,10,121
+expect: true
+expect: true
+expect: false
+expect: false
+test: arg=7,0,25
+expect: true
+expect: true
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let x = n;
+	let r = x < 10;
+	r
+}
+@end
+
+@entry e7d9b8870ad677ff
+kind: step
+verb: normalize
+noun: vectors
+modifier: vnorm
+context: vectors
+phrase: normalize the vectors
+phrase: make each vector unit length
+test: vecs=1:2:2,3:4:0,0:0:5
+expect: => i=0 r=0.0 ok=true s="vnorm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => vecs=[(0.3333333333333333 0.6666666666666666 0.6666666666666666),(0.6 0.8 0.0),(0.0 0.0 1.0)]
+test: vecs=1:0:0,0:1:0,2:2:1
+expect: => i=0 r=0.0 ok=true s="vnorm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => vecs=[(1.0 0.0 0.0),(0.0 1.0 0.0),(0.6666666666666666 0.6666666666666666 0.3333333333333333)]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.vn { if gold_vlen(g.vl[q]) == 0.0 { gold_fail(g, "zero vector"); out.ok = false; out.s.clear(); format(out.s, "vnorm zero"); return out; } }
+	for q in g.vn { let l = gold_vlen(g.vl[q]); g.vl[q] = gold_v3(g.vl[q].x / l, g.vl[q].y / l, g.vl[q].z / l); }
+	out.s.clear();
+	format(out.s, "vnorm");
+	out
+}
+@end
+
+@entry e82fd6a472cd70ff
+kind: step
+verb: dec
+noun: results
+modifier: mult3
+context: list
+phrase: decrement the results divisible by three
+phrase: subtract one from only numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="dec mult3" errors=0 n=9 res=[2,-4,10,7,121,-1,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="dec mult3" errors=0 n=9 res=[2,8,-16,35,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 3 == 0 { g.res[q] = x - 1; }
+	}
+	out.s.clear();
+	format(out.s, "dec mult3");
+	out
+}
+@end
+
+@entry e858b681b8224f29
+kind: step
+verb: digitsum
+noun: value
+modifier: below
+context: scalar
+phrase: replace it with digit sums if it is below {t}
+phrase: take the digit sum of the value when it is below {t}
+slot: t int
+test: input=7 t=10
+expect: => i=7 r=0.0 ok=true s="value digitsum below" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12 t=7
+expect: => i=12 r=0.0 ok=true s="value digitsum below" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x < ${t} { out.i = core_digit_sum(x); }
+	out.s.clear();
+	format(out.s, "value digitsum below");
+	out
+}
+@end
+
+@entry e86f84d0cf614242
+kind: step
+verb: max
+noun: results
+modifier: mult3
+context: aggregate
+phrase: maximum of results divisible by three
+phrase: largest of the numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=3 r=0.0 ok=true s="max mult3" errors=0 n=1 res=[3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=36 r=0.0 ok=true s="max mult3" errors=0 n=1 res=[36] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 3 == 0 {
+			let x = x0;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max mult3 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max mult3");
+	out
+}
+@end
+
+@entry e876dd9130f3dd4d
+kind: step
+verb: average
+noun: results
+modifier: overhundred double
+context: aggregate
+phrase: average of doubled results over a hundred
+phrase: mean of the doubled values of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=242 r=242.0 ok=true s="average double overhundred" errors=0 n=1 res=[242] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="average double overhundred none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 100 {
+			let x = x0 * 2;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average double overhundred none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average double overhundred");
+	out
+}
+@end
+
+@entry e879aa86e39729a2
+kind: step
+verb: check
+noun: value
+modifier: atleast
+context: scalar
+phrase: check if it is at least {t}
+phrase: is the value at least {t}
+slot: t int
+test: input=7 t=10
+expect: => i=0 r=0.0 ok=false s="is atleast" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12 t=7
+expect: => i=1 r=0.0 ok=true s="is atleast" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = x >= ${t};
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is atleast");
+	out
+}
+@end
+
+@entry e8a6de07d308c81a
+kind: step
+verb: halve
+noun: results
+modifier: atmost
+context: list
+phrase: halve the results at most {t}
+phrase: divide only numbers no larger than {t} by two
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="halve atmost" errors=0 n=9 res=[1,-2,5,3,121,0,25,4,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="halve atmost" errors=0 n=9 res=[1,9,-7,36,100,11,2,0,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x <= ${t} { g.res[q] = x / 2; }
+	}
+	out.s.clear();
+	format(out.s, "halve atmost");
+	out
+}
+@end
+
+@entry e8ba0b54c7fadf30
+kind: step
+verb: min
+noun: results
+modifier: between double
+context: aggregate
+phrase: minimum of doubled results between {lo} and {hi}
+phrase: smallest of the doubled values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=0 r=0.0 ok=true s="min double between" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=10 r=0.0 ok=true s="min double between" errors=0 n=1 res=[10] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = x0 * 2;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min double between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min double between");
+	out
+}
+@end
+
+@entry e910c16726bab843
+kind: step
+verb: min
+noun: results
+modifier: above square
+context: aggregate
+phrase: minimum of squared results above {t}
+phrase: smallest of the squared values of the numbers greater than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=169 r=0.0 ok=true s="min square above" errors=0 n=1 res=[169] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=81 r=0.0 ok=true s="min square above" errors=0 n=1 res=[81] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > ${t} {
+			let x = x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min square above none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min square above");
+	out
+}
+@end
+
+@entry e9802491db6a9da3
+kind: step
+verb: square
+noun: value
+modifier: plain
+context: scalar
+phrase: square it
+phrase: raise the value to the second power
+test: input=7
+expect: => i=49 r=0.0 ok=true s="value square" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=144 r=0.0 ok=true s="value square" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.i = x * x;
+	out.s.clear();
+	format(out.s, "value square");
+	out
+}
+@end
+
+@entry e9b670034721fc66
+kind: step
+verb: addk
+noun: results
+modifier: zero
+context: list
+phrase: add {k} to the zero results
+phrase: increase only numbers equal to zero by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="addk zero" errors=0 n=9 res=[3,-4,10,7,121,3,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="addk zero" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x == 0 { g.res[q] = x + ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "addk zero");
+	out
+}
+@end
+
+@entry ea2548902726137d
+kind: step
+verb: keep
+noun: results
+modifier: odd positions
+context: list
+phrase: keep results at odd positions
+phrase: take every second number
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="oddpos" errors=0 n=4 res=[-4,7,0,8] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="oddpos" errors=0 n=4 res=[9,36,11,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	var q = 1;
+	while q < g.n { g.res[m] = g.res[q]; m++; q += 2; }
+	g.n = m;
+	out.s.clear();
+	format(out.s, "oddpos");
+	out
+}
+@end
+
+@entry ea2a1f39b46f40e9
+kind: step
+verb: dec
+noun: results
+modifier: zero
+context: list
+phrase: decrement the zero results
+phrase: subtract one from only numbers equal to zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="dec zero" errors=0 n=9 res=[3,-4,10,7,121,-1,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="dec zero" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x == 0 { g.res[q] = x - 1; }
+	}
+	out.s.clear();
+	format(out.s, "dec zero");
+	out
+}
+@end
+
+@entry ea2d1279e4c91533
+kind: step
+verb: range
+noun: results
+modifier: single
+context: aggregate
+phrase: range of single digit results
+phrase: spread of the numbers with one digit
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=12 r=0.0 ok=true s="range single" errors=0 n=1 res=[12] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=8 r=0.0 ok=true s="range single" errors=0 n=1 res=[8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > -10 && x0 < 10 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "range single none"); return out; }
+	var mx = tmp[0];
+	var mn = tmp[0];
+	for a in cnt { if tmp[a] > mx { mx = tmp[a]; } if tmp[a] < mn { mn = tmp[a]; } }
+	acc = mx - mn;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "range single");
+	out
+}
+@end
+
+@entry ea34a98c5bb836ea
+kind: step
+verb: keep
+noun: results
+modifier: square
+context: filter
+phrase: keep perfect square results
+phrase: keep only numbers that are perfect squares
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="kept square" errors=0 n=3 res=[121,0,25] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="kept square" errors=0 n=4 res=[9,36,100,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "kept square");
+	out
+}
+@end
+
+@entry ea45440b8dad1e05
+kind: step
+verb: revdigits
+noun: results
+modifier: square
+context: list
+phrase: reverse the digits of the perfect square results
+phrase: mirror the digits of only numbers that are perfect squares
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="revdigits square" errors=0 n=9 res=[3,-4,10,7,121,0,52,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="revdigits square" errors=0 n=9 res=[2,9,-15,63,1,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = core_reverse_digits(x); }
+	}
+	out.s.clear();
+	format(out.s, "revdigits square");
+	out
+}
+@end
+
+@entry ea7c3daa7cc1888f
+kind: step
+verb: floork
+noun: results
+modifier: square
+context: list
+phrase: raise the perfect square results to at least {k}
+phrase: floor only numbers that are perfect squares at {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="floork square" errors=0 n=9 res=[3,-4,10,7,121,3,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="floork square" errors=0 n=9 res=[2,9,-15,36,100,11,5,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = if x < ${k} { ${k} } else { x }; }
+	}
+	out.s.clear();
+	format(out.s, "floork square");
+	out
+}
+@end
+
+@entry ea945c955f4a60d6
+kind: step
+verb: quadruple
+noun: results
+modifier: under10
+context: list
+phrase: quadruple the results under ten
+phrase: multiply only numbers less than ten by four
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="quadruple under10" errors=0 n=9 res=[12,-16,10,28,121,0,25,32,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="quadruple under10" errors=0 n=9 res=[8,36,-60,36,100,11,20,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 10 { g.res[q] = x * 4; }
+	}
+	out.s.clear();
+	format(out.s, "quadruple under10");
+	out
+}
+@end
+
+@entry ead1425871d9f9b9
+kind: step
+verb: max
+noun: results
+modifier: mult5 double
+context: aggregate
+phrase: maximum of doubled results divisible by five
+phrase: largest of the doubled values of the numbers that are multiples of five
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=50 r=0.0 ok=true s="max double mult5" errors=0 n=1 res=[50] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=200 r=0.0 ok=true s="max double mult5" errors=0 n=1 res=[200] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 5 == 0 {
+			let x = x0 * 2;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max double mult5 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max double mult5");
+	out
+}
+@end
+
+@entry eae3755a64f91cfa
+kind: step
+verb: double
+noun: results
+modifier: under10
+context: list
+phrase: double the results under ten
+phrase: multiply only numbers less than ten by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="double under10" errors=0 n=9 res=[6,-8,10,14,121,0,25,16,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="double under10" errors=0 n=9 res=[4,18,-30,36,100,11,10,2,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 10 { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double under10");
+	out
+}
+@end
+
+@entry eb5a7aa483be76e8
+kind: step
+verb: double
+noun: results
+modifier: square
+context: list
+phrase: double the perfect square results
+phrase: multiply only numbers that are perfect squares by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="double square" errors=0 n=9 res=[3,-4,10,7,242,0,50,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="double square" errors=0 n=9 res=[2,18,-15,72,200,11,5,2,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_square(x) { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double square");
+	out
+}
+@end
+
+@entry eb7fed7e7ed0ccaf
+kind: step
+verb: median
+noun: results
+modifier: all digitsum
+context: aggregate
+phrase: median of digit summed results
+phrase: middle value of the digit summed values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=4.0 ok=true s="median digitsum" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=5 r=5.0 ok=true s="median digitsum" errors=0 n=1 res=[5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = core_digit_sum(x0);
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median digitsum none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median digitsum");
+	out
+}
+@end
+
+@entry eb88f283193848ee
+kind: step
+verb: halve
+noun: results
+modifier: divby
+context: list
+phrase: halve the results divisible by {t}
+phrase: divide only numbers that are multiples of {t} by two
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="halve divby" errors=0 n=9 res=[3,-4,5,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="halve divby" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if ${t} != 0 && x % ${t} == 0 { g.res[q] = x / 2; }
+	}
+	out.s.clear();
+	format(out.s, "halve divby");
+	out
+}
+@end
+
+@entry ebcfbb32f85070cf
+kind: step
+verb: max
+noun: results
+modifier: palindrome abs
+context: aggregate
+phrase: maximum of absolute palindromic results
+phrase: largest of the absolute values of the numbers that read the same reversed
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=121 r=0.0 ok=true s="max abs palindrome" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=44 r=0.0 ok=true s="max abs palindrome" errors=0 n=1 res=[44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_palindrome(x0) {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max abs palindrome none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max abs palindrome");
+	out
+}
+@end
+
+@entry ec0020b3a614fe0f
+kind: step
+verb: tenfold
+noun: results
+modifier: positive
+context: list
+phrase: multiply the positive results by ten
+phrase: scale only numbers above zero by ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="tenfold positive" errors=0 n=9 res=[30,-4,100,70,1210,0,250,80,130] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="tenfold positive" errors=0 n=9 res=[20,90,-15,360,1000,110,50,10,440] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > 0 { g.res[q] = x * 10; }
+	}
+	out.s.clear();
+	format(out.s, "tenfold positive");
+	out
+}
+@end
+
+@entry ec62c7f2ae918778
+kind: step
+verb: digitsum
+noun: results
+modifier: atmost
+context: list
+phrase: replace the results at most {t} with digit sums
+phrase: take the digit sum of only numbers no larger than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="digitsum atmost" errors=0 n=9 res=[3,4,1,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="digitsum atmost" errors=0 n=9 res=[2,9,6,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x <= ${t} { g.res[q] = core_digit_sum(x); }
+	}
+	out.s.clear();
+	format(out.s, "digitsum atmost");
+	out
+}
+@end
+
+@entry eca706d09d5392ff
+kind: step
+verb: last
+noun: results
+modifier: between
+context: aggregate
+phrase: last of results between {lo} and {hi}
+phrase: latest of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=13 r=0.0 ok=true s="last between" errors=0 n=1 res=[13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=5 r=0.0 ok=true s="last between" errors=0 n=1 res=[5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = x0;
+			acc = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "last between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "last between");
+	out
+}
+@end
+
+@entry ece79aadcb8b0d78
+kind: step
+verb: sum
+noun: results
+modifier: all double
+context: aggregate
+phrase: sum of doubled results
+phrase: add up the doubled values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=366 r=0.0 ok=true s="sum double" errors=0 n=1 res=[366] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=386 r=0.0 ok=true s="sum double" errors=0 n=1 res=[386] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0 * 2;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum double");
+	out
+}
+@end
+
+@entry ed0ba7c4c1d4d875
+kind: step
+verb: average
+noun: results
+modifier: prime digitsum
+context: aggregate
+phrase: average of digit summed prime results
+phrase: mean of the digit summed values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=4.666666666666667 ok=true s="average digitsum prime" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=3 r=3.0 ok=true s="average digitsum prime" errors=0 n=1 res=[3] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = core_digit_sum(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average digitsum prime none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average digitsum prime");
+	out
+}
+@end
+
+@entry ed192d01e1064418
+kind: step
+verb: double
+noun: value
+modifier: prime
+context: scalar
+phrase: double it if it is prime
+phrase: multiply the value by two when it is prime
+test: input=7
+expect: => i=14 r=0.0 ok=true s="value double prime" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value double prime" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_prime(x) { out.i = x * 2; }
+	out.s.clear();
+	format(out.s, "value double prime");
+	out
+}
+@end
+
+@entry ed1c3ab92708a906
+kind: step
+verb: triple
+noun: value
+modifier: nonzero
+context: scalar
+phrase: triple it if it is nonzero
+phrase: multiply the value by three when it is nonzero
+test: input=7
+expect: => i=21 r=0.0 ok=true s="value triple nonzero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=36 r=0.0 ok=true s="value triple nonzero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x != 0 { out.i = x * 3; }
+	out.s.clear();
+	format(out.s, "value triple nonzero");
+	out
+}
+@end
+
+@entry ed6795874c05606b
+kind: step
+verb: halve
+noun: results
+modifier: zero
+context: list
+phrase: halve the zero results
+phrase: divide only numbers equal to zero by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="halve zero" errors=0 n=9 res=[3,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="halve zero" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x == 0 { g.res[q] = x / 2; }
+	}
+	out.s.clear();
+	format(out.s, "halve zero");
+	out
+}
+@end
+
+@entry ee7c4f73e9ff5a60
+kind: step
+verb: average
+noun: records
+modifier: kmean
+context: records
+phrase: average value of the records
+phrase: mean x across records
+test: recs=1:2.5:ab,2:0.5:cd,3:7.25:ab
+expect: => i=0 r=3.4166666666666665 ok=true s="kmean" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{1 2.5 ab},{2 0.5 cd},{3 7.25 ab}]
+test: recs=4:1.0:x,5:3.5:y
+expect: => i=0 r=2.25 ok=true s="kmean" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{4 1.0 x},{5 3.5 y}]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if g.kn == 0 { gold_fail(g, "no records"); out.ok = false; return out; }
+	var t = 0.0;
+	for q in g.kn { t += g.kl[q].x; }
+	out.r = t / g.kn as real;
+	out.s.clear();
+	format(out.s, "kmean");
+	out
+}
+@end
+
+@entry ee94d26b44157014
+kind: step
+verb: digitsum
+noun: results
+modifier: mult3
+context: list
+phrase: replace the results divisible by three with digit sums
+phrase: take the digit sum of only numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="digitsum mult3" errors=0 n=9 res=[3,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="digitsum mult3" errors=0 n=9 res=[2,9,6,9,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 3 == 0 { g.res[q] = core_digit_sum(x); }
+	}
+	out.s.clear();
+	format(out.s, "digitsum mult3");
+	out
+}
+@end
+
+@entry ee9d5d51bdf78852
+kind: step
+verb: sum
+noun: results
+modifier: negative digitsum
+context: aggregate
+phrase: sum of digit summed negative results
+phrase: add up the digit summed values of the numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=0.0 ok=true s="sum digitsum negative" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=6 r=0.0 ok=true s="sum digitsum negative" errors=0 n=1 res=[6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 0 {
+			let x = core_digit_sum(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum digitsum negative");
+	out
+}
+@end
+
+@entry eeafce8523e91907
+kind: step
+verb: floork
+noun: results
+modifier: each
+context: list
+phrase: raise each result to at least {k}
+phrase: floor every number at {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="floork" errors=0 n=9 res=[3,3,10,7,121,3,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="floork" errors=0 n=9 res=[4,9,4,36,100,11,5,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		g.res[q] = if x < ${k} { ${k} } else { x };
+	}
+	out.s.clear();
+	format(out.s, "floork");
+	out
+}
+@end
+
+@entry ef38d2cc0ff7e8af
+kind: step
+verb: count
+noun: reals
+modifier: rcount
+context: reals
+phrase: count the reals
+phrase: how many real numbers
+test: reals=1.5,2.0,-3.25,4.0
+expect: => i=4 r=0.0 ok=true s="rcount" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[1.5,2.0,-3.25,4.0]
+test: reals=0.5,0.25,8.0
+expect: => i=3 r=0.0 ok=true s="rcount" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[0.5,0.25,8.0]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	out.i = g.rn;
+	out.s.clear();
+	format(out.s, "rcount");
+	out
+}
+@end
+
+@entry ef61047d5edd78d7
+kind: step
+verb: min
+noun: results
+modifier: zero square
+context: aggregate
+phrase: minimum of squared zero results
+phrase: smallest of the squared values of the numbers equal to zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min square zero" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="min square zero none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 == 0 {
+			let x = x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min square zero none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min square zero");
+	out
+}
+@end
+
+@entry efb480b14246e70d
+kind: step
+verb: check
+noun: value
+modifier: mult10
+context: scalar
+phrase: check if it is divisible by ten
+phrase: is the value divisible by ten
+test: input=7
+expect: => i=0 r=0.0 ok=false s="is mult10" errors=0 n=0 res=[] cache=0 hits=0
+test: input=0
+expect: => i=1 r=0.0 ok=true s="is mult10" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = x % 10 == 0;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is mult10");
+	out
+}
+@end
+
+@entry efbe6fdeb34558ab
+kind: step
+verb: min
+noun: results
+modifier: divby cube
+context: aggregate
+phrase: minimum of cubed results divisible by {t}
+phrase: smallest of the cubed values of the numbers that are multiples of {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="min cube divby" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=false s="min cube divby none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if ${t} != 0 && x0 % ${t} == 0 {
+			let x = x0 * x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min cube divby none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min cube divby");
+	out
+}
+@end
+
+@entry f0122dba346ebd27
+kind: step
+verb: revdigits
+noun: value
+modifier: zero
+context: scalar
+phrase: reverse the digits of it if it is zero
+phrase: mirror the digits of the value when it is zero
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value revdigits zero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value revdigits zero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x == 0 { out.i = core_reverse_digits(x); }
+	out.s.clear();
+	format(out.s, "value revdigits zero");
+	out
+}
+@end
+
+@entry f064e02450031da2
+kind: step
+verb: sum
+noun: results
+modifier: odd double
+context: aggregate
+phrase: sum of doubled odd results
+phrase: add up the doubled values of the numbers that are odd
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=338 r=0.0 ok=true s="sum double odd" errors=0 n=1 res=[338] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=22 r=0.0 ok=true s="sum double odd" errors=0 n=1 res=[22] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 != 0 {
+			let x = x0 * 2;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum double odd");
+	out
+}
+@end
+
+@entry f0918bfbc3f80894
+kind: step
+verb: collatz
+noun: results
+modifier: mult10
+context: list
+phrase: apply a collatz step to the results divisible by ten
+phrase: advance only numbers that are multiples of ten one collatz step
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="collatz mult10" errors=0 n=9 res=[3,-4,5,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="collatz mult10" errors=0 n=9 res=[2,9,-15,36,50,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 10 == 0 { g.res[q] = core_collatz(x); }
+	}
+	out.s.clear();
+	format(out.s, "collatz mult10");
+	out
+}
+@end
+
+@entry f0957bc77a6465aa
+kind: step
+verb: average
+noun: results
+modifier: prime double
+context: aggregate
+phrase: average of doubled prime results
+phrase: mean of the doubled values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=15 r=15.333333333333334 ok=true s="average double prime" errors=0 n=1 res=[15] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=12 r=12.0 ok=true s="average double prime" errors=0 n=1 res=[12] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = x0 * 2;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average double prime none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average double prime");
+	out
+}
+@end
+
+@entry f0c0168e0112a7a6
+kind: step
+verb: sum
+noun: results
+modifier: below double
+context: aggregate
+phrase: sum of doubled results below {t}
+phrase: add up the doubled values of the numbers less than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=28 r=0.0 ok=true s="sum double below" errors=0 n=1 res=[28] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=-14 r=0.0 ok=true s="sum double below" errors=0 n=1 res=[-14] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < ${t} {
+			let x = x0 * 2;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum double below");
+	out
+}
+@end
+
+@entry f0d106f7f84e7555
+kind: step
+verb: find
+noun: records
+modifier: kmaxid
+context: records
+phrase: id of the record with the largest value
+phrase: which record has the biggest x
+test: recs=1:2.5:ab,2:0.5:cd,3:7.25:ab
+expect: => i=3 r=0.0 ok=true s="kmaxid" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{1 2.5 ab},{2 0.5 cd},{3 7.25 ab}]
+test: recs=4:1.0:x,5:3.5:y
+expect: => i=5 r=0.0 ok=true s="kmaxid" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{4 1.0 x},{5 3.5 y}]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if g.kn == 0 { return out; }
+	var b = 0;
+	for q in g.kn { if g.kl[q].x > g.kl[b].x { b = q; } }
+	out.i = g.kl[b].id;
+	out.s.clear();
+	format(out.s, "kmaxid");
+	out
+}
+@end
+
+@entry f0d85ce26376567b
+kind: step
+verb: sign
+noun: value
+modifier: nonzero
+context: scalar
+phrase: replace it with their signs if it is nonzero
+phrase: take the sign of the value when it is nonzero
+test: input=7
+expect: => i=1 r=0.0 ok=true s="value sign nonzero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=-5
+expect: => i=-1 r=0.0 ok=true s="value sign nonzero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x != 0 { out.i = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	out.s.clear();
+	format(out.s, "value sign nonzero");
+	out
+}
+@end
+
+@entry f16dbadeea2d5beb
+kind: step
+verb: double
+noun: results
+modifier: palindrome
+context: list
+phrase: double the palindromic results
+phrase: multiply only numbers that read the same reversed by two
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="double palindrome" errors=0 n=9 res=[6,-8,10,14,242,0,25,16,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="double palindrome" errors=0 n=9 res=[4,18,-15,36,100,22,10,2,88] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_palindrome(x) { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double palindrome");
+	out
+}
+@end
+
+@entry f194426715e8d7c2
+kind: step
+verb: sort
+noun: words
+modifier: wsort
+context: words
+phrase: sort the words
+phrase: alphabetize the word list
+test: words=apple,kiwi,banana,kiwi
+expect: => i=0 r=0.0 ok=true s="wsort" errors=0 n=0 res=[] cache=0 hits=0
+expect: => words=[apple,banana,kiwi,kiwi]
+test: words=zeta,alpha,mu
+expect: => i=0 r=0.0 ok=true s="wsort" errors=0 n=0 res=[] cache=0 hits=0
+expect: => words=[alpha,mu,zeta]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for a in g.wn { for b in g.wn - 1 - a {
+		let p = g.wl[b];
+		let r = g.wl[b + 1];
+		var d = 0;
+		while d < p.len && d < r.len && p[d] == r[d] { d++; }
+		let sw = if d < p.len && d < r.len { p[d] > r[d] } else { p.len > r.len };
+		if sw { g.wl[b] = r; g.wl[b + 1] = p; }
+	} }
+	out.s.clear();
+	format(out.s, "wsort");
+	out
+}
+@end
+
+@entry f194f0d9a4b95bfd
+kind: step
+verb: median
+noun: results
+modifier: overhundred
+context: aggregate
+phrase: median of results over a hundred
+phrase: middle value of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=121 r=121.0 ok=true s="median overhundred" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="median overhundred none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 100 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median overhundred none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median overhundred");
+	out
+}
+@end
+
+@entry f1a7bcf498945d66
+kind: step
+verb: max
+noun: results
+modifier: under10 digitsum
+context: aggregate
+phrase: maximum of digit summed results under ten
+phrase: largest of the digit summed values of the numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=8 r=0.0 ok=true s="max digitsum under10" errors=0 n=1 res=[8] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=9 r=0.0 ok=true s="max digitsum under10" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 10 {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max digitsum under10 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max digitsum under10");
+	out
+}
+@end
+
+@entry f1d2b64343f93a05
+kind: step
+verb: sum
+noun: records
+modifier: ktotal
+context: records
+phrase: total value of the records
+phrase: sum the x of every record
+test: recs=1:2.5:ab,2:0.5:cd,3:7.25:ab
+expect: => i=0 r=10.25 ok=true s="ktotal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{1 2.5 ab},{2 0.5 cd},{3 7.25 ab}]
+test: recs=4:1.0:x,5:3.5:y
+expect: => i=0 r=4.5 ok=true s="ktotal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => recs=[{4 1.0 x},{5 3.5 y}]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var t = 0.0;
+	for q in g.kn { t += g.kl[q].x; }
+	out.r = t;
+	out.s.clear();
+	format(out.s, "ktotal");
+	out
+}
+@end
+
+@entry f2305859b6626f73
+kind: step
+verb: sum
+noun: results
+modifier: above abs
+context: aggregate
+phrase: sum of absolute results above {t}
+phrase: add up the absolute values of the numbers greater than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=159 r=0.0 ok=true s="sum abs above" errors=0 n=1 res=[159] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=200 r=0.0 ok=true s="sum abs above" errors=0 n=1 res=[200] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > ${t} {
+			let x = core_abs_val(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum abs above");
+	out
+}
+@end
+
+@entry f2625a2b05121621
+kind: step
+verb: median
+noun: results
+modifier: even
+context: aggregate
+phrase: median of even results
+phrase: middle value of the numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=4.0 ok=true s="median even" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=36 r=40.0 ok=true s="median even" errors=0 n=1 res=[36] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 == 0 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median even none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median even");
+	out
+}
+@end
+
+@entry f2a68f691e150631
+kind: step
+verb: collatz
+noun: results
+modifier: prime
+context: list
+phrase: apply a collatz step to the prime results
+phrase: advance only numbers that are prime one collatz step
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="collatz prime" errors=0 n=9 res=[10,-4,10,22,121,0,25,8,40] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="collatz prime" errors=0 n=9 res=[1,9,-15,36,100,34,16,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_prime(x) { g.res[q] = core_collatz(x); }
+	}
+	out.s.clear();
+	format(out.s, "collatz prime");
+	out
+}
+@end
+
+@entry f2a80c4ca332d6ea
+kind: step
+verb: average
+noun: results
+modifier: overhundred cube
+context: aggregate
+phrase: average of cubed results over a hundred
+phrase: mean of the cubed values of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1771561 r=1771561.0 ok=true s="average cube overhundred" errors=0 n=1 res=[1771561] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=false s="average cube overhundred none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 100 {
+			let x = x0 * x0 * x0;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average cube overhundred none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average cube overhundred");
+	out
+}
+@end
+
+@entry f2a8bb992396c9b8
+kind: step
+verb: capk
+noun: results
+modifier: positive
+context: list
+phrase: cap the positive results at {k}
+phrase: limit only numbers above zero to at most {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="capk positive" errors=0 n=9 res=[3,-4,3,3,3,0,3,3,3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="capk positive" errors=0 n=9 res=[2,4,-15,4,4,4,4,1,4] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > 0 { g.res[q] = if x > ${k} { ${k} } else { x }; }
+	}
+	out.s.clear();
+	format(out.s, "capk positive");
+	out
+}
+@end
+
+@entry f2c9e1de31eba779
+kind: step
+verb: sign
+noun: value
+modifier: odd
+context: scalar
+phrase: replace it with their signs if it is odd
+phrase: take the sign of the value when it is odd
+test: input=7
+expect: => i=1 r=0.0 ok=true s="value sign odd" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value sign odd" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x % 2 != 0 { out.i = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	out.s.clear();
+	format(out.s, "value sign odd");
+	out
+}
+@end
+
+@entry f2da0aa55e887862
+kind: step
+verb: first
+noun: results
+modifier: all digitsum
+context: aggregate
+phrase: first of digit summed results
+phrase: earliest of the digit summed values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=3 r=0.0 ok=true s="first digitsum" errors=0 n=1 res=[3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=2 r=0.0 ok=true s="first digitsum" errors=0 n=1 res=[2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = core_digit_sum(x0);
+			if cnt == 0 { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "first digitsum none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "first digitsum");
+	out
+}
+@end
+
+@entry f38beb587ff2b731
+kind: step
+verb: floork
+noun: results
+modifier: mult3
+context: list
+phrase: raise the results divisible by three to at least {k}
+phrase: floor only numbers that are multiples of three at {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="floork mult3" errors=0 n=9 res=[3,-4,10,7,121,3,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="floork mult3" errors=0 n=9 res=[2,9,4,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 3 == 0 { g.res[q] = if x < ${k} { ${k} } else { x }; }
+	}
+	out.s.clear();
+	format(out.s, "floork mult3");
+	out
+}
+@end
+
+@entry f3b9e6debb48af07
+kind: step
+verb: revdigits
+noun: results
+modifier: mult10
+context: list
+phrase: reverse the digits of the results divisible by ten
+phrase: mirror the digits of only numbers that are multiples of ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="revdigits mult10" errors=0 n=9 res=[3,-4,1,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="revdigits mult10" errors=0 n=9 res=[2,9,-15,36,1,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 10 == 0 { g.res[q] = core_reverse_digits(x); }
+	}
+	out.s.clear();
+	format(out.s, "revdigits mult10");
+	out
+}
+@end
+
+@entry f3bfd73d1b4586ba
+kind: step
+verb: triple
+noun: value
+modifier: even
+context: scalar
+phrase: triple it if it is even
+phrase: multiply the value by three when it is even
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value triple even" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=36 r=0.0 ok=true s="value triple even" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x % 2 == 0 { out.i = x * 3; }
+	out.s.clear();
+	format(out.s, "value triple even");
+	out
+}
+@end
+
+@entry f3e14d7bc4ac068e
+kind: step
+verb: count
+noun: text
+modifier: countvowels
+context: text
+phrase: count the vowels
+phrase: how many vowels in the text
+test: text="the quick brown fox"
+expect: => i=5 r=0.0 ok=true s="the quick brown fox" errors=0 n=1 res=[5] cache=0 hits=0
+test: text="hello world"
+expect: => i=3 r=0.0 ok=true s="hello world" errors=0 n=1 res=[3] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for b in v.s { let l = if b >= 'A' && b <= 'Z' { b + 32 } else { b }; if l == 'a' || l == 'e' || l == 'i' || l == 'o' || l == 'u' { c++; } }
+	gold_push(g, c);
+	out.i = c;
+	out
+}
+@end
+
+@entry f404f9356bedd11c
+kind: step
+verb: negate
+noun: value
+modifier: mult3
+context: scalar
+phrase: negate it if it is divisible by three
+phrase: flip the sign of the value when it is divisible by three
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value negate mult3" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=-12 r=0.0 ok=true s="value negate mult3" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x % 3 == 0 { out.i = -x; }
+	out.s.clear();
+	format(out.s, "value negate mult3");
+	out
+}
+@end
+
+@entry f47fa0a653a846f6
+kind: step
+verb: sum
+noun: results
+modifier: between abs
+context: aggregate
+phrase: sum of absolute results between {lo} and {hi}
+phrase: add up the absolute values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=41 r=0.0 ok=true s="sum abs between" errors=0 n=1 res=[41] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=61 r=0.0 ok=true s="sum abs between" errors=0 n=1 res=[61] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = core_abs_val(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum abs between");
+	out
+}
+@end
+
+@entry f48e50ceb835c9b5
+kind: step
+verb: count
+noun: words
+modifier: wdistinct
+context: words
+phrase: count distinct words
+phrase: how many different words are listed
+test: words=apple,kiwi,banana,kiwi
+expect: => i=3 r=0.0 ok=true s="wdistinct" errors=0 n=1 res=[3] cache=0 hits=0
+expect: => words=[apple,kiwi,banana,kiwi]
+test: words=zeta,alpha,mu
+expect: => i=3 r=0.0 ok=true s="wdistinct" errors=0 n=1 res=[3] cache=0 hits=0
+expect: => words=[zeta,alpha,mu]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for q in g.wn { var dup = false; for p in q { if g.wl[p] == g.wl[q] { dup = true; } } if !dup { c++; } }
+	gold_push(g, c);
+	out.i = c;
+	out.s.clear();
+	format(out.s, "wdistinct");
+	out
+}
+@end
+
+@entry f4d86c65990b8f95
+kind: step
+verb: min
+noun: results
+modifier: square square
+context: aggregate
+phrase: minimum of squared perfect square results
+phrase: smallest of the squared values of the numbers that are perfect squares
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min square square" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1 r=0.0 ok=true s="min square square" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_square(x0) {
+			let x = x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min square square none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min square square");
+	out
+}
+@end
+
+@entry f4dae9382ea570a6
+kind: step
+verb: sum
+noun: results
+modifier: under10 abs
+context: aggregate
+phrase: sum of absolute results under ten
+phrase: add up the absolute values of the numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=22 r=0.0 ok=true s="sum abs under10" errors=0 n=1 res=[22] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=32 r=0.0 ok=true s="sum abs under10" errors=0 n=1 res=[32] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 10 {
+			let x = core_abs_val(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum abs under10");
+	out
+}
+@end
+
+@entry f4f3ed1cd42ea1df
+kind: step
+verb: quadruple
+noun: results
+modifier: single
+context: list
+phrase: quadruple the single digit results
+phrase: multiply only numbers with one digit by four
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="quadruple single" errors=0 n=9 res=[12,-16,10,28,121,0,25,32,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="quadruple single" errors=0 n=9 res=[8,36,-15,36,100,11,20,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > -10 && x < 10 { g.res[q] = x * 4; }
+	}
+	out.s.clear();
+	format(out.s, "quadruple single");
+	out
+}
+@end
+
+@entry f500e8f55f82bfab
+kind: step
+verb: max
+noun: results
+modifier: nonzero double
+context: aggregate
+phrase: maximum of doubled nonzero results
+phrase: largest of the doubled values of the numbers that are not zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=242 r=0.0 ok=true s="max double nonzero" errors=0 n=1 res=[242] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=200 r=0.0 ok=true s="max double nonzero" errors=0 n=1 res=[200] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 != 0 {
+			let x = x0 * 2;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max double nonzero none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max double nonzero");
+	out
+}
+@end
+
+@entry f52169af849f02dc
+kind: step
+verb: average
+noun: results
+modifier: positive abs
+context: aggregate
+phrase: average of absolute positive results
+phrase: mean of the absolute values of the numbers above zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=26 r=26.714285714285715 ok=true s="average abs positive" errors=0 n=1 res=[26] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=26 r=26.0 ok=true s="average abs positive" errors=0 n=1 res=[26] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 0 {
+			let x = core_abs_val(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average abs positive none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average abs positive");
+	out
+}
+@end
+
+@entry f58330cd19e5e667
+kind: step
+verb: sum
+noun: results
+modifier: under10 square
+context: aggregate
+phrase: sum of squared results under ten
+phrase: add up the squared values of the numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=138 r=0.0 ok=true s="sum square under10" errors=0 n=1 res=[138] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=336 r=0.0 ok=true s="sum square under10" errors=0 n=1 res=[336] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 10 {
+			let x = x0 * x0;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum square under10");
+	out
+}
+@end
+
+@entry f58bd5b2007cba6e
+kind: step
+verb: sign
+noun: results
+modifier: atleast
+context: list
+phrase: replace the results at least {t} with their signs
+phrase: take the sign of only numbers no smaller than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="sign atleast" errors=0 n=9 res=[3,-4,1,7,1,0,1,8,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="sign atleast" errors=0 n=9 res=[2,1,-15,1,1,1,5,1,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x >= ${t} { g.res[q] = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	}
+	out.s.clear();
+	format(out.s, "sign atleast");
+	out
+}
+@end
+
+@entry f5dfeda3cc0af3a7
+kind: step
+verb: max
+noun: results
+modifier: between abs
+context: aggregate
+phrase: maximum of absolute results between {lo} and {hi}
+phrase: largest of the absolute values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=13 r=0.0 ok=true s="max abs between" errors=0 n=1 res=[13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=36 r=0.0 ok=true s="max abs between" errors=0 n=1 res=[36] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max abs between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max abs between");
+	out
+}
+@end
+
+@entry f63696c03ac4a3ca
+kind: step
+verb: max
+noun: results
+modifier: above digitsum
+context: aggregate
+phrase: maximum of digit summed results above {t}
+phrase: largest of the digit summed values of the numbers greater than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=7 r=0.0 ok=true s="max digitsum above" errors=0 n=1 res=[7] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=9 r=0.0 ok=true s="max digitsum above" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > ${t} {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max digitsum above none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max digitsum above");
+	out
+}
+@end
+
+@entry f6470cb3fe445cd2
+kind: step
+verb: double
+noun: value
+modifier: under10
+context: scalar
+phrase: double it if it is under ten
+phrase: multiply the value by two when it is under ten
+test: input=7
+expect: => i=14 r=0.0 ok=true s="value double under10" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value double under10" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x < 10 { out.i = x * 2; }
+	out.s.clear();
+	format(out.s, "value double under10");
+	out
+}
+@end
+
+@entry f688552d05de4cfc
+kind: step
+verb: sum
+noun: results
+modifier: mult5 abs
+context: aggregate
+phrase: sum of absolute results divisible by five
+phrase: add up the absolute values of the numbers that are multiples of five
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=35 r=0.0 ok=true s="sum abs mult5" errors=0 n=1 res=[35] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=120 r=0.0 ok=true s="sum abs mult5" errors=0 n=1 res=[120] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 5 == 0 {
+			let x = core_abs_val(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum abs mult5");
+	out
+}
+@end
+
+@entry f68e5b7c25bd058e
+kind: fn
+verb: cube
+noun: number
+modifier: plain
+context: function
+phrase: cube
+phrase: cubed
+test: arg=3,-4,10
+expect: 27
+expect: -64
+expect: 1000
+test: arg=12,0,5,250
+expect: 1728
+expect: 0
+expect: 125
+expect: 15625000
+code:
+fn ${ID}(n int) int {
+	let r = n * n * n;
+	r
+}
+@end
+
+@entry f697189c986c991d
+kind: step
+verb: last
+noun: results
+modifier: nonzero
+context: aggregate
+phrase: last of nonzero results
+phrase: latest of the numbers that are not zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=13 r=0.0 ok=true s="last nonzero" errors=0 n=1 res=[13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=44 r=0.0 ok=true s="last nonzero" errors=0 n=1 res=[44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 != 0 {
+			let x = x0;
+			acc = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "last nonzero none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "last nonzero");
+	out
+}
+@end
+
+@entry f6baffea127d7717
+kind: step
+verb: range
+noun: results
+modifier: twodigit
+context: aggregate
+phrase: range of two digit results
+phrase: spread of the numbers with two digits
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=15 r=0.0 ok=true s="range twodigit" errors=0 n=1 res=[15] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=59 r=0.0 ok=true s="range twodigit" errors=0 n=1 res=[59] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_abs_val(x0) >= 10 && core_abs_val(x0) <= 99 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "range twodigit none"); return out; }
+	var mx = tmp[0];
+	var mn = tmp[0];
+	for a in cnt { if tmp[a] > mx { mx = tmp[a]; } if tmp[a] < mn { mn = tmp[a]; } }
+	acc = mx - mn;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "range twodigit");
+	out
+}
+@end
+
+@entry f6cbd37a389fdb4d
+kind: step
+verb: median
+noun: results
+modifier: single
+context: aggregate
+phrase: median of single digit results
+phrase: middle value of the numbers with one digit
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=3 r=3.0 ok=true s="median single" errors=0 n=1 res=[3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=2 r=3.5 ok=true s="median single" errors=0 n=1 res=[2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > -10 && x0 < 10 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median single none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median single");
+	out
+}
+@end
+
+@entry f6cee8c2001063e7
+kind: step
+verb: collatz
+noun: value
+modifier: zero
+context: scalar
+phrase: apply a collatz step to it if it is zero
+phrase: advance the value one collatz step when it is zero
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value collatz zero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value collatz zero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x == 0 { out.i = core_collatz(x); }
+	out.s.clear();
+	format(out.s, "value collatz zero");
+	out
+}
+@end
+
+@entry f6f58200613ea083
+kind: step
+verb: first
+noun: results
+modifier: all triple
+context: aggregate
+phrase: first of tripled results
+phrase: earliest of the tripled values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=9 r=0.0 ok=true s="first triple" errors=0 n=1 res=[9] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=6 r=0.0 ok=true s="first triple" errors=0 n=1 res=[6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0 * 3;
+			if cnt == 0 { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "first triple none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "first triple");
+	out
+}
+@end
+
+@entry f703f4fc85b62d80
+kind: step
+verb: subk
+noun: results
+modifier: negative
+context: list
+phrase: subtract {k} from the negative results
+phrase: decrease only numbers below zero by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="subk negative" errors=0 n=9 res=[3,-7,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="subk negative" errors=0 n=9 res=[2,9,-19,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 0 { g.res[q] = x - ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "subk negative");
+	out
+}
+@end
+
+@entry f7150ff4bba8a6fd
+kind: step
+verb: first
+noun: results
+modifier: all negate
+context: aggregate
+phrase: first of negated results
+phrase: earliest of the negated values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=-3 r=0.0 ok=true s="first negate" errors=0 n=1 res=[-3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=-2 r=0.0 ok=true s="first negate" errors=0 n=1 res=[-2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = -x0;
+			if cnt == 0 { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "first negate none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "first negate");
+	out
+}
+@end
+
+@entry f7435c427cdfca02
+kind: step
+verb: inc
+noun: results
+modifier: atleast
+context: list
+phrase: increment the results at least {t}
+phrase: add one to only numbers no smaller than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="inc atleast" errors=0 n=9 res=[3,-4,11,7,122,0,26,8,14] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="inc atleast" errors=0 n=9 res=[2,10,-15,37,101,12,5,1,45] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x >= ${t} { g.res[q] = x + 1; }
+	}
+	out.s.clear();
+	format(out.s, "inc atleast");
+	out
+}
+@end
+
+@entry f7496ce25bfb9391
+kind: step
+verb: max
+noun: results
+modifier: between double
+context: aggregate
+phrase: maximum of doubled results between {lo} and {hi}
+phrase: largest of the doubled values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=26 r=0.0 ok=true s="max double between" errors=0 n=1 res=[26] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=72 r=0.0 ok=true s="max double between" errors=0 n=1 res=[72] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = x0 * 2;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max double between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max double between");
+	out
+}
+@end
+
+@entry f74d933930487374
+kind: step
+verb: modk
+noun: results
+modifier: positive
+context: list
+phrase: take the positive results modulo {k}
+phrase: reduce only numbers above zero mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk positive" errors=0 n=9 res=[0,-4,1,1,1,0,1,2,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk positive" errors=0 n=9 res=[2,1,-15,0,0,3,1,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x > 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk positive");
+	out
+}
+@end
+
+@entry f7891921559c689f
+kind: step
+verb: check
+noun: value
+modifier: overhundred
+context: scalar
+phrase: check if it is over a hundred
+phrase: is the value over a hundred
+test: input=7
+expect: => i=0 r=0.0 ok=false s="is overhundred" errors=0 n=0 res=[] cache=0 hits=0
+test: input=121
+expect: => i=1 r=0.0 ok=true s="is overhundred" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = x > 100;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is overhundred");
+	out
+}
+@end
+
+@entry f7c3fdc08e61040b
+kind: step
+verb: min
+noun: results
+modifier: mult3 digitsum
+context: aggregate
+phrase: minimum of digit summed results divisible by three
+phrase: smallest of the digit summed values of the numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min digitsum mult3" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=6 r=0.0 ok=true s="min digitsum mult3" errors=0 n=1 res=[6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 3 == 0 {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min digitsum mult3 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min digitsum mult3");
+	out
+}
+@end
+
+@entry f7c5b7128e36903b
+kind: step
+verb: median
+noun: results
+modifier: twodigit
+context: aggregate
+phrase: median of two digit results
+phrase: middle value of the numbers with two digits
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=13 r=13.0 ok=true s="median twodigit" errors=0 n=1 res=[13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=11 r=23.5 ok=true s="median twodigit" errors=0 n=1 res=[11] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_abs_val(x0) >= 10 && core_abs_val(x0) <= 99 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "median twodigit none"); return out; }
+	for a in cnt { for b in cnt - 1 - a { if tmp[b] > tmp[b + 1] { let s = tmp[b]; tmp[b] = tmp[b + 1]; tmp[b + 1] = s; } } }
+	acc = tmp[(cnt - 1) / 2];
+	out.r = if cnt % 2 == 1 { tmp[cnt / 2] as real } else { (tmp[cnt / 2 - 1] + tmp[cnt / 2]) as real / 2.0 };
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "median twodigit");
+	out
+}
+@end
+
+@entry f7ca49bb77515dfe
+kind: step
+verb: min
+noun: results
+modifier: prime cube
+context: aggregate
+phrase: minimum of cubed prime results
+phrase: smallest of the cubed values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=27 r=0.0 ok=true s="min cube prime" errors=0 n=1 res=[27] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=8 r=0.0 ok=true s="min cube prime" errors=0 n=1 res=[8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = x0 * x0 * x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min cube prime none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min cube prime");
+	out
+}
+@end
+
+@entry f7dcdc4cb59f1e18
+kind: step
+verb: product
+noun: results
+modifier: single
+context: aggregate
+phrase: product of single digit results
+phrase: multiply together the numbers with one digit
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="product single" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=90 r=0.0 ok=true s="product single" errors=0 n=1 res=[90] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > -10 && x0 < 10 {
+			let x = x0;
+			if cnt == 0 { acc = x; } else { acc *= x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { acc = 1; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "product single");
+	out
+}
+@end
+
+@entry f83f4c22425660d2
+kind: step
+verb: dec
+noun: results
+modifier: overhundred
+context: list
+phrase: decrement the results over a hundred
+phrase: subtract one from only numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="dec overhundred" errors=0 n=9 res=[3,-4,10,7,120,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="dec overhundred" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > 100 { g.res[q] = x - 1; }
+	}
+	out.s.clear();
+	format(out.s, "dec overhundred");
+	out
+}
+@end
+
+@entry f8447851617b8e05
+kind: step
+verb: average
+noun: results
+modifier: divby abs
+context: aggregate
+phrase: average of absolute results divisible by {t}
+phrase: mean of the absolute values of the numbers that are multiples of {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=5 r=5.0 ok=true s="average abs divby" errors=0 n=1 res=[5] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=false s="average abs divby none" errors=1 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if ${t} != 0 && x0 % ${t} == 0 {
+			let x = core_abs_val(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average abs divby none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average abs divby");
+	out
+}
+@end
+
+@entry f864a6e44e27e8e3
+kind: step
+verb: index
+noun: results
+modifier: between
+context: query
+phrase: index of the first results between {lo} and {hi}
+phrase: position of the first of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=0 r=0.0 ok=true s="index between" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=1 r=0.0 ok=true s="index between" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var at = -1;
+	for q in g.n { let x = g.res[q]; if at < 0 && x >= ${lo} && x <= ${hi} { at = q; } }
+	gold_clear(g);
+	gold_push(g, at);
+	out.i = at;
+	out.s.clear();
+	format(out.s, "index between");
+	out
+}
+@end
+
+@entry f8a318e25cb7258c
+kind: step
+verb: min
+noun: results
+modifier: negative
+context: aggregate
+phrase: minimum of negative results
+phrase: smallest of the numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=-4 r=0.0 ok=true s="min negative" errors=0 n=1 res=[-4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=-15 r=0.0 ok=true s="min negative" errors=0 n=1 res=[-15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 0 {
+			let x = x0;
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min negative none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min negative");
+	out
+}
+@end
+
+@entry f8d311cf7174ec6f
+kind: step
+verb: mulk
+noun: results
+modifier: mult10
+context: list
+phrase: multiply the results divisible by ten by {k}
+phrase: scale only numbers that are multiples of ten by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="mulk mult10" errors=0 n=9 res=[3,-4,30,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="mulk mult10" errors=0 n=9 res=[2,9,-15,36,400,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 10 == 0 { g.res[q] = x * ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "mulk mult10");
+	out
+}
+@end
+
+@entry f8e2204dd1bf4ddf
+kind: step
+verb: take
+noun: text
+modifier: lastword
+context: text
+phrase: last word of the text
+phrase: take the final word
+test: text="the quick brown fox"
+expect: => i=0 r=0.0 ok=true s="fox" errors=0 n=0 res=[] cache=0 hits=0
+test: text="hello world"
+expect: => i=0 r=0.0 ok=true s="world" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var best byte[>..] = [];
+	for w in words(v.s) { if w.len > 0 { best.clear(); best.append(w); } }
+	gold_text(out, best);
+	out
+}
+@end
+
+@entry f8e508c0ad7c827f
+kind: step
+verb: check
+noun: value
+modifier: divby
+context: scalar
+phrase: check if it is divisible by {t}
+phrase: is the value divisible by {t}
+slot: t int
+test: input=7 t=10
+expect: => i=0 r=0.0 ok=false s="is divby" errors=0 n=0 res=[] cache=0 hits=0
+test: input=0 t=3
+expect: => i=1 r=0.0 ok=true s="is divby" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = ${t} != 0 && x % ${t} == 0;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is divby");
+	out
+}
+@end
+
+@entry f8ea3eb7d653efd9
+kind: step
+verb: average
+noun: results
+modifier: nonzero double
+context: aggregate
+phrase: average of doubled nonzero results
+phrase: mean of the doubled values of the numbers that are not zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=45 r=45.75 ok=true s="average double nonzero" errors=0 n=1 res=[45] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=42 r=42.888888888888886 ok=true s="average double nonzero" errors=0 n=1 res=[42] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 != 0 {
+			let x = x0 * 2;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average double nonzero none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average double nonzero");
+	out
+}
+@end
+
+@entry f90b6c7630571c1e
+kind: step
+verb: cube
+noun: results
+modifier: atleast
+context: list
+phrase: cube the results at least {t}
+phrase: raise only numbers no smaller than {t} to the third power
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="cube atleast" errors=0 n=9 res=[3,-4,1000,7,1771561,0,15625,8,2197] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="cube atleast" errors=0 n=9 res=[2,729,-15,46656,1000000,1331,5,1,85184] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x >= ${t} { g.res[q] = x * x * x; }
+	}
+	out.s.clear();
+	format(out.s, "cube atleast");
+	out
+}
+@end
+
+@entry f921cd38ee1f0803
+kind: step
+verb: quadruple
+noun: results
+modifier: above
+context: list
+phrase: quadruple the results above {t}
+phrase: multiply only numbers greater than {t} by four
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="quadruple above" errors=0 n=9 res=[3,-4,10,7,484,0,100,8,52] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="quadruple above" errors=0 n=9 res=[2,36,-15,144,400,44,5,1,176] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > ${t} { g.res[q] = x * 4; }
+	}
+	out.s.clear();
+	format(out.s, "quadruple above");
+	out
+}
+@end
+
+@entry f92b729a471f84a7
+kind: step
+verb: square
+noun: value
+modifier: under10
+context: scalar
+phrase: square it if it is under ten
+phrase: raise the value to the second power when it is under ten
+test: input=7
+expect: => i=49 r=0.0 ok=true s="value square under10" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value square under10" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x < 10 { out.i = x * x; }
+	out.s.clear();
+	format(out.s, "value square under10");
+	out
+}
+@end
+
+@entry f9595ff9332c9c5c
+kind: step
+verb: check
+noun: value
+modifier: nonzero
+context: scalar
+phrase: check if it is nonzero
+phrase: is the value nonzero
+test: input=7
+expect: => i=1 r=0.0 ok=true s="is nonzero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=0
+expect: => i=0 r=0.0 ok=false s="is nonzero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = x != 0;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is nonzero");
+	out
+}
+@end
+
+@entry f97f66d7774a8174
+kind: step
+verb: max
+noun: results
+modifier: between cube
+context: aggregate
+phrase: maximum of cubed results between {lo} and {hi}
+phrase: largest of the cubed values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=2197 r=0.0 ok=true s="max cube between" errors=0 n=1 res=[2197] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=46656 r=0.0 ok=true s="max cube between" errors=0 n=1 res=[46656] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = x0 * x0 * x0;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max cube between none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max cube between");
+	out
+}
+@end
+
+@entry f9970d735d789128
+kind: step
+verb: average
+noun: results
+modifier: mult3 abs
+context: aggregate
+phrase: average of absolute results divisible by three
+phrase: mean of the absolute values of the numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=1 r=1.5 ok=true s="average abs mult3" errors=0 n=1 res=[1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=20 r=20.0 ok=true s="average abs mult3" errors=0 n=1 res=[20] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 3 == 0 {
+			let x = core_abs_val(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average abs mult3 none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average abs mult3");
+	out
+}
+@end
+
+@entry f9ef156b02893a33
+kind: step
+verb: negate
+noun: results
+modifier: single
+context: list
+phrase: negate the single digit results
+phrase: flip the sign of only numbers with one digit
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="negate single" errors=0 n=9 res=[-3,4,10,-7,121,0,25,-8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="negate single" errors=0 n=9 res=[-2,-9,-15,36,100,11,-5,-1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > -10 && x < 10 { g.res[q] = -x; }
+	}
+	out.s.clear();
+	format(out.s, "negate single");
+	out
+}
+@end
+
+@entry fa0279a163e1945f
+kind: step
+verb: max
+noun: results
+modifier: even square
+context: aggregate
+phrase: maximum of squared even results
+phrase: largest of the squared values of the numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=100 r=0.0 ok=true s="max square even" errors=0 n=1 res=[100] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=10000 r=0.0 ok=true s="max square even" errors=0 n=1 res=[10000] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 == 0 {
+			let x = x0 * x0;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max square even none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max square even");
+	out
+}
+@end
+
+@entry fa4b077b586e900e
+kind: step
+verb: cube
+noun: results
+modifier: atmost
+context: list
+phrase: cube the results at most {t}
+phrase: raise only numbers no larger than {t} to the third power
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="cube atmost" errors=0 n=9 res=[27,-64,1000,343,121,0,25,512,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="cube atmost" errors=0 n=9 res=[8,9,-3375,36,100,11,125,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x <= ${t} { g.res[q] = x * x * x; }
+	}
+	out.s.clear();
+	format(out.s, "cube atmost");
+	out
+}
+@end
+
+@entry fa8cb565b8279456
+kind: step
+verb: list
+noun: records
+modifier: kxs
+context: records
+phrase: record values into reals
+phrase: copy each record x to the real list
+test: recs=1:2.5:ab,2:0.5:cd,3:7.25:ab
+expect: => i=0 r=0.0 ok=true s="kxs" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[2.5,0.5,7.25] recs=[{1 2.5 ab},{2 0.5 cd},{3 7.25 ab}]
+test: recs=4:1.0:x,5:3.5:y
+expect: => i=0 r=0.0 ok=true s="kxs" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[1.0,3.5] recs=[{4 1.0 x},{5 3.5 y}]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.kn { gold_rpush(g, g.kl[q].x); }
+	out.s.clear();
+	format(out.s, "kxs");
+	out
+}
+@end
+
+@entry fa90f94862b834ee
+kind: step
+verb: max
+noun: results
+modifier: prime double
+context: aggregate
+phrase: maximum of doubled prime results
+phrase: largest of the doubled values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=26 r=0.0 ok=true s="max double prime" errors=0 n=1 res=[26] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=22 r=0.0 ok=true s="max double prime" errors=0 n=1 res=[22] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = x0 * 2;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max double prime none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max double prime");
+	out
+}
+@end
+
+@entry fab0e7838bfb3fdc
+kind: step
+verb: sum
+noun: results
+modifier: all
+context: aggregate
+phrase: sum of results
+phrase: add up the numbers
+phrase: sum results
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=183 r=0.0 ok=true s="sum" errors=0 n=1 res=[183] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=193 r=0.0 ok=true s="sum" errors=0 n=1 res=[193] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum");
+	out
+}
+@end
+
+@entry fab1e5375b9c45e1
+kind: step
+verb: index
+noun: results
+modifier: overhundred
+context: query
+phrase: index of the first results over a hundred
+phrase: position of the first of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=0.0 ok=true s="index overhundred" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=-1 r=0.0 ok=true s="index overhundred" errors=0 n=1 res=[-1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var at = -1;
+	for q in g.n { let x = g.res[q]; if at < 0 && x > 100 { at = q; } }
+	gold_clear(g);
+	gold_push(g, at);
+	out.i = at;
+	out.s.clear();
+	format(out.s, "index overhundred");
+	out
+}
+@end
+
+@entry facb741858b3f768
+kind: step
+verb: max
+noun: results
+modifier: all abs
+context: aggregate
+phrase: maximum of absolute results
+phrase: largest of the absolute values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=121 r=0.0 ok=true s="max abs" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=100 r=0.0 ok=true s="max abs" errors=0 n=1 res=[100] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max abs none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max abs");
+	out
+}
+@end
+
+@entry fb754a7101ffae94
+kind: step
+verb: count
+noun: results
+modifier: distinct
+context: list
+phrase: count distinct results
+phrase: how many unique numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=9 r=0.0 ok=true s="countdistinct" errors=0 n=1 res=[9] cache=0 hits=0
+test: list=150,-7,22,49,6,33,101,-20
+expect: => i=8 r=0.0 ok=true s="countdistinct" errors=0 n=1 res=[8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var c = 0;
+	for q in g.n { var dup = false; for p in q { if g.res[p] == g.res[q] { dup = true; } } if !dup { c++; } }
+	gold_clear(g);
+	gold_push(g, c);
+	out.i = c;
+	out.s.clear();
+	format(out.s, "countdistinct");
+	out
+}
+@end
+
+@entry fb7dbc18711370dc
+kind: step
+verb: sum
+noun: results
+modifier: prime digitsum
+context: aggregate
+phrase: sum of digit summed prime results
+phrase: add up the digit summed values of the numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=14 r=0.0 ok=true s="sum digitsum prime" errors=0 n=1 res=[14] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=9 r=0.0 ok=true s="sum digitsum prime" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if core_is_prime(x0) {
+			let x = core_digit_sum(x0);
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum digitsum prime");
+	out
+}
+@end
+
+@entry fb7e6775420281e3
+kind: step
+verb: sum
+noun: results
+modifier: overhundred double
+context: aggregate
+phrase: sum of doubled results over a hundred
+phrase: add up the doubled values of the numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=242 r=0.0 ok=true s="sum double overhundred" errors=0 n=1 res=[242] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="sum double overhundred" errors=0 n=1 res=[0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > 100 {
+			let x = x0 * 2;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum double overhundred");
+	out
+}
+@end
+
+@entry fbbb66d7015daac3
+kind: step
+verb: replace
+noun: results
+modifier: odd
+context: query
+phrase: replace odd results with {k}
+phrase: set numbers that are odd to {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="replace odd" errors=0 n=9 res=[3,-4,10,3,3,0,3,8,3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="replace odd" errors=0 n=9 res=[2,4,4,36,100,4,4,4,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n { let x = g.res[q]; if x % 2 != 0 { g.res[q] = ${k}; } }
+	out.s.clear();
+	format(out.s, "replace odd");
+	out
+}
+@end
+
+@entry fbc6fc601f7b4cad
+kind: step
+verb: keep
+noun: results
+modifier: overhundred
+context: filter
+phrase: keep results over a hundred
+phrase: keep only numbers greater than one hundred
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="kept overhundred" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="kept overhundred" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if x > 100 { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "kept overhundred");
+	out
+}
+@end
+
+@entry fbd28a0c9432f13f
+kind: step
+verb: sum
+noun: results
+modifier: between double
+context: aggregate
+phrase: sum of doubled results between {lo} and {hi}
+phrase: add up the doubled values of the numbers from {lo} to {hi}
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=82 r=0.0 ok=true s="sum double between" errors=0 n=1 res=[82] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=122 r=0.0 ok=true s="sum double between" errors=0 n=1 res=[122] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 >= ${lo} && x0 <= ${hi} {
+			let x = x0 * 2;
+			acc += x;
+			tot += x;
+			cnt++;
+		}
+	}
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "sum double between");
+	out
+}
+@end
+
+@entry fbd3176cbaece6b8
+kind: step
+verb: remove
+noun: results
+modifier: atleast
+context: filter
+phrase: remove results at least {t}
+phrase: throw away numbers no smaller than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="removed atleast" errors=0 n=5 res=[3,-4,7,0,8] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="removed atleast" errors=0 n=4 res=[2,-15,5,1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if !(x >= ${t}) { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "removed atleast");
+	out
+}
+@end
+
+@entry fbda41f6c14380cc
+kind: step
+verb: revdigits
+noun: results
+modifier: even
+context: list
+phrase: reverse the digits of the even results
+phrase: mirror the digits of only numbers that are even
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="revdigits even" errors=0 n=9 res=[3,4,1,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="revdigits even" errors=0 n=9 res=[2,9,-15,63,1,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 2 == 0 { g.res[q] = core_reverse_digits(x); }
+	}
+	out.s.clear();
+	format(out.s, "revdigits even");
+	out
+}
+@end
+
+@entry fc0c94b552cbc925
+kind: step
+verb: min
+noun: reals
+modifier: rmin
+context: reals
+phrase: smallest real
+phrase: minimum of the real numbers
+test: reals=1.5,2.0,-3.25,4.0
+expect: => i=0 r=-3.25 ok=true s="rmin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[1.5,2.0,-3.25,4.0]
+test: reals=0.5,0.25,8.0
+expect: => i=0 r=0.25 ok=true s="rmin" errors=0 n=0 res=[] cache=0 hits=0
+expect: => reals=[0.5,0.25,8.0]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if g.rn == 0 { gold_fail(g, "no reals"); out.ok = false; return out; }
+	var t = g.rl[0];
+	for q in g.rn { if g.rl[q] < t { t = g.rl[q]; } }
+	out.r = t;
+	out.s.clear();
+	format(out.s, "rmin");
+	out
+}
+@end
+
+@entry fc4a5bf3d287a7fb
+kind: step
+verb: min
+noun: results
+modifier: mult5 digitsum
+context: aggregate
+phrase: minimum of digit summed results divisible by five
+phrase: smallest of the digit summed values of the numbers that are multiples of five
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min digitsum mult5" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1 r=0.0 ok=true s="min digitsum mult5" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 5 == 0 {
+			let x = core_digit_sum(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min digitsum mult5 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min digitsum mult5");
+	out
+}
+@end
+
+@entry fccd6ef154c97520
+kind: step
+verb: double
+noun: results
+modifier: above
+context: list
+phrase: double the results above {t}
+phrase: multiply only numbers greater than {t} by two
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=0 r=0.0 ok=true s="double above" errors=0 n=9 res=[3,-4,10,7,242,0,50,8,26] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=0 r=0.0 ok=true s="double above" errors=0 n=9 res=[2,18,-15,72,200,22,5,1,88] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > ${t} { g.res[q] = x * 2; }
+	}
+	out.s.clear();
+	format(out.s, "double above");
+	out
+}
+@end
+
+@entry fd00f2a4f775f073
+kind: step
+verb: first
+noun: results
+modifier: odd
+context: aggregate
+phrase: first of odd results
+phrase: earliest of the numbers that are odd
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=3 r=0.0 ok=true s="first odd" errors=0 n=1 res=[3] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=9 r=0.0 ok=true s="first odd" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 2 != 0 {
+			let x = x0;
+			if cnt == 0 { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "first odd none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "first odd");
+	out
+}
+@end
+
+@entry fd12f3fa9e8d3192
+kind: step
+verb: max
+noun: results
+modifier: all inc
+context: aggregate
+phrase: maximum of incremented results
+phrase: largest of the incremented values of the numbers
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=122 r=0.0 ok=true s="max inc" errors=0 n=1 res=[122] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=101 r=0.0 ok=true s="max inc" errors=0 n=1 res=[101] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0 + 1;
+			if cnt == 0 || x > acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "max inc none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "max inc");
+	out
+}
+@end
+
+@entry fd1a63629167fe3d
+kind: step
+verb: cube
+noun: value
+modifier: prime
+context: scalar
+phrase: cube it if it is prime
+phrase: raise the value to the third power when it is prime
+test: input=7
+expect: => i=343 r=0.0 ok=true s="value cube prime" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value cube prime" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_prime(x) { out.i = x * x * x; }
+	out.s.clear();
+	format(out.s, "value cube prime");
+	out
+}
+@end
+
+@entry fd6c790e664411f9
+kind: step
+verb: check
+noun: value
+modifier: mult5
+context: scalar
+phrase: check if it is divisible by five
+phrase: is the value divisible by five
+test: input=7
+expect: => i=0 r=0.0 ok=false s="is mult5" errors=0 n=0 res=[] cache=0 hits=0
+test: input=-5
+expect: => i=1 r=0.0 ok=true s="is mult5" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	out.ok = x % 5 == 0;
+	out.i = if out.ok { 1 } else { 0 };
+	out.s.clear();
+	format(out.s, "is mult5");
+	out
+}
+@end
+
+@entry fd97f752083e45ae
+kind: step
+verb: triple
+noun: results
+modifier: between
+context: list
+phrase: triple the results between {lo} and {hi}
+phrase: multiply only numbers from {lo} to {hi} by three
+slot: lo int
+slot: hi int
+test: list=3,-4,10,7,121,0,25,8,13 lo=0 hi=20
+expect: => i=0 r=0.0 ok=true s="triple between" errors=0 n=9 res=[9,-4,30,21,121,0,25,24,39] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 lo=5 hi=40
+expect: => i=0 r=0.0 ok=true s="triple between" errors=0 n=9 res=[2,27,-15,108,100,33,15,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x >= ${lo} && x <= ${hi} { g.res[q] = x * 3; }
+	}
+	out.s.clear();
+	format(out.s, "triple between");
+	out
+}
+@end
+
+@entry fdb5b4cbda83fbb0
+kind: step
+verb: round
+noun: reals
+modifier: rround
+context: reals
+phrase: round the reals into results
+phrase: round each real to a whole number
+test: reals=1.5,2.0,-3.25,4.0
+expect: => i=0 r=0.0 ok=true s="rround" errors=0 n=4 res=[2,2,-3,4] cache=0 hits=0
+expect: => reals=[1.5,2.0,-3.25,4.0]
+test: reals=0.5,0.25,8.0
+expect: => i=0 r=0.0 ok=true s="rround" errors=0 n=3 res=[1,0,8] cache=0 hits=0
+expect: => reals=[0.5,0.25,8.0]
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.rn { gold_push(g, round(g.rl[q]) as! int); }
+	out.s.clear();
+	format(out.s, "rround");
+	out
+}
+@end
+
+@entry fdc88a10214168ee
+kind: step
+verb: revdigits
+noun: results
+modifier: twodigit
+context: list
+phrase: reverse the digits of the two digit results
+phrase: mirror the digits of only numbers with two digits
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="revdigits twodigit" errors=0 n=9 res=[3,-4,1,7,121,0,52,8,31] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="revdigits twodigit" errors=0 n=9 res=[2,9,51,63,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_abs_val(x) >= 10 && core_abs_val(x) <= 99 { g.res[q] = core_reverse_digits(x); }
+	}
+	out.s.clear();
+	format(out.s, "revdigits twodigit");
+	out
+}
+@end
+
+@entry fde090935b75f147
+kind: step
+verb: sign
+noun: value
+modifier: zero
+context: scalar
+phrase: replace it with their signs if it is zero
+phrase: take the sign of the value when it is zero
+test: input=7
+expect: => i=7 r=0.0 ok=true s="value sign zero" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value sign zero" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if x == 0 { out.i = if x > 0 { 1 } else if x < 0 { -1 } else { 0 }; }
+	out.s.clear();
+	format(out.s, "value sign zero");
+	out
+}
+@end
+
+@entry fdf6a553775bb712
+kind: step
+verb: min
+noun: results
+modifier: mult5 abs
+context: aggregate
+phrase: minimum of absolute results divisible by five
+phrase: smallest of the absolute values of the numbers that are multiples of five
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min abs mult5" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=5 r=0.0 ok=true s="min abs mult5" errors=0 n=1 res=[5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 5 == 0 {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min abs mult5 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min abs mult5");
+	out
+}
+@end
+
+@entry fe1924e33ba627e0
+kind: step
+verb: min
+noun: results
+modifier: under10 abs
+context: aggregate
+phrase: minimum of absolute results under ten
+phrase: smallest of the absolute values of the numbers less than ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="min abs under10" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=1 r=0.0 ok=true s="min abs under10" errors=0 n=1 res=[1] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 10 {
+			let x = core_abs_val(x0);
+			if cnt == 0 || x < acc { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "min abs under10 none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "min abs under10");
+	out
+}
+@end
+
+@entry fe5039b5a7a8fb10
+kind: step
+verb: average
+noun: results
+modifier: negative digitsum
+context: aggregate
+phrase: average of digit summed negative results
+phrase: mean of the digit summed values of the numbers below zero
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=4 r=4.0 ok=true s="average digitsum negative" errors=0 n=1 res=[4] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=6 r=6.0 ok=true s="average digitsum negative" errors=0 n=1 res=[6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 < 0 {
+			let x = core_digit_sum(x0);
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "average digitsum negative none"); return out; }
+	acc = tot / cnt;
+	out.r = tot as real / cnt as real;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "average digitsum negative");
+	out
+}
+@end
+
+@entry fe52e7419c54fd40
+kind: step
+verb: keep
+noun: results
+modifier: twodigit
+context: filter
+phrase: keep two digit results
+phrase: keep only numbers with two digits
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="kept twodigit" errors=0 n=3 res=[10,25,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="kept twodigit" errors=0 n=4 res=[-15,36,11,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var m = 0;
+	for q in g.n {
+		let x = g.res[q];
+		if core_abs_val(x) >= 10 && core_abs_val(x) <= 99 { g.res[m] = x; m++; }
+	}
+	g.n = m;
+	out.s.clear();
+	format(out.s, "kept twodigit");
+	out
+}
+@end
+
+@entry fe57917dd679a5c8
+kind: step
+verb: digitsum
+noun: results
+modifier: palindrome
+context: list
+phrase: replace the palindromic results with digit sums
+phrase: take the digit sum of only numbers that read the same reversed
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="digitsum palindrome" errors=0 n=9 res=[3,4,10,7,4,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="digitsum palindrome" errors=0 n=9 res=[2,9,-15,36,100,2,5,1,8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_palindrome(x) { g.res[q] = core_digit_sum(x); }
+	}
+	out.s.clear();
+	format(out.s, "digitsum palindrome");
+	out
+}
+@end
+
+@entry fe5df86f7f5a09f7
+kind: step
+verb: tenfold
+noun: results
+modifier: nonzero
+context: list
+phrase: multiply the nonzero results by ten
+phrase: scale only numbers that are not zero by ten
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="tenfold nonzero" errors=0 n=9 res=[30,-40,100,70,1210,0,250,80,130] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="tenfold nonzero" errors=0 n=9 res=[20,90,-150,360,1000,110,50,10,440] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x != 0 { g.res[q] = x * 10; }
+	}
+	out.s.clear();
+	format(out.s, "tenfold nonzero");
+	out
+}
+@end
+
+@entry fe8d5105b5ec369d
+kind: step
+verb: negate
+noun: results
+modifier: prime
+context: list
+phrase: negate the prime results
+phrase: flip the sign of only numbers that are prime
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="negate prime" errors=0 n=9 res=[-3,-4,10,-7,121,0,25,8,-13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="negate prime" errors=0 n=9 res=[-2,9,-15,36,100,-11,-5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_prime(x) { g.res[q] = -x; }
+	}
+	out.s.clear();
+	format(out.s, "negate prime");
+	out
+}
+@end
+
+@entry febfda2a4dedc60a
+kind: step
+verb: abs
+noun: results
+modifier: under10
+context: list
+phrase: take the absolute value of the results under ten
+phrase: make only numbers less than ten absolute
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="abs under10" errors=0 n=9 res=[3,4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="abs under10" errors=0 n=9 res=[2,9,15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x < 10 { g.res[q] = core_abs_val(x); }
+	}
+	out.s.clear();
+	format(out.s, "abs under10");
+	out
+}
+@end
+
+@entry feda00e76afabb01
+kind: step
+verb: clear
+noun: map
+modifier: mclear
+context: map
+phrase: clear the map
+phrase: empty the dictionary
+test: map=1:2,3:4,5:6
+expect: => i=3 r=0.0 ok=true s="mclear" errors=0 n=0 res=[] cache=0 hits=0
+test: map=7:1,2:9
+expect: => i=2 r=0.0 ok=true s="mclear" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	out.i = g.mn;
+	gold_mclear(g);
+	out.s.clear();
+	format(out.s, "mclear");
+	out
+}
+@end
+
+@entry feefdabd9aa114af
+kind: step
+verb: negate
+noun: results
+modifier: mult3
+context: list
+phrase: negate the results divisible by three
+phrase: flip the sign of only numbers that are multiples of three
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=0 r=0.0 ok=true s="negate mult3" errors=0 n=9 res=[-3,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=0 r=0.0 ok=true s="negate mult3" errors=0 n=9 res=[2,-9,15,-36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x % 3 == 0 { g.res[q] = -x; }
+	}
+	out.s.clear();
+	format(out.s, "negate mult3");
+	out
+}
+@end
+
+@entry fef7674cbe973e09
+kind: fn
+verb: square
+noun: number
+modifier: plain
+context: function
+phrase: square
+phrase: squared
+test: arg=3,-4,10
+expect: 9
+expect: 16
+expect: 100
+test: arg=12,0,5,250
+expect: 144
+expect: 0
+expect: 25
+expect: 62500
+code:
+fn ${ID}(n int) int {
+	let r = n * n;
+	r
+}
+@end
+
+@entry ff2c6f3911e60cc6
+kind: step
+verb: mulk
+noun: results
+modifier: overhundred
+context: list
+phrase: multiply the results over a hundred by {k}
+phrase: scale only numbers greater than one hundred by {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="mulk overhundred" errors=0 n=9 res=[3,-4,10,7,363,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="mulk overhundred" errors=0 n=9 res=[2,9,-15,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	for q in g.n {
+		let x = g.res[q];
+		if x > 100 { g.res[q] = x * ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "mulk overhundred");
+	out
+}
+@end
+
+@entry ff2f7e015358aee2
+kind: step
+verb: first
+noun: results
+modifier: above
+context: aggregate
+phrase: first of results above {t}
+phrase: earliest of the numbers greater than {t}
+slot: t int
+test: list=3,-4,10,7,121,0,25,8,13 t=10
+expect: => i=121 r=0.0 ok=true s="first above" errors=0 n=1 res=[121] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 t=7
+expect: => i=9 r=0.0 ok=true s="first above" errors=0 n=1 res=[9] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 > ${t} {
+			let x = x0;
+			if cnt == 0 { acc = x; }
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "first above none"); return out; }
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "first above");
+	out
+}
+@end
+
+@entry ff521c7bbceb4a7a
+kind: step
+verb: range
+noun: results
+modifier: mult5
+context: aggregate
+phrase: range of results divisible by five
+phrase: spread of the numbers that are multiples of five
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=25 r=0.0 ok=true s="range mult5" errors=0 n=1 res=[25] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=115 r=0.0 ok=true s="range mult5" errors=0 n=1 res=[115] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if x0 % 5 == 0 {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "range mult5 none"); return out; }
+	var mx = tmp[0];
+	var mn = tmp[0];
+	for a in cnt { if tmp[a] > mx { mx = tmp[a]; } if tmp[a] < mn { mn = tmp[a]; } }
+	acc = mx - mn;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "range mult5");
+	out
+}
+@end
+
+@entry ffc17ea3797b960f
+kind: step
+verb: halve
+noun: value
+modifier: palindrome
+context: scalar
+phrase: halve it if it is a palindrome
+phrase: divide the value by two when it is a palindrome
+test: input=7
+expect: => i=3 r=0.0 ok=true s="value halve palindrome" errors=0 n=0 res=[] cache=0 hits=0
+test: input=12
+expect: => i=12 r=0.0 ok=true s="value halve palindrome" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let x = v.i;
+	if core_is_palindrome(x) { out.i = x / 2; }
+	out.s.clear();
+	format(out.s, "value halve palindrome");
+	out
+}
+@end
+
+@entry 056cecb3be60b138
+kind: step
+verb: modk
+noun: results
+modifier: single
+context: list
+phrase: take the single digit results modulo {k}
+phrase: reduce only numbers with one digit mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk single" errors=0 n=9 res=[0,2,10,1,121,0,25,2,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk single" errors=0 n=9 res=[2,1,-15,36,100,11,1,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x > -10 && x < 10 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk single");
+	out
+}
+@end
+
+@entry 059586294035434e
+kind: step
+verb: modk
+noun: results
+modifier: even
+context: list
+phrase: take the even results modulo {k}
+phrase: reduce only numbers that are even mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk even" errors=0 n=9 res=[3,2,1,7,121,0,25,2,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk even" errors=0 n=9 res=[2,9,-15,0,0,11,5,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x % 2 == 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk even");
+	out
+}
+@end
+
+@entry 23bc0eda6cd02908
+kind: step
+verb: modk
+noun: results
+modifier: negative
+context: list
+phrase: take the negative results modulo {k}
+phrase: reduce only numbers below zero mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk negative" errors=0 n=9 res=[3,2,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk negative" errors=0 n=9 res=[2,9,1,36,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x < 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk negative");
+	out
+}
+@end
+
+@entry 386dbde6e474cf93
+kind: step
+verb: range
+noun: results
+modifier: all
+context: aggregate
+phrase: range of results
+phrase: spread of the numbers
+phrase: gap from smallest to largest
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=125 r=0.0 ok=true s="range" errors=0 n=1 res=[125] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44
+expect: => i=115 r=0.0 ok=true s="range" errors=0 n=1 res=[115] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	var tmp = [0; 512];
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0;
+			tmp[cnt] = x;
+			tot += x;
+			cnt++;
+		}
+	}
+	if cnt == 0 { gold_fail(g, "no matching results"); out.ok = false; out.s.clear(); format(out.s, "range none"); return out; }
+	var mx = tmp[0];
+	var mn = tmp[0];
+	for a in cnt { if tmp[a] > mx { mx = tmp[a]; } if tmp[a] < mn { mn = tmp[a]; } }
+	acc = mx - mn;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "range");
+	out
+}
+@end
+
+@entry 4aa5f0ba6455071c
+kind: step
+verb: modk
+noun: results
+modifier: twodigit
+context: list
+phrase: take the two digit results modulo {k}
+phrase: reduce only numbers with two digits mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk twodigit" errors=0 n=9 res=[3,-4,1,7,121,0,1,8,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk twodigit" errors=0 n=9 res=[2,9,1,0,100,3,5,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if core_abs_val(x) >= 10 && core_abs_val(x) <= 99 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk twodigit");
+	out
+}
+@end
+
+@entry 55ad9892bc6eb40e
+kind: step
+verb: modk
+noun: results
+modifier: mult5
+context: list
+phrase: take the results divisible by five modulo {k}
+phrase: reduce only numbers that are multiples of five mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk mult5" errors=0 n=9 res=[3,-4,1,7,121,0,1,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk mult5" errors=0 n=9 res=[2,9,1,36,0,11,1,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x % 5 == 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk mult5");
+	out
+}
+@end
+
+@entry 58c7a29df22be376
+kind: step
+verb: modk
+noun: results
+modifier: each
+context: list
+phrase: take each result modulo {k}
+phrase: reduce every number mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk" errors=0 n=9 res=[0,2,1,1,1,0,1,2,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk" errors=0 n=9 res=[2,1,1,0,0,3,1,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		g.res[q] = x % ${k};
+	}
+	out.s.clear();
+	format(out.s, "modk");
+	out
+}
+@end
+
+@entry 600d54759b5f7141
+kind: step
+verb: count
+noun: results
+modifier: all
+context: aggregate
+phrase: count results
+phrase: how many the numbers
+phrase: tally results
+test: list=3,-4,10,7,121,0,25,8,13
+expect: => i=9 r=0.0 ok=true s="count" errors=0 n=1 res=[9] cache=0 hits=0
+test: list=150,-7,22,49,6,33,101,-20
+expect: => i=8 r=0.0 ok=true s="count" errors=0 n=1 res=[8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var cnt = 0;
+	var acc = 0;
+	var tot = 0;
+	for q in g.n {
+		let x0 = g.res[q];
+		if true {
+			let x = x0;
+			tot += x;
+			cnt++;
+		}
+	}
+	acc = cnt;
+	gold_clear(g);
+	gold_push(g, acc);
+	out.i = acc;
+	out.s.clear();
+	format(out.s, "count");
+	out
+}
+@end
+
+@entry 6d8e7e19d5f93ba2
+kind: step
+verb: modk
+noun: results
+modifier: under10
+context: list
+phrase: take the results under ten modulo {k}
+phrase: reduce only numbers less than ten mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk under10" errors=0 n=9 res=[0,2,10,1,121,0,25,2,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk under10" errors=0 n=9 res=[2,1,1,36,100,11,1,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x < 10 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk under10");
+	out
+}
+@end
+
+@entry 8283ed24f061819b
+kind: step
+verb: modk
+noun: results
+modifier: nonzero
+context: list
+phrase: take the nonzero results modulo {k}
+phrase: reduce only numbers that are not zero mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk nonzero" errors=0 n=9 res=[0,2,1,1,1,0,1,2,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk nonzero" errors=0 n=9 res=[2,1,1,0,0,3,1,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x != 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk nonzero");
+	out
+}
+@end
+
+@entry ce7f9017fc14f054
+kind: step
+verb: modk
+noun: results
+modifier: mult3
+context: list
+phrase: take the results divisible by three modulo {k}
+phrase: reduce only numbers that are multiples of three mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk mult3" errors=0 n=9 res=[0,-4,10,7,121,0,25,8,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk mult3" errors=0 n=9 res=[2,1,1,0,100,11,5,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x % 3 == 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk mult3");
+	out
+}
+@end
+
+@entry fa323f3369195b67
+kind: step
+verb: modk
+noun: results
+modifier: odd
+context: list
+phrase: take the odd results modulo {k}
+phrase: reduce only numbers that are odd mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk odd" errors=0 n=9 res=[0,-4,10,1,1,0,1,8,1] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk odd" errors=0 n=9 res=[2,1,1,36,100,3,1,1,44] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if x % 2 != 0 { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk odd");
+	out
+}
+@end
+
+@entry fbd88511c7792b1e
+kind: step
+verb: modk
+noun: results
+modifier: palindrome
+context: list
+phrase: take the palindromic results modulo {k}
+phrase: reduce only numbers that read the same reversed mod {k}
+slot: k int
+test: list=3,-4,10,7,121,0,25,8,13 k=3
+expect: => i=0 r=0.0 ok=true s="modk palindrome" errors=0 n=9 res=[0,2,10,1,1,0,25,2,13] cache=0 hits=0
+test: list=2,9,-15,36,100,11,5,1,44 k=4
+expect: => i=0 r=0.0 ok=true s="modk palindrome" errors=0 n=9 res=[2,1,-15,36,100,3,1,1,0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${k} == 0 { gold_fail(g, "divide by zero"); out.ok = false; return out; }
+	for q in g.n {
+		let x = g.res[q];
+		if core_is_palindrome(x) { g.res[q] = x % ${k}; }
+	}
+	out.s.clear();
+	format(out.s, "modk palindrome");
+	out
+}
+@end
+

@@ -1,0 +1,64 @@
+into units.amni
+
+use os, math
+
+The unit system is a module-level global `SYS`, a short string that is either "us" or "si". It starts as "us". At program start it is loaded from the file `amnicad.sys` in the current directory. It becomes "si" only if that file exists and its trimmed contents are exactly "si"; any other content, or a missing or unreadable file, leaves it at "us".
+
+Function `sys` takes no inputs and returns the current `SYS` string.
+
+Function `set_sys` takes a string `s`. It sets `SYS` to "si" when `s` equals "si", and to "us" otherwise. It then tries to write the new value to the file `amnicad.sys`, and silently ignores any failure.
+
+Constant table `MM_PER` gives millimetres per document unit: "in" is 25.4 and "mm" is 1.0.
+
+Function `doc_units` takes the document's units string (an empty string means there is no document). It returns "in" when the string equals "in", and "mm" otherwise.
+
+Function `mm_per` takes the same document units string. It returns 25.4 when `doc_units` gives "in", and 1.0 otherwise.
+
+Function `nf` takes a real `v` and an int `d`, where `d` defaults to -1 and -1 means "automatic". It returns a new string.
+- If `v` is not finite (use math `is_finite`), it returns the em dash "—".
+- Otherwise, when `d` is -1, the decimal count `dd` is chosen from `a = abs(v)`: 0 if a >= 1000, 1 if a >= 100, 2 if a >= 10, 3 if a >= 1, 4 if a >= 0.01, and 5 otherwise. When `d` is not -1, `dd` is `d`.
+- It formats `v` with exactly `dd` decimals, rounding exact halves away from zero as JavaScript's toFixed does.
+- If the formatted value is zero, including "-0.000", the result is "0".
+- Otherwise it removes trailing zeros after the decimal point, and then the point itself if nothing follows it.
+- It inserts a comma every three digits in the integer part, counting from the right, keeping any leading minus sign.
+- Examples: 1234.5 with auto gives "1,235"; 12.3456 gives "12.35"; 0.5 gives "0.5"; -0.00001 with d=2 gives "0".
+
+Struct `Unit` has the fields `label` (a const byte slice), `factor` (real) and `offset` (real, default 0.0).
+
+Function `unit_entry` takes a quantity name `q` and a system `s` ("si" or "us") and returns a `Unit`. It aborts with "unknown quantity" for an unknown `q`. The table is (quantity: si label/factor[/offset]; us label/factor[/offset]):
+
+| Quantity | si | us |
+|---|---|---|
+| len | "mm" 1 | "in" 1/25.4 |
+| area | "mm²" 1 | "in²" 1/645.16 |
+| vol | "cm³" 1e-3 | "in³" 1/16387.064 |
+| mass | "kg" 1 | "lb" 2.2046226 |
+| force | "N" 1 | "lbf" 0.22480894 |
+| press | "MPa" 1 | "psi" 145.03774 |
+| stress | "MPa" 1 | "psi" 145.03774 |
+| modulus | "GPa" 1e-3 | "Msi" 1.4503774e-4 |
+| torque | "N·mm" 1 | "lbf·in" 0.0088507458 |
+| temp | "°C" 1 offset 0 | "°F" 1.8 offset 32 |
+| dtemp | "K" 1 | "°F" 1.8 |
+| power | "W" 1 | "BTU/hr" 3.4121416 |
+| film | "W/m²K" 1 | "BTU/hr·ft²·°F" 0.17611016 |
+| cond | "W/m·K" 1 | "BTU/hr·ft·°F" 0.57782155 |
+| speed | "m/s" 1 | "mph" 2.2369363 |
+| dens | "kg/m³" 1 | "lb/in³" 3.6127292e-5 |
+| accel | "m/s²" 1 | "ft/s²" 3.2808399 |
+| freq | "Hz" 1 | "Hz" 1 |
+| pa | "Pa" 1 | "psf" 0.020885434 |
+
+Function `conv` takes `q`, a real `v` and a system `to`. It returns `v * factor + offset` using the entry for `q` in `to`.
+
+Function `back` takes `q`, a real `v` and a system `from`. It returns `(v - offset) / factor` using the entry for `q` in `from`.
+
+Function `unit_of` takes `q` and a system `s` that defaults to the current `SYS`. It returns the label of the entry for `q` in `s`.
+
+Function `to_si` takes `q` and `v` and returns `back(q, v, SYS)`.
+
+Function `from_si` takes `q` and `v` and returns `conv(q, v, SYS)`.
+
+Function `one` takes `q`, a real `v_si`, a system `s` (default `SYS`) and an int `d` (default -1). It returns a new string: `nf(conv(q, v_si, s), d)`, then a space, then the label of `q` in `s`.
+
+Function `dual` takes `q`, a real `v_si` and an int `d` (default -1). Let `a` be `SYS` and `b` be the other system ("si" if `a` is "us", otherwise "us"). It returns `one(q, v_si, a, d)`, then " (", then `one(q, v_si, b, d)`, then ")".

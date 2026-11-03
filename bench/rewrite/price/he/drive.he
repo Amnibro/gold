@@ -1,0 +1,47 @@
+use os
+use math
+use price
+r100(x f32) int:
+	v f32 := x * 100.0
+	floor(v as real + 0.5) as int
+show(r price::ShelfTagResult&, o byte[>..]&):
+	if r.has_price { format(o, r.price) } else { o.append("null") }
+	o.push('|')
+	if r.has_name { o.append(r.name) } else { o.append("null") }
+	o.push('|')
+	if r.has_size { o.append(r.size) } else { o.append("null") }
+	format(o, "|", if r.on_sale { "true" } else { "false" }, "|")
+	for c, i r.candidates:
+		if i > 0: o.push(',')
+		format(o, c.cents, ":", r100(c.score), ":", if c.is_unit { "true" } else { "false" })
+main():
+	e byte[>..] ~= []
+	reps ~= 0
+	if env("REPS", e): v, ok := parse_int(e); if ok { reps = v }
+	txt byte[>..] ~= []
+	read_stdin(txt)
+	lines price::OcrLine[>..] ~= []
+	starts int[>..] ~= []
+	for l split(txt, '\n'):
+		starts.push(lines.len)
+		for rec split(l, 30):
+			if rec.len > 0:
+				f := split(rec, 31)
+				a, _ := parse_int(f[1])
+				b, _ := parse_int(f[2])
+				c, _ := parse_int(f[3])
+				d, _ := parse_int(f[4])
+				t byte[..256] ~= ""
+				t.append(f[0])
+				lines.push(price::OcrLine{t, a, b, c, d})
+	starts.push(lines.len)
+	nc := if txt.len > 0 && txt[txt.len - 1] == '\n' { starts.len - 2 } else { starts.len - 1 }
+	out byte[>..] ~= []
+	tot ~= 0
+	for rep max(1, reps):
+		for i nc:
+			r := price::parse(lines[starts[i]..starts[i + 1]])
+			o byte[>..] ~= []
+			show(r, o)
+			if reps == 0 { out.append(o); out.push('\n') } else { tot += o.len }
+	if reps == 0 { write_stdout(out) } else { print(tot) }

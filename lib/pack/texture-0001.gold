@@ -1,0 +1,797 @@
+@entry 0019db896037e762
+kind: step
+verb: paint
+noun: texture
+modifier: checker
+context: texture
+phrase: paint a checkerboard with squares of {c} pixels
+phrase: checker pattern of cell size {c}
+slot: c int
+test: img=16 c=4
+expect: => i=256 r=0.0 ok=true s="checker" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=32640 hash=987058
+test: img=8 c=1
+expect: => i=64 r=0.0 ok=true s="checker" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=1 sum8=8160 hash=44871
+test: c=2
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if ${c} < 1 { gold_fail(g, "cell must be positive"); out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = ((x / ${c} + y / ${c}) % 2) as real;
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "checker");
+	out
+}
+@end
+
+@entry 089de3eea5eaf291
+kind: step
+verb: fill
+noun: texture
+modifier: value
+context: texture
+phrase: fill the texture with value {a}
+phrase: set every pixel to {a}
+slot: a real
+test: img=8 a=0.25
+expect: => i=64 r=0.0 ok=true s="fill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.25 max=0.25 sum8=4096 hash=226016
+test: img=16 a=0.75
+expect: => i=256 r=0.0 ok=true s="fill" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.75 max=0.75 sum8=48896 hash=715150
+test: a=0.3
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01(${a}); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "fill");
+	out
+}
+@end
+
+@entry 197ed1a5a17aa7ea
+kind: step
+verb: normalize
+noun: texture
+modifier: range
+context: texture
+phrase: normalize the texture to full range
+phrase: stretch pixel values across the full range
+test: img=16
+expect: => i=256 r=0.0 ok=true s="normalize" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=32743 hash=802508
+test: img=4
+expect: => i=16 r=0.0 ok=true s="normalize" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 4x4 min=0 max=1 sum8=1960 hash=70551
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var mn = g.img[0];
+	var mx = g.img[0];
+	for k in g.iw * g.ih { if g.img[k] < mn { mn = g.img[k]; } if g.img[k] > mx { mx = g.img[k]; } }
+	if mx - mn < 0.000001 { gold_fail(g, "flat texture"); out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = (g.img[k] - mn) / (mx - mn); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "normalize");
+	out
+}
+@end
+
+@entry 1a36cddd110cc4c1
+kind: step
+verb: posterize
+noun: texture
+modifier: levels
+context: texture
+phrase: posterize the texture into {n} levels
+phrase: reduce the texture to {n} grey steps
+slot: n int
+test: img=16 n=4
+expect: => i=256 r=0.0 ok=true s="quantize" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=30855 hash=545176
+test: img=8 n=2
+expect: => i=64 r=0.0 ok=true s="quantize" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=1 sum8=7395 hash=943393
+test: img=8 n=1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.941 sum8=7530 hash=130440
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if ${n} < 2 || ${n} > 16 { gold_fail(g, "levels must be in range"); out.ok = false; return out; }
+	for k in g.iw * g.ih {
+		var t = (g.img[k] * (${n} as real)) as! int;
+		if t > ${n} - 1 { t = ${n} - 1; }
+		g.img[k] = (t as real) / ((${n} - 1) as real);
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "quantize");
+	out
+}
+@end
+
+@entry 1b62be5598deec20
+kind: step
+verb: brighten
+noun: texture
+modifier: brightness
+context: texture
+phrase: brighten the texture by {a}
+phrase: add {a} to every pixel
+slot: a real
+test: img=16 a=0.2
+expect: => i=256 r=0.0 ok=true s="brighten" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.2 max=1 sum8=42915 hash=834244
+test: img=8 a=0.35
+expect: => i=64 r=0.0 ok=true s="brighten" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.35 max=1 sum8=12449 hash=298781
+test: a=0.1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01(g.img[k] + ${a}); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "brighten");
+	out
+}
+@end
+
+@entry 210084102c313088
+kind: step
+verb: invert
+noun: texture
+modifier: tone
+context: texture
+phrase: invert the texture
+phrase: flip dark pixels to bright
+test: img=16
+expect: => i=256 r=0.0 ok=true s="invert" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.059 max=1 sum8=34470 hash=763061
+test: img=8
+expect: => i=64 r=0.0 ok=true s="invert" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.059 max=1 sum8=8790 hash=240114
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = 1.0 - g.img[k]; }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "invert");
+	out
+}
+@end
+
+@entry 2ca250303260f4bf
+kind: step
+verb: threshold
+noun: texture
+modifier: mask
+context: texture
+phrase: threshold the texture at {a}
+phrase: turn pixels brighter than {a} white
+slot: a real
+test: img=16 a=0.4
+expect: => i=256 r=0.0 ok=true s="threshold" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=38505 hash=373918
+test: img=8 a=0.7
+expect: => i=64 r=0.0 ok=true s="threshold" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=1 sum8=4590 hash=31554
+test: a=0.5
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { if g.img[k] >= ${a} { g.img[k] = 1.0; } else { g.img[k] = 0.0; } }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "threshold");
+	out
+}
+@end
+
+@entry 51e97395d2e2a84f
+kind: step
+verb: flip
+noun: texture
+modifier: vertical
+context: texture
+phrase: flip the texture vertically
+phrase: turn the texture upside down
+test: img=16
+expect: => i=256 r=0.0 ok=true s="flip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=820874
+test: img=8
+expect: => i=64 r=0.0 ok=true s="flip" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.941 sum8=7530 hash=987991
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var s2 = g.img;
+	for y in g.ih {
+		for x in g.iw {
+			s2[y * g.iw + x] = g.img[(g.ih - 1 - y) * g.iw + x];
+		}
+	}
+	g.img = s2;
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "flip");
+	out
+}
+@end
+
+@entry 5c4df1a7a431f7b5
+kind: step
+verb: raise
+noun: texture
+modifier: contrast
+context: texture
+phrase: raise texture contrast by factor {a}
+phrase: stretch contrast around middle grey by {a}
+slot: a real
+test: img=16 a=1.8
+expect: => i=256 r=0.0 ok=true s="contrast" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=30855 hash=828745
+test: img=8 a=0.6
+expect: => i=64 r=0.0 ok=true s="contrast" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.2 max=0.765 sum8=7782 hash=552376
+test: a=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01((g.img[k] - 0.5) * ${a} + 0.5); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "contrast");
+	out
+}
+@end
+
+@entry 601cb4f197b299dd
+kind: step
+verb: remap
+noun: texture
+modifier: window
+context: texture
+phrase: remap the texture between {a} and {b}
+phrase: squeeze pixel values into range {a} to {b}
+slot: a real
+slot: b real
+test: img=16 a=0.2 b=0.8
+expect: => i=256 r=0.0 ok=true s="remap" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.2 max=0.765 sum8=31542 hash=799638
+test: img=8 a=0.9 b=0.1
+expect: => i=64 r=0.0 ok=true s="remap" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.147 max=0.9 sum8=8690 hash=178700
+test: a=0.2 b=0.6
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01(${a} + (${b} - ${a}) * g.img[k]); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "remap");
+	out
+}
+@end
+
+@entry 635c90b5b02c54a3
+kind: step
+verb: paint
+noun: texture
+modifier: stripes
+context: texture
+phrase: paint vertical stripes {c} pixels wide
+phrase: stripe pattern with bands of {c} pixels
+slot: c int
+test: img=16 c=2
+expect: => i=256 r=0.0 ok=true s="stripes" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=32640 hash=554469
+test: img=8 c=3
+expect: => i=64 r=0.0 ok=true s="stripes" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=1 sum8=6120 hash=309843
+test: img=8 c=0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.941 sum8=7530 hash=130440
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if ${c} < 1 { gold_fail(g, "width must be positive"); out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = ((x / ${c}) % 2) as real;
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "stripes");
+	out
+}
+@end
+
+@entry 67d86f64210cbe89
+kind: step
+verb: fill
+noun: texture
+modifier: cellular
+context: texture
+phrase: fill the texture with cellular noise of cell {c} seed {u}
+phrase: voronoi cells of {c} pixels using seed {u}
+slot: c int
+slot: u int
+test: img=16 c=4 u=2
+expect: => i=256 r=0.0 ok=true s="worley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.022 max=0.908 sum8=28287 hash=428671
+test: img=32 c=8 u=6
+expect: => i=1024 r=0.0 ok=true s="worley" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 32x32 min=0.006 max=0.993 sum8=113658 hash=818269
+test: img=16 c=3 u=2
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=58780
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_square(g, ${c}) { out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = gold_worley(x, y, ${c}, g.iw / ${c}, ${u});
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "worley");
+	out
+}
+@end
+
+@entry 6b8cddcac4706f91
+kind: step
+verb: layer
+noun: texture
+modifier: fractal
+context: texture
+phrase: layer {n} octaves of noise from cell {c} seed {u}
+phrase: fractal noise with {n} octaves base cell {c} seed {u}
+slot: n int
+slot: c int
+slot: u int
+test: img=32 n=3 c=16 u=5
+expect: => i=1024 r=0.0 ok=true s="fbm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 32x32 min=0.239 max=0.566 sum8=101313 hash=128181
+test: img=16 n=2 c=8 u=9
+expect: => i=256 r=0.0 ok=true s="fbm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.128 max=0.739 sum8=31628 hash=327632
+test: img=16 n=6 c=8 u=1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=58780
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if ${n} < 1 || ${n} > 5 { gold_fail(g, "octaves must be in range"); out.ok = false; return out; }
+	var c0 = ${c};
+	for o in ${n} { if !gold_img_square(g, c0) { out.ok = false; return out; } c0 = c0 / 2; }
+	for y in g.ih {
+		for x in g.iw {
+			var t = 0.0;
+			var amp = 1.0;
+			var norm = 0.0;
+			var cc = ${c};
+			for o in ${n} { t += amp * gold_vnoise(x, y, cc, g.iw / cc, ${u} + o); norm += amp; amp *= 0.5; cc = cc / 2; }
+			g.img[y * g.iw + x] = t / norm;
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "fbm");
+	out
+}
+@end
+
+@entry 6e7e071b593ad2f4
+kind: step
+verb: fill
+noun: texture
+modifier: noise
+context: texture
+phrase: fill the texture with value noise of cell {c} seed {u}
+phrase: tileable noise with cells of {c} pixels using seed {u}
+slot: c int
+slot: u int
+test: img=16 c=4 u=7
+expect: => i=256 r=0.0 ok=true s="noise" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.014 max=0.992 sum8=36108 hash=144033
+test: img=32 c=8 u=3
+expect: => i=1024 r=0.0 ok=true s="noise" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 32x32 min=0.078 max=0.988 sum8=142325 hash=872475
+test: img=16 c=5 u=1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=58780
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_square(g, ${c}) { out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = gold_vnoise(x, y, ${c}, g.iw / ${c}, ${u});
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "noise");
+	out
+}
+@end
+
+@entry 8a6231ed7ae85c5d
+kind: step
+verb: fill
+noun: texture
+modifier: vgradient
+context: texture
+phrase: fill the texture with a vertical gradient
+phrase: ramp from dark at the top to bright at the bottom
+test: img=16
+expect: => i=256 r=0.0 ok=true s="vgrad" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=32640 hash=928882
+test: img=4
+expect: => i=16 r=0.0 ok=true s="vgrad" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 4x4 min=0 max=1 sum8=2040 hash=311554
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if g.ih < 2 { gold_fail(g, "texture too short"); out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = (y as real) / ((g.ih - 1) as real);
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "vgrad");
+	out
+}
+@end
+
+@entry 953eec174ea53677
+kind: step
+verb: blur
+noun: texture
+modifier: box
+context: texture
+phrase: blur the texture
+phrase: soften the texture with a box blur
+test: img=16
+expect: => i=256 r=0.0 ok=true s="blur" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.353 max=0.614 sum8=30810 hash=471560
+test: img=8
+expect: => i=64 r=0.0 ok=true s="blur" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.353 max=0.562 sum8=7530 hash=131517
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var s2 = g.img;
+	for y in g.ih {
+		for x in g.iw {
+			var t = 0.0;
+			for dy in 3 { for dx in 3 { t += gold_img_wrap(g, x + dx - 1, y + dy - 1); } }
+			s2[y * g.iw + x] = t / 9.0;
+		}
+	}
+	g.img = s2;
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "blur");
+	out
+}
+@end
+
+@entry 9d28ace801f2ddcb
+kind: step
+verb: mirror
+noun: texture
+modifier: horizontal
+context: texture
+phrase: mirror the texture horizontally
+phrase: flip the texture left to right
+test: img=16
+expect: => i=256 r=0.0 ok=true s="mirror" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=720582
+test: img=8
+expect: => i=64 r=0.0 ok=true s="mirror" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.941 sum8=7530 hash=556685
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var s2 = g.img;
+	for y in g.ih {
+		for x in g.iw {
+			s2[y * g.iw + x] = g.img[y * g.iw + (g.iw - 1 - x)];
+		}
+	}
+	g.img = s2;
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "mirror");
+	out
+}
+@end
+
+@entry b3c586bc480ade25
+kind: step
+verb: fill
+noun: texture
+modifier: radial
+context: texture
+phrase: fill the texture with a radial falloff
+phrase: bright center fading to dark edges
+test: img=16
+expect: => i=256 r=0.0 ok=true s="radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.912 sum8=17084 hash=827485
+test: img=9
+expect: => i=81 r=0.0 ok=true s="radial" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 9x9 min=0 max=1 sum8=5431 hash=430583
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	let cx = ((g.iw - 1) as real) / 2.0;
+	let cy = ((g.ih - 1) as real) / 2.0;
+	var rr = (g.iw as real) / 2.0;
+	if g.ih < g.iw { rr = (g.ih as real) / 2.0; }
+	for y in g.ih {
+		for x in g.iw {
+			let a = (x as real) - cx;
+			let b = (y as real) - cy;
+			g.img[y * g.iw + x] = gold_clamp01(1.0 - sqrt(a * a + b * b) / rr);
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "radial");
+	out
+}
+@end
+
+@entry bbab42d82913bec4
+kind: step
+verb: start
+noun: texture
+modifier: canvas
+context: texture
+phrase: start a blank texture {w} by {h} pixels
+phrase: new image canvas {w} wide {h} tall
+slot: w int
+slot: h int
+test: w=16 h=16
+expect: => i=256 r=0.0 ok=true s="canvas" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0 sum8=0 hash=201642
+test: w=8 h=4
+expect: => i=32 r=0.0 ok=true s="canvas" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x4 min=0 max=0 sum8=0 hash=555616
+test: w=64 h=64
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_new(g, ${w}, ${h}) { out.ok = false; return out; }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "canvas");
+	out
+}
+@end
+
+@entry c64da110bb7bad6a
+kind: step
+verb: fill
+noun: texture
+modifier: hgradient
+context: texture
+phrase: fill the texture with a horizontal gradient
+phrase: ramp from dark on the left to bright on the right
+test: img=16
+expect: => i=256 r=0.0 ok=true s="hgrad" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=32640 hash=546623
+test: img=8
+expect: => i=64 r=0.0 ok=true s="hgrad" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=1 sum8=8160 hash=423175
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	if g.iw < 2 { gold_fail(g, "texture too narrow"); out.ok = false; return out; }
+	for y in g.ih {
+		for x in g.iw {
+			g.img[y * g.iw + x] = (x as real) / ((g.iw - 1) as real);
+		}
+	}
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "hgrad");
+	out
+}
+@end
+
+@entry d303efdbca5155d3
+kind: step
+verb: derive
+noun: texture
+modifier: roughness
+context: texture
+phrase: derive roughness from texture slope
+phrase: turn the height texture into a slope map
+test: img=16
+expect: => i=256 r=0.0 ok=true s="slope" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0.235 max=0.765 sum8=25795 hash=705029
+test: img=8
+expect: => i=64 r=0.0 ok=true s="slope" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0.294 max=0.706 sum8=6858 hash=856105
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var s2 = g.img;
+	for y in g.ih {
+		for x in g.iw {
+			let gx = gold_absr(gold_img_wrap(g, x + 1, y) - gold_img_wrap(g, x - 1, y));
+			let gy = gold_absr(gold_img_wrap(g, x, y + 1) - gold_img_wrap(g, x, y - 1));
+			s2[y * g.iw + x] = gold_clamp01((gx + gy) * 0.5);
+		}
+	}
+	g.img = s2;
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "slope");
+	out
+}
+@end
+
+@entry d44f8f6235de7370
+kind: step
+verb: scale
+noun: texture
+modifier: gain
+context: texture
+phrase: scale texture brightness by {a}
+phrase: multiply every pixel by {a}
+slot: a real
+test: img=16 a=1.3
+expect: => i=256 r=0.0 ok=true s="scale" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=1 sum8=38400 hash=626036
+test: img=8 a=0.4
+expect: => i=64 r=0.0 ok=true s="scale" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.376 sum8=3012 hash=158878
+test: a=2.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01(g.img[k] * ${a}); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "scale");
+	out
+}
+@end
+
+@entry da4a69d12eaa0a72
+kind: step
+verb: darken
+noun: texture
+modifier: darkness
+context: texture
+phrase: darken the texture by {a}
+phrase: subtract {a} from every pixel
+slot: a real
+test: img=16 a=0.2
+expect: => i=256 r=0.0 ok=true s="darken" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.741 sum8=19464 hash=42361
+test: img=8 a=0.45
+expect: => i=64 r=0.0 ok=true s="darken" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.491 sum8=2115 hash=7469
+test: a=0.1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	for k in g.iw * g.ih { g.img[k] = gold_clamp01(g.img[k] - ${a}); }
+	out.i = g.iw * g.ih;
+	out.s.clear();
+	format(out.s, "darken");
+	out
+}
+@end
+
+@entry fb57edf77ce3092b
+kind: step
+verb: measure
+noun: texture
+modifier: seam
+context: texture
+phrase: measure the texture seam
+phrase: check how well the texture tiles
+test: img=16
+expect: => i=94 r=0.0 ok=true s="seam" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 16x16 min=0 max=0.941 sum8=30810 hash=58780
+test: img=8
+expect: => i=92 r=0.0 ok=true s="seam" errors=0 n=0 res=[] cache=0 hits=0
+expect: => img: 8x8 min=0 max=0.941 sum8=7530 hash=130440
+test:
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if !gold_img_ok(g) { out.ok = false; return out; }
+	var e = 0.0;
+	var ne = 0;
+	var inn = 0.0;
+	var ni = 0;
+	for y in g.ih {
+		for x in g.iw {
+			let p = g.img[y * g.iw + x];
+			let r = gold_img_wrap(g, x + 1, y);
+			let d = gold_img_wrap(g, x, y + 1);
+			if x == g.iw - 1 { e += gold_absr(r - p); ne++; } else { inn += gold_absr(r - p); ni++; }
+			if y == g.ih - 1 { e += gold_absr(d - p); ne++; } else { inn += gold_absr(d - p); ni++; }
+		}
+	}
+	var t = 0.0;
+	if inn > 0.0 { t = (e / (ne as real)) / (inn / (ni as real)); }
+	out.i = round(t * 10.0 * 10.0) as! int;
+	out.s.clear();
+	format(out.s, "seam");
+	return out;
+}
+@end
+
