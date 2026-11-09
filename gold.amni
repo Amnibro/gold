@@ -2,6 +2,9 @@ import os;
 import math;
 import json;
 import dictionary;
+import net.tcp;
+import net.tls;
+import net.http;
 var T byte[>..];
 var HOME byte[>..];
 var CACHE byte[>..];
@@ -69,7 +72,8 @@ fn setup() {
 fn hcq(out byte[>..]&) { out.append("env HC_HEPROV=1 HC_LIB="); q(out, HCLIB); out.push(' '); q(out, HC); }
 fn norm_ws(s const byte[:], out byte[>..]&) { var sp = false; for c in s { if c == ' ' || c == '\t' || c == '\n' || c == '\r' { sp = out.len > 0; } else { if sp { out.push(' '); sp = false; } out.push(c); } } }
 fn add_block(kind int, s const byte[:]) { if kind != 1 && trim(s).len == 0 { return; } B.push(Blk { kind: kind, src: put(s), he: Sp { 0, 0 }, l0: 0, l1: 0, key: 0, pend: false }); }
-fn numlit(c const byte[:]) bool { if c.len == 0 { return false; } var d = false; for x, i in c { if x >= '0' && x <= '9' { d = true; } else if !(x == '.' || x == 'e' || x == 'E' || x == '_' || ((x == '-' || x == '+') && (i == 0 || c[i - 1] == 'e' || c[i - 1] == 'E'))) { return false; } } d }
+fn hexlit(c const byte[:]) bool { if c.len < 3 || c[0] != '0' || (c[1] != 'x' && c[1] != 'X') { return false; } for x in c[2..] { if !((x >= '0' && x <= '9') || (x >= 'a' && x <= 'f') || (x >= 'A' && x <= 'F') || x == '_') { return false; } } true }
+fn numlit(c const byte[:]) bool { if hexlit(c) { return true; } if c.len == 0 { return false; } var d = false; for x, i in c { if x >= '0' && x <= '9' { d = true; } else if !(x == '.' || x == 'e' || x == 'E' || x == '_' || ((x == '-' || x == '+') && (i == 0 || c[i - 1] == 'e' || c[i - 1] == 'E'))) { return false; } } d }
 fn cell_lit(c const byte[:], out byte[>..]&) {
 	if numlit(c) || c == "true" || c == "false" { out.append(c); return; }
 	let s = if c.len >= 2 && c[0] == '\'' && c[c.len - 1] == '\'' { c[1..(c.len - 1)] } else { c };
@@ -222,7 +226,9 @@ fn load_pack(name const byte[:]) bool {
 	let d = pack_dir(name);
 	var c byte[>..] = [];
 	if !readall(str(d, "/pack.conf"), c) {
-		if PK.len > 0 && (file_exists(str(at(PK[0].dir), "/", name, ".he")) || file_exists(str(at(PK[0].dir), "/", name, ".amni"))) { format(IMPORTS, name, "\n"); return true; }
+		var np byte[>..] = [];
+		for ch in name { np.push(if ch == '.' { '/' } else { ch }); }
+		if PK.len > 0 && (file_exists(str(at(PK[0].dir), "/", np, ".he")) || file_exists(str(at(PK[0].dir), "/", np, ".amni"))) { format(IMPORTS, name, "\n"); return true; }
 		print("gold: no pack or std module '", name, "' (gold pack ", name, " <dir>)");
 		return false;
 	}
@@ -267,7 +273,7 @@ fn load_pack(name const byte[:]) bool {
 fn import_of(p Pk, file const byte[:], out byte[>..]&) {
 	let s = stem(file);
 	let kw = if at(p.lang) == "amni" && LANG == "amni" { "import " } else if LANG == "amni" { "import " } else { "use " };
-	if at(p.name) == "std" { if s != "std" { format(out, kw, s); } return; }
+	if at(p.name) == "std" { if s != "std" { out.append(kw); let e = rfind(file, "."); for c in file[..(if e > 0 { e } else { file.len })] { out.push(if c == '/' { '.' } else { c }); } } return; }
 	var rel = file;
 	let mn = at(p.main);
 	if mn.len > 0 { let md = dirof(mn); if file.starts_with(md) && file.len > md.len + 1 { rel = file[(md.len + 1)..]; } }
@@ -475,10 +481,83 @@ fn context(text const byte[:], out byte[>..]&) {
 		ns++;
 	}
 }
-fn jstr(d json::Doc&, key const byte[:], out byte[>..]&) { for n in d.nodes { if n.name == key && n.kind == json::K_STR { out.append(n.text); return; } } }
-fn jint(d json::Doc&, key const byte[:]) int { for n in d.nodes { if n.name == key && (n.kind == json::K_INT || n.kind == json::K_NUM) { return n.num as! int; } } 0 }
-fn jnum(d json::Doc&, key const byte[:]) real { for n in d.nodes { if n.name == key && (n.kind == json::K_INT || n.kind == json::K_NUM) { return n.num; } } 0.0 }
+fn jstr(d json::Doc&, key const byte[:], out byte[>..]&) { for n, i in d.nodes { if json::name_of(d, i) == key && n.kind == json::K_STR { let t, ok = json::as_string(d, i); out.append(t); return; } } }
+fn jint(d json::Doc&, key const byte[:]) int { for n, i in d.nodes { if json::name_of(d, i) == key && (n.kind == json::K_INT || n.kind == json::K_NUM) { return n.num as! int; } } 0 }
+fn jnum(d json::Doc&, key const byte[:]) real { for n, i in d.nodes { if json::name_of(d, i) == key && (n.kind == json::K_INT || n.kind == json::K_NUM) { return n.num; } } 0.0 }
+var LDOWN = false;
+var LSTART = false;
+var LCALLS = 0;
+fn is_local(m const byte[:]) bool { m == "granite" || m.starts_with("local") }
+fn fallback(out byte[>..]&) { envor("GOLD_MODEL_FALLBACK", "sonnet", out); }
+fn LROUNDS() int { var e byte[>..] = []; envor("GOLD_LOCAL_ROUNDS", "2", e); let v, ok = parse_int(e); if ok { v } else { 2 } }
+fn lurl(path const byte[:]) byte[>..] { var u byte[>..] = []; envor("GOLD_LOCAL_URL", "http://127.0.0.1:18790", u); while u.len > 0 && u[u.len - 1] == '/' { u.resize(u.len - 1, 0); } u.append(path); u }
+fn lhealth() bool { var h = net::http_fetch("GET", lurl("/health"), "", "", 3000); h.status == 200 }
+fn lup() bool {
+	if lhealth() { return true; }
+	var unit byte[>..] = [];
+	envor("GOLD_LOCAL_UNIT", "granite-gold.service", unit);
+	var c byte[>..] = [];
+	c.append("systemctl --user start --no-block ");
+	q(c, unit);
+	c.append(" >/dev/null 2>&1");
+	if run_command(c) != 0 { return false; }
+	LSTART = true;
+	var w byte[>..] = [];
+	envor("GOLD_LOCAL_WAIT", "120", w);
+	let lim, ok = parse_int(w);
+	let t0 = time();
+	write_stderr("gold: starting the local model (waits for the GPU)\n");
+	while time() - t0 < (if ok { lim } else { 120 }) as f64 { if lhealth() { return true; } sleep_ms(1000); }
+	false
+}
+fn local_stop() {
+	if !LSTART { return; }
+	var unit byte[>..] = [];
+	envor("GOLD_LOCAL_UNIT", "granite-gold.service", unit);
+	var c byte[>..] = [];
+	c.append("systemctl --user stop ");
+	q(c, unit);
+	c.append(" >/dev/null 2>&1");
+	run_command(c);
+	LSTART = false;
+}
+fn local_done(rc int) int { local_stop(); rc }
+fn ask_local(sys const byte[:], prompt const byte[:], out byte[>..]&) bool {
+	if LDOWN || !lup() { LDOWN = true; return false; }
+	var b byte[>..] = [];
+	b.append("{\"messages\":[{\"role\":\"system\",\"content\":");
+	json::format_string(b, sys);
+	b.append("},{\"role\":\"user\",\"content\":");
+	json::format_string(b, prompt);
+	b.append("}],\"temperature\":0.2,\"max_tokens\":16384,\"stream\":false}");
+	let t0 = time();
+	var h = net::http_fetch("POST", lurl("/v1/chat/completions"), "Content-Type: application/json\r\n", b, 1800000);
+	LCALLS++;
+	if h.status != 200 { write_stderr(str("gold: local model call failed (", h.status, "): ", h.err, h.body[..min(h.body.len, 300)], "\n")); LDOWN = true; return false; }
+	var doc = json::Doc {};
+	let root, err = json::parse(h.body, doc);
+	if root < 0 { LDOWN = true; return false; }
+	let ch = json::element(doc, json::member(doc, root, "choices"), 0);
+	let msg = json::member(doc, ch, "message");
+	let s, sok = json::as_string(doc, json::member(doc, msg, "content"));
+	out.clear();
+	if sok { out.append(s); }
+	let us = json::member(doc, root, "usage");
+	let pi, pok = json::as_f64(doc, json::member(doc, us, "prompt_tokens"));
+	let po, ook = json::as_f64(doc, json::member(doc, us, "completion_tokens"));
+	if pok { TIN += pi as! int; }
+	if ook { TOUT += po as! int; }
+	if VERB { write_stderr(str("gold: local reply ", out.len, " chars in ", (time() - t0) as! int, " s\n")); }
+	out.len > 0
+}
 fn ask(model const byte[:], sys const byte[:], prompt const byte[:], out byte[>..]&) bool {
+	if is_local(model) {
+		if ask_local(sys, prompt, out) { return true; }
+		var fb byte[>..] = [];
+		fallback(fb);
+		write_stderr(str("gold: local model unavailable, using ", fb, "\n"));
+		return ask(fb, sys, prompt, out);
+	}
 	let pf = tmp("prompt.txt");
 	let rf = tmp("reply.json");
 	write_file(pf, prompt);
@@ -535,6 +614,8 @@ fn harness(target const byte[:], root byte[>..]&, cleanup byte[>..]&) {
 	var found = false;
 	for p in PK { let mn = at(p.main); if mn.len > 0 && target.starts_with(dirof(mn)) { found = true; } }
 	if !found {
+		var own byte[>..] = [];
+		if readall(target, own) && (find(own, "fn main(") >= 0 || own.starts_with("main(") || find(own, "\nmain(") >= 0) { return; }
 		root.clear();
 		format(root, dirof(target), "/.gold-", TAG, ext(LANG));
 		write_file(root, str(if LANG == "amni" { "import " } else { "use " }, stem(target), if LANG == "amni" { ";\nfn main() {}\n" } else { "\nmain(): return\n" }));
@@ -594,10 +675,11 @@ fn check(target const byte[:], text const byte[:], errs byte[>..]&) int {
 	var n = 0;
 	var want = false;
 	var ln = 0;
-	for nd in doc.nodes {
-		if nd.name == "start" { want = true; }
-		else if nd.name == "line" && want { ln = nd.whole + 1; want = false; }
-		else if nd.name == "message" { format(errs, ln, ": ", nd.text, "\n"); n++; }
+	for nd, i in doc.nodes {
+		let nm = json::name_of(doc, i);
+		if nm == "start" { want = true; }
+		else if nm == "line" && want { ln = nd.whole + 1; want = false; }
+		else if nm == "message" { let t, ok = json::as_string(doc, i); format(errs, ln, ": ", t, "\n"); n++; }
 	}
 	if n > 0 { return n; }
 	write_file(target, text);
@@ -784,7 +866,9 @@ fn build(gp const byte[:], run_args const byte[:], quiet bool, outp byte[>..]&) 
 	let t0 = time();
 	if pend.len > 0 {
 		if !quiet { write_stderr(str("gold: translating ", pend.len, " of ", B.len, " blocks with ", model, "\n")); }
-		if !translate(pend, model) { print("gold: translation failed"); return false; }
+		var ok = translate(pend, model);
+		if !ok && is_local(model) { var fb byte[>..] = []; fallback(fb); write_stderr(str("gold: local translation failed, retrying with ", fb, "\n")); ok = translate(pend, fb); }
+		if !ok { print("gold: translation failed"); return false; }
 		for &b, i in B { if b.pend { b.pend = false; b.he = put(""); } }
 	}
 	var file byte[>..] = [];
@@ -828,7 +912,9 @@ fn build(gp const byte[:], run_args const byte[:], quiet bool, outp byte[>..]&) 
 		if bad.len == 0 { for b, i in B { if b.kind == 0 { bad.push(i); } } }
 		sort(bad) { a, b => a < b };
 		if !quiet { write_stderr(str("gold: repairing ", bad.len, " block(s), round ", round + 1, "\n")); }
-		if !repair(bad, file, errs, if round + 2 >= tries { hard[..] } else { model[..] }) { print("gold: repair call failed"); return false; }
+		var rm byte[>..] = [];
+		if round + 2 >= tries { rm.append(hard); } else if is_local(model) && round >= LROUNDS() { fallback(rm); } else { rm.append(model); }
+		if !repair(bad, file, errs, rm) { print("gold: repair call failed"); return false; }
 		changed = true;
 		round++;
 	}
@@ -839,6 +925,7 @@ fn build(gp const byte[:], run_args const byte[:], quiet bool, outp byte[>..]&) 
 		var gw = 0;
 		for b in B { if b.kind == 0 { gw += words(at(b.src)).len; } }
 		write_stderr(str("gold: ", outp, " ok (", B.len, " blocks, ", gw, " Gold words -> ", words(file).len, " Helium words"));
+		if LCALLS > 0 { write_stderr(str("; ", LCALLS, " local model calls")); }
 		if CALLS > 0 { write_stderr(str("; ", CALLS, " model calls, ", TIN + TCR, " in / ", TOUT, " out tokens, $")); var cs byte[>..] = []; format_flt(cs, COST, 4); write_stderr(cs); }
 		write_stderr(str(", ", (time() - t0) as! int, " s)\n"));
 	}
@@ -1001,7 +1088,7 @@ fn usage() {
 	print("  gold test file.gold         build, then run the packs' test commands");
 	print("  gold squeeze f.gold check='cmd' [rounds=4]   shorten the Gold, keeping it only if it rebuilds and the check passes");
 	print("  gold compact f.gold         pack its data tables (column scales, blank = same as above); no model call");
-	print("\nenv: GOLD_MODEL (sonnet), GOLD_MODEL_HARD (opus, last repair), GOLD_MODEL_PORT, GOLD_TRIES (4, extended up to 10 while each round changes the errors), GOLD_K (70), GOLD_HC, GOLD_HC_LIB, GOLD_VERBOSE");
+	print("\nenv: GOLD_MODEL (sonnet; granite or local:<name> = the local llama-server, GOLD_LOCAL_URL http://127.0.0.1:18790, started via GOLD_LOCAL_UNIT granite-gold.service, waiting GOLD_LOCAL_WAIT 120 s for the GPU; it gets the first GOLD_LOCAL_ROUNDS 2 repair rounds, then GOLD_MODEL_FALLBACK sonnet takes over, and the whole build falls back when the local model is unavailable), GOLD_MODEL_HARD (opus, last repair), GOLD_MODEL_PORT, GOLD_TRIES (4, extended up to 10 while each round changes the errors), GOLD_K (70), GOLD_HC, GOLD_HC_LIB, GOLD_VERBOSE");
 }
 fn main() {
 	setup();
@@ -1012,15 +1099,17 @@ fn main() {
 	if cmd == "pack" { exit(cmd_pack(rest)); }
 	if cmd == "packs" { exit(cmd_packs()); }
 	if cmd == "find" { exit(cmd_find(rest)); }
-	if cmd == "port" { exit(cmd_port(rest)); }
-	if cmd == "squeeze" { exit(cmd_squeeze(rest)); }
+	if cmd == "port" { exit(local_done(cmd_port(rest))); }
+	if cmd == "squeeze" { exit(local_done(cmd_squeeze(rest))); }
 	if cmd == "compact" { var o byte[>..] = []; var pk byte[>..] = []; if rest.len == 0 || !readall(rest[0], o) { print("usage: gold compact <file.gold>"); exit(2); } pack_tables(o, pk); write_file(rest[0], pk); print("gold compact: ", rest[0], " ", o.len, " -> ", pk.len, " bytes"); exit(0); }
 	if cmd != "build" && cmd != "run" && cmd != "show" && cmd != "test" || rest.len == 0 { usage(); exit(2); }
 	var pa byte[>..] = [];
 	var dd = false;
 	for x in rest[1..] { if dd { pa.push(' '); q(pa, x); } if x == "--" { dd = true; } }
 	var outp byte[>..] = [];
-	if !build(rest[0], pa, cmd == "show", outp) { exit(1); }
+	let built = build(rest[0], pa, cmd == "show", outp);
+	local_stop();
+	if !built { exit(1); }
 	if cmd == "show" { var s byte[>..] = []; readall(outp, s); write_stdout(s); }
 	if cmd == "run" { var o byte[>..] = []; let rc = run_prog(outp, pa, o); write_stdout(o); exit(rc); }
 	if cmd == "test" {

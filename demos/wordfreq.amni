@@ -1,39 +1,36 @@
-import dictionary;
-struct WC { w byte[..32], c int }
-fn is_letter(c byte) bool { (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') }
-fn top_words(text const byte[:], n int) WC[>..] {
+struct WC { word byte[..16], count int }
+fn top_words(text byte[:], n int) WC[>..] {
 	var low byte[>..] = [];
 	for c in text {
-		if c >= 'A' && c <= 'Z' { low.push(c + 32); }
-		else if c >= 'a' && c <= 'z' { low.push(c); }
-		else { low.push(' '); }
+		if c >= 'A' && c <= 'Z' { low.push(c + 32); } else { low.push(c); }
 	}
-	var d = dictionary<const byte[:], int> {};
-	let ws = words(low);
-	for w in ws { update(d, w, 0) { it += 1; }; }
-	var items WC[>..] = [];
-	each(d) { k, v =>
-		let e .= items.push(WC { c: v, .. });
-		e.w.append(k);
-	};
-	sort(items) { a, b => a.c > b.c || (a.c == b.c && compare(a.w, b.w) < 0) };
+	var all WC[>..] = [];
+	var i = 0;
+	while i < low.len {
+		if low[i] < 'a' || low[i] > 'z' { i++; continue; }
+		let start = i;
+		while i < low.len && low[i] >= 'a' && low[i] <= 'z' { i++; }
+		let w = low[start..i];
+		var found = false;
+		for &e in all {
+			if e.word == w { e.count += 1; found = true; }
+		}
+		if !found {
+			let e .= all.push(WC { count: 1, .. });
+			e.word.append(w);
+		}
+	}
+	sort(all) { a, b => a.count > b.count || (a.count == b.count && compare(a.word, b.word) < 0) };
 	var out WC[>..] = [];
-	for i in 0..min(n, items.len) { out.push(items[i]); }
+	for k in min(n, all.len) { out.push(all[k]); }
 	out
-}
-fn count_words(text const byte[:]) int {
-	var n = 0;
-	var inw = false;
-	for c in text {
-		let l = is_letter(c);
-		if l && !inw { n++; }
-		inw = l;
-	}
-	n
 }
 fn main() {
 	let text = "The cat and the hat. The bat sat on the cat!";
-	let r = top_words(text, 3);
-	for e in r { print(e.w, ": ", e.c); }
-	print("total: ", count_words(text));
+	let top = top_words(text, 3);
+	for e in top { print(e.word, ": ", e.count); }
+	let everything = top_words(text, 1000);
+	var total = 0;
+	for e in everything { total += e.count; }
+	print("total: ", total);
 }

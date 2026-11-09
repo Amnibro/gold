@@ -1,0 +1,12 @@
+logic	Logic & Core	Numbers, arrays, sorting, strings, maps and error handling: the building blocks of every program.
+data	Text & Data	JSON, regular expressions, Base64, binary formats and decompression.
+system	Files & System	Files, folders, processes, clocks and calling into C.
+graphics	Graphics	The GPU layer, the 3D renderer, models, meshes, particles and image files.
+ui	User Interface	Windows, buttons, text input, game HUDs, touch gestures and fonts.
+audio	Audio	Sound playback, 3D positioning, mixing and reverb.
+animation	Animation	Skeletons, clips, blending, state machines, inverse kinematics and skinning.
+physics	Physics & Navigation	Rigid-body simulation, collisions, joints and pathfinding.
+world	Worlds & Editors	Streaming large worlds and building scene editors.
+network	Networking	Sockets, HTTP, TLS, WebSockets and multiplayer game networking.
+security	Security	Hashes, encryption, signatures and certificates.
+web	Web Pages	Control the browser from a Helium web build: page elements, events and WebGL.

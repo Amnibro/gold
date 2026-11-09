@@ -1,0 +1,23 @@
+/api-library/gold/	Install Gold and write your first program in plain English.
+/api-library/gold/commands	Every gold command and its options, with examples.
+/api-library/gold/format	Headers, paragraphs, exact code, data tables and expected output.
+/api-library/gold/settings	The environment variables that choose models, compilers and limits.
+/api-library/gold/dialects	Keep the number and rounding rules of Rust, Python, JavaScript, Java, Kotlin or NumPy when porting.
+/api-library/gold/packs	Index your own product so Gold can find and call its code.
+/api-library/gold/writing	How to get the right program on the first try, and what to do when a build fails.
+/api-library/gold/how	The six steps from plain English to checked Helium.
+/api-library/helium/	Install Helium, run your first program, and browse the whole standard library.
+/api-library/helium/language/commands	Every hc command, option and environment variable.
+/api-library/helium/language/builtins	Functions the compiler provides directly: print, copy, threads, queues and array members.
+/api-library/helium/language/amni-basics	The three things to know before reading .amni code.
+/api-library/helium/language/core-language	Variables, functions, numbers and how memory stays safe with no heap.
+/api-library/helium/language/arrays-and-strings	The array kinds, their members, strings, and the rules behind most errors.
+/api-library/helium/language/control-flow	If, match, guard, loops, ranges and blocks that return values.
+/api-library/helium/language/structs-enums-match	Structs, enums with payloads, pattern matching and generic structs.
+/api-library/helium/language/references-and-optionals	References, optional values and the rules that stop them dangling.
+/api-library/helium/language/functions-generics-blocks	Overloads, generics, trailing blocks, nested functions and recursion.
+/api-library/helium/language/lookup-table-functions	Turn a pure function into a saved lookup table that can fill on the GPU.
+/api-library/helium/language/program-modules-threads	Imports, namespaces, globals, threads and calling C.
+/api-library/helium/language/the-standard-library-at-a-glance	A one-page tour of the most-used library functions.
+/api-library/helium/language/compact-constructs-and-warnings	One-line constructs for common loops, and the warnings that suggest them.
+/api-library/helium/language/web-builds	Build for the browser with WebAssembly, the web module and WebGL.

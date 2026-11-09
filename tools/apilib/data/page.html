@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#FBFAF8">
+<title>{{title}} | AMNI-SCIENT</title>
+<meta name="description" content="{{desc}}">
+<meta name="author" content="Amni-Scient">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{desc}}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://amni-scient.com{{url}}">
+<link rel="canonical" href="https://amni-scient.com{{url}}">
+<link rel="stylesheet" href="/css/style.css?v=b268">
+<link rel="stylesheet" href="/api-library/lib.css?v={{ver}}">
+<script>
+(function(){var h=document.documentElement,s=localStorage.getItem('amni-theme')||'light';h.dataset.theme=s;function u(){var b=document.getElementById('theme-toggle');if(b)b.textContent=h.dataset.theme==='dark'?'LIGHT':'DARK';var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',h.dataset.theme==='dark'?'#0A0B0E':'#FBFAF8');}window.addEventListener('DOMContentLoaded',u);window.toggleTheme=function(){var n=h.dataset.theme==='dark'?'light':'dark';h.dataset.theme=n;localStorage.setItem('amni-theme',n);u();};})();
+</script>
+<script type="module">import {start} from '/api-library/helium.js?v={{ver}}'; start({wasm: '/api-library/search.wasm?v={{ver}}'});</script>
+</head>
+<body class="theme-gold lib">
+{{nav}}
+<div class="lib-bar">
+<p class="lib-crumbs">{{crumbs}}</p>
+<div class="lib-search">
+<input id="lib-q" type="search" placeholder="Search every function, type and command" autocomplete="off" aria-label="Search the API library">
+<div id="lib-results" class="lib-results" hidden></div>
+</div>
+</div>
+<div class="lib-wrap">
+<main class="lib-main" id="lib-main">
+<a class="lib-skip" href="#lib-side">All sections</a>
+{{main}}
+</main>
+<aside class="lib-side" id="lib-side">
+{{side}}
+</aside>
+</div>
+<p class="page-updated">Last updated <time datetime="{{date}}">{{date}}</time></p>
+<footer>
+<div class="footer-links">
+<a href="/about.html">ABOUT</a>
+<a href="/faq.html">FAQ</a>
+<a href="/privacy.html">PRIVACY</a>
+<a href="/terms.html">TERMS</a>
+<a href="/contact.html">CONTACT</a>
+<a href="https://ko-fi.com/amnibro" target="_blank" rel="noopener noreferrer" class="kofi-link">&#9749; SUPPORT</a>
+</div>
+<p>&copy; 2025-2026 Amniscient, LLC. All rights reserved.</p>
+</footer>
+</body>
+</html>

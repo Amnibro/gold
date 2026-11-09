@@ -1,0 +1,66 @@
+std.he	logic	The library every program sees without importing it: numbers, arrays, sorting, heaps, strings, parsing, printing and random numbers.
+math.he	logic	Rounding, roots, trigonometry, exponentials and logarithms for `real` and `f32` values, plus `PI` and `TAU`.
+vec.he	logic	Small fixed vectors such as `float3` with dot and cross products, lengths, normalizing and blending.
+dictionary.he	logic	A hash map from any key type to any value type, with insert, lookup, update, remove and iteration.
+exception.he	logic	Try a block of code and throw a value out of any depth beneath it.
+json.he	data	Write JSON text, read it piece by piece with a pull reader, or parse it into a small document tree.
+regex.he	data	Regular expressions over bytes. Matching time grows linearly with the text, so a bad pattern cannot hang a program.
+base64.he	data	Encode and decode Base64 text.
+binary.he	data	Float bit patterns, bounds-checked little-endian reads, a read cursor and little-endian writes.
+gfx/zlib.amni	data	Decompress DEFLATE and zlib streams, the compression used inside PNG files.
+os.he	system	Files, folders, standard streams, command-line arguments, environment variables, clocks and child processes.
+ffi.he	system	Read raw memory at addresses handed over by foreign code such as C libraries.
+gfx.he	graphics	The GPU layer: windows, input events, buffers, textures, samplers, render passes, pipelines and compute.
+gfx/scene3d.amni	graphics	A 3D renderer for glTF assets with sun shadows, ambient occlusion, temporal upscaling, bloom and color grading.
+gfx/gltf.amni	graphics	Load glTF 2.0 models (`.glb` and `.gltf`) into memory pools the renderer uploads in one go.
+gfx/shapes.amni	graphics	Build spheres, planes and boxes in code. They render through `gfx.scene3d` exactly like loaded models.
+gfx/motion.amni	graphics	Pose glTF scenes: sample animation channels, walk the node tree, and build joint matrices and morph weights.
+gfx/linalg.amni	graphics	Quaternions, rigid transforms and 4x4 matrix helpers for the 3D renderer.
+gfx/fx.amni	graphics	GPU particle emitters that spawn, simulate, sort and draw.
+gfx/sparks.amni	graphics	Fast GPU particles drawn as glowing camera-facing discs in the `gfx.scene3d` color pass.
+gfx/rt.amni	graphics	Build a bounding volume tree of triangles for ray tracing, upload it to the GPU, and test rays against it.
+gfx/scalability.amni	graphics	Pick and apply graphics quality settings for the device.
+gfx/codec_png.amni	graphics	Decode PNG files to RGBA pixels and write 8-bit PNG files.
+gfx/codec_jpeg.amni	graphics	Decode baseline JPEG files to RGBA pixels.
+gfx/cornell.amni	graphics	The classic Cornell box test scene as plain triangle data.
+ui.he	ui	A full interface toolkit: windows, layouts, buttons, sliders, text editing, charts, trees, fonts and styling.
+gfx/hud.amni	ui	An in-game HUD: a tree of nodes with layout, animated tweens, rich text and localized strings.
+gfx/sdf_font.amni	ui	A built-in font drawn from vector strokes, so text stays sharp at any size with no font files.
+gfx/touch.amni	ui	Turn raw touch input into gestures.
+ttf.he	ui	Read TrueType fonts: metrics, glyph shapes, glyph bitmaps and packing glyphs into atlases.
+audio.he	audio	Load and play sounds with voices, 3D positioning, mix buses, reverb and offline rendering.
+anim/clip.amni	animation	The clip bank: keyframes at a uniform rate, sampled by time or phase, with additive clips and root motion.
+anim/pose.amni	animation	Skeletons, local poses, forward kinematics, blending, additive layers and per-bone masks.
+anim/space.amni	animation	1D and 2D blend spaces that turn values such as speed into weights over sample clips.
+anim/machine.amni	animation	The animation state machine: states, conditional transitions, crossfades, phase sync and interruption.
+anim/ik.amni	animation	Two-bone and FABRIK chain inverse kinematics, plus a foot-planting helper.
+anim/skin.amni	animation	Skinning palettes and linear-blend skinning of glTF mesh data on the CPU.
+anim/gpuskin.he	animation	Linear-blend skinning on the GPU through a self-contained Vulkan compute backend.
+anim/gltf.amni	animation	Read skinned characters from `.glb` files: skeletons, inverse bind matrices and animation samplers.
+anim/math.amni	animation	Quaternions and rigid transforms for the animation runtime.
+anim/gold.amni	animation	A ready-made walking and running character: speed blending, action states, an upper-body layer, root motion and foot planting.
+physics.he	physics	A 3D rigid-body physics engine: worlds, bodies, shapes, joints, contacts, queries and recordings.
+nav/mesh.amni	physics	Build a navigation mesh of walkable cells and find paths across it.
+stream/world.amni	world	Stream a large world: load and unload grid cells in background threads as the player moves.
+edit/scene.amni	world	The core of a scene editor: entities, undo and redo, parenting, save and load, picking and drag handles.
+edit/view.amni	world	Connect an edited scene to the 3D renderer so it draws in the viewport.
+net/sock.he	network	TCP and UDP sockets with addresses, polling, length-prefixed frames and readable error names.
+net/udp.he	network	Minimal IPv4 UDP sockets.
+net/tcp.he	network	Non-blocking TCP client connections with host name lookup.
+net/http.he	network	An HTTP client with chunked replies and JSON helpers.
+net/tls.he	network	A TLS client with certificate checking and pinning.
+net/ws.he	network	A WebSocket client.
+net/sio.he	network	A Socket.IO client over WebSocket, with a fallback to long polling.
+net/link.amni	network	Reliable and unreliable game messages over UDP, with acknowledgments and round-trip timing.
+net/snap.amni	network	Compact game-state snapshots, interpolation and client-side prediction.
+crypto/hash.he	security	SHA-1 and SHA-2 hashes, HMAC, HKDF, PBKDF2 and constant-time comparison.
+crypto/aead.he	security	Authenticated encryption with ChaCha20-Poly1305 and AES-GCM.
+crypto/c25519.he	security	X25519 key exchange and Ed25519 signatures.
+crypto/ecc.he	security	Elliptic-curve keys, ECDH key exchange, and ECDSA signing and verification.
+crypto/rsa.he	security	RSA PKCS#1 and PSS signature verification.
+crypto/x509.he	security	Parse X.509 certificates and verify certificate chains.
+crypto/bn.he	security	Big-number and Montgomery arithmetic the other security modules build on.
+crypto/rand.he	security	Secure random bytes from the operating system.
+gf.he	security	Fast GF(2^8) arithmetic over byte buffers and the AES S-box and MixColumns steps, using CPU vector instructions when present.
+web.he	web	Talk to the browser from a Helium web build: page elements, events, timers, fetch, storage and other JavaScript libraries.
+webgl.he	web	WebGL2 graphics on a canvas: shaders, buffers, textures and draw calls.

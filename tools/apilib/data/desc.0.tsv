@@ -1,0 +1,57 @@
+gfx.he	display_scale() f32	Window Setup	pub	Returns the window's display scale factor, or 1.0 when no window exists or the scale is unavailable.
+gfx.he	touch_first() bool	Input Events	pub	Returns true when the platform is Android or iOS, where touch is the primary input.
+os.he	extern utc_offset(unix_seconds int) int	Time	pub	Returns the UTC offset in seconds for the given Unix timestamp, as used for converting to local time.
+ttf.he	struct V { t int, x int, y int, cx int, cy int, cx1 int	Font Parsing	int	Raw outline vertex record used internally for glyph shapes, with a type tag and coordinates plus control points.
+ttf.he	struct Cs { x f32	Glyph Shapes	int	Internal cursor state for decoding CFF charstrings, tracking current point, contour start and accumulated vertices.
+ttf.he	font_offset(d const byte[:], index int) int	Font Parsing	pub	Returns the byte offset of the font at the given index in a font file, or -1 if invalid.
+ttf.he	font_count(d const byte[:]) int	Font Parsing	pub	Returns how many fonts a file contains, counting collections, or 0 if the data is too short.
+ttf.he	find_table(d const byte[:], fo int, tag const byte[:]) int	Font Parsing	int	Returns the byte offset of the table with the given four-character tag, or 0 if absent.
+ttf.he	cubic(ps Pt[>..]&, x0 f32, y0 f32, x1 f32, y1 f32, x2 f32, y2 f32, x3 f32, y3 f32, fs f32, n int)	Glyph Rasterizing	int	Flattens a cubic Bézier curve into line points by recursive subdivision, appending the results to a point list.
+ttf.he	cov(d const byte[:], o int, g int) int	Font Parsing	int	Looks up a glyph in a coverage table and returns its coverage index, or -1 if absent.
+ttf.he	cls(d const byte[:], o int, g int) int	Font Parsing	int	Returns the class value of a glyph from a class definition table, or 0 if not listed.
+ttf.he	vsz(vf int) int	Font Parsing	int	Returns the byte size of a positioning value record based on its format flags.
+ttf.he	xadv(d const byte[:], o int, vf int) int	Font Parsing	int	Reads the horizontal advance adjustment from a positioning value record, or 0 if the format has none.
+ttf.he	kern_setup(f Info&)	Font Parsing	int	Locates kerning tables and collects pair adjustment subtables from the font for later kerning lookups.
+ttf.he	pair(d const byte[:], st int, g1 int, g2 int) int, bool	Font Parsing	int	Looks up a glyph pair in a pair adjustment subtable, returning the kerning value and whether the pair was found.
+ttf.he	legacy(d const byte[:], t int, g1 int, g2 int) int	Font Parsing	int	Sums horizontal kerning values for a glyph pair from a legacy kern table, or 0 if the format is unsupported.
+ttf.he	kern_raw(f Info&, g1 int, g2 int) int	Font Parsing	int	Computes the uncached kerning adjustment for a glyph pair, using pair adjustment subtables or the legacy table.
+ttf.he	kern(f Info&, g1 int, g2 int) int	Font Parsing	pub	Returns the kerning adjustment in font units between two glyphs, caching results, or 0 if either glyph is not positive.
+ttf.he	rofs(d const byte[:], p int, sz int) int	Font Parsing	int	Reads a big-endian unsigned integer of the given byte size at an offset.
+ttf.he	ix_item(d const byte[:], o int, i int) int, int	Font Parsing	int	Returns the data offset and byte length of an item in a CFF index.
+ttf.he	ix_end(d const byte[:], o int) int	Font Parsing	int	Returns the offset just past the end of a CFF index.
+ttf.he	dnum(d const byte[:], p int) int, int	Font Parsing	int	Decodes a CFF dictionary integer operand and returns its value with the offset of the next byte.
+ttf.he	dict_get(d const byte[:], st int, n int, key int) int[>..]	Font Parsing	int	Collects the operands of a given operator from a CFF dictionary, returning an empty list if the key is missing.
+ttf.he	priv_subrs(f Info&, st int, n int) int	Font Parsing	int	Returns the offset of the local subroutine index from a CFF private dictionary, or 0 if none.
+ttf.he	cff_init(f Info&) bool	Font Parsing	int	Initializes CFF data for a font by locating charstrings, subroutines and font dictionaries, returning false if unsupported or malformed.
+ttf.he	subr(d const byte[:], ix int, n0 int) int, int	Font Parsing	int	Finds a subroutine in a CFF index after applying the bias, returning its offset and length, or zero if invalid.
+ttf.he	cid_subrs(f Info&, g int) int	Font Parsing	int	Returns the local subroutine offset for a glyph in a CID-keyed CFF font, or 0 if none is selected.
+ttf.he	cv(c Cs&, t int, x f32, y f32, cx f32, cy f32, cx1 f32, cy1 f32)	Glyph Shapes	int	Appends a vertex with coordinates wrapped to 16 bits to a charstring cursor's vertex list.
+ttf.he	cclose(c Cs&)	Glyph Shapes	int	Closes the current CFF contour with a line back to its start if the pen is not already there.
+ttf.he	cmove(c Cs&, dx f32, dy f32)	Glyph Shapes	int	Starts a new contour by moving the pen by a relative offset after closing the previous one.
+ttf.he	cline(c Cs&, dx f32, dy f32)	Glyph Shapes	int	Adds a line segment from the current point by a relative offset.
+ttf.he	ccurve(c Cs&, a f32, b f32, p f32, q f32, e f32, h f32)	Glyph Shapes	int	Adds a cubic curve from relative control point and end offsets, updating the current point.
+ttf.he	cff_shape(f Info&, g int) V[>..]	Glyph Shapes	int	Decodes a CFF glyph's charstring into outline vertices, returning an empty list if the data is malformed.
+ttf.he	cff_box(f Info&, g int, b B4&) bool	Glyph Shapes	int	Computes a glyph's bounding box from its CFF outline including cubic control points, returning false if the glyph has no outline.
+ui.he	var EDIT_SEEN = false	Input	int	Tracks whether a text edit was seen this frame, used internally by the module's own input handling.
+ui.he	var HELD int3[>..] = []	Input	int	Holds the set of currently held inputs as integer triples, used only by this module's own code.
+ui.he	var TD = false	Input	int	Internal flag recording touch-down state for the module's own touch handling.
+ui.he	var TDRAG = false	Input	int	Internal flag recording whether a touch is dragging, used by the module's own touch handling.
+ui.he	var TPEND = false	Input	int	Internal flag recording a pending touch action, used by the module's own touch handling.
+ui.he	var TX0 = 0.0	Input	int	Internal touch start x coordinate used by the module's own touch handling.
+ui.he	var TY0 = 0.0	Input	int	Internal touch start y coordinate used by the module's own touch handling.
+ui.he	var TLY = 0.0	Input	int	Internal last touch y coordinate used by the module's own touch handling.
+ui.he	var TV = 0.0	Input	int	Internal touch velocity value used by the module's own touch handling.
+ui.he	var TT0 = 0.0	Input	int	Internal touch start time used by the module's own touch handling.
+ui.he	plausible(d const byte[:], index int) bool	Font Atlases	int	Checks whether font data bytes hold a valid TrueType or OpenType font at the given index, returning false otherwise.
+ui.he	kadj(a Atl&, i int, j int) f32	Font Metrics	int	Returns the kerning adjustment in pixels between two baked glyph indices, or zero when they come from different fonts.
+ui.he	struct Inp { mb MB[6], pos float2, prev float2, delta float2, sd float2, sp float2	Input	int	Internal record of per-frame input state: mouse buttons, pointer position, scroll, keys and typed text.
+ui.he	input_scroll_px(c Context, amount float2)	Input	pub	Adds a pixel-based scroll amount, divided by the context scale, to the pending scroll; must be called between input begin and end.
+ui.he	style_shape(c Context, rounding f32, spacing f32)	Styling	pub	Sets button and widget corner rounding and spacing, scaling paddings from the spacing; rounding must be >= 0 and spacing > 0.
+ui.he	style_button_text(c Context, col Color)	Button Styling	pub	Sets the button's normal, hover and active text colors to one color.
+ui.he	font_height(f Font) f32	Font Metrics	pub	Returns the line height of a font, or 0 if the font handle is invalid.
+ui.he	style_text_padding(c Context, tpad float2) float2	Styling	pub	Sets the padding around text labels and returns the previous padding.
+ui.he	row_spacing(c Context) float2	Layout	pub	Returns the spacing between widgets and rows in the context's window style.
+ui.he	group_padding(c Context) float2	Layout	pub	Returns the padding inside groups from the context's window style.
+ui.he	wrap_height(c Context, f Font, s const byte[:], width f32) f32	Text Labels	pub	Returns the height needed to draw text wrapped to a width with a font, or 0 if invalid.
+ui.he	kw(fid u32, t const byte[:], ps int, cs int, ce int) f32	Text Editing	int	Returns the pixel width of a glyph run in a text slice, kerning-adjusted against the previous character when one exists.
+ui.he	touch_cancel(c Context)	Input	pub	Cancels the in-progress left-button touch press on a context, releasing it and moving its pointer far offscreen.

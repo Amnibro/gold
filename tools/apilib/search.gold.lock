@@ -1,0 +1,316 @@
+=== -4cd98615a6725bd4
+import web;
+struct Row { at int[6], len int[6], pub_rank bool }
+var IDX byte[>..];
+var ROWS Row[>..];
+fn col(r Row, i int) const byte[:] { IDX[r.at[i]..r.at[i] + r.len[i]] }
+=== -7f2a495cf263150e
+var Q i32 = 0;
+var RES i32 = 0;
+var LOADED = false;
+var LOADING = false;
+var QUERY byte[>..];
+var SHOWN int[>..];
+var SEL int = -1;
+let TAG_INPUT i32 = 1;
+let TAG_FOCUS i32 = 2;
+let TAG_KEY i32 = 3;
+let TAG_DOCKEY i32 = 4;
+let TAG_CLICK i32 = 5;
+let TAG_INDEX i32 = 7;
+=== -1113790fc9f84c9d
+fn parse_index() {
+	ROWS.clear();
+	let n = IDX.len;
+	var pos = 0;
+	while pos < n {
+		var e = pos;
+		while e < n && IDX[e] != '\n' { e++; }
+		var le = e;
+		if le > pos && IDX[le - 1] == '\r' { le--; }
+		var r = Row { at: [0; 6], len: [0; 6], pub_rank: false };
+		var c = 0;
+		var s = pos;
+		var i = pos;
+		while i <= le {
+			if i == le || IDX[i] == '\t' {
+				if c < 6 {
+					r.at[c] = s;
+					r.len[c] = i - s;
+				}
+				c++;
+				s = i + 1;
+			}
+			i++;
+		}
+		if c == 6 {
+			r.pub_rank = IDX[r.at[5]..r.at[5] + r.len[5]] == "pub";
+			ROWS.push(r);
+		}
+		pos = e + 1;
+	}
+}
+=== -41e2e719f8c300c0
+fn lc(c byte) byte { if c >= 'A' && c <= 'Z' { c + 32 } else { c } }
+fn lower_has(hay const byte[:], needle const byte[:]) int {
+	if needle.len == 0 { return 0; }
+	if needle.len > hay.len { return -1; }
+	for i in hay.len - needle.len + 1 {
+		var j = 0;
+		while j < needle.len && lc(hay[i + j]) == lc(needle[j]) { j++; }
+		if j == needle.len { return i; }
+	}
+	return -1;
+}
+fn lower_eq(a const byte[:], b const byte[:]) bool {
+	if a.len != b.len { return false; }
+	for i in a.len {
+		if lc(a[i]) != lc(b[i]) { return false; }
+	}
+	return true;
+}
+=== -58cdacaac4365a0e
+fn score(r Row, q const byte[:]) int {
+	let name = col(r, 0);
+	let module = col(r, 2);
+	let desc = col(r, 4);
+	var st = 0;
+	if name.len >= 2 {
+		var i = name.len - 2;
+		while i >= 0 {
+			if name[i] == ':' && name[i + 1] == ':' { st = i + 2; break; }
+			i--;
+		}
+	}
+	let short = name[st..];
+	var s = 0;
+	if lower_eq(name, q) || lower_eq(short, q) {
+		s = 1000;
+	} else if short.len >= q.len && lower_eq(short[..q.len], q) {
+		s = 800;
+	} else if name.len >= q.len && lower_eq(name[..q.len], q) {
+		s = 750;
+	} else {
+		let p = lower_has(name, q);
+		if p >= 0 {
+			s = 600;
+			if p > 0 && name[p - 1] == '_' { s += 50; }
+		} else {
+			var all = true;
+			var cnt = 0;
+			var bonus = 0;
+			let ws = words(q);
+			for w in ws {
+				cnt++;
+				let inn = lower_has(name, w) >= 0;
+				let inm = lower_has(module, w) >= 0;
+				let ind = lower_has(desc, w) >= 0;
+				if !(inn || inm || ind) { all = false; }
+				if inn { bonus += 40; }
+				if inm { bonus += 20; }
+			}
+			if all && cnt > 0 {
+				s = 200 + bonus + max(0, 30 - name.len);
+			}
+		}
+	}
+	if s > 0 {
+		if r.pub_rank { s += 100; }
+		if col(r, 1) == "guide" { s += 60; }
+	}
+	return s;
+}
+=== -26b8fd673c7809ed
+fn html_esc(out byte[>..]&, s const byte[:]) {
+	for c in s {
+		if c == '&' { out.append("&amp;"); }
+		else if c == '<' { out.append("&lt;"); }
+		else if c == '>' { out.append("&gt;"); }
+		else if c == '"' { out.append("&quot;"); }
+		else if c == '\'' { out.append("&#39;"); }
+		else { out.push(c); }
+	}
+}
+fn render() {
+	if QUERY.len == 0 {
+		web::attr(RES, "hidden", "");
+		SHOWN.clear();
+		return;
+	}
+	if !LOADED {
+		SHOWN.clear();
+		SEL = -1;
+		web::html(RES, "<p class=\"lib-rn\">Loading...</p>");
+		web::del_attr(RES, "hidden");
+		return;
+	}
+	let q = QUERY[..];
+	var top int[..40];
+	var tsc int[..40];
+	var tnl int[..40];
+	for i in ROWS.len {
+		let s = score(ROWS[i], q);
+		if s > 0 {
+			let nl = col(ROWS[i], 0).len;
+			var p = 0;
+			while p < top.len && !(s > tsc[p] || (s == tsc[p] && nl < tnl[p])) { p++; }
+			if p < 40 {
+				if top.len < 40 {
+					top.push(0);
+					tsc.push(0);
+					tnl.push(0);
+				}
+				var k = top.len - 1;
+				while k > p {
+					top[k] = top[k - 1];
+					tsc[k] = tsc[k - 1];
+					tnl[k] = tnl[k - 1];
+					k--;
+				}
+				top[p] = i;
+				tsc[p] = s;
+				tnl[p] = nl;
+			}
+		}
+	}
+	SHOWN.clear();
+	var h byte[>..] = [];
+	for k in top.len {
+		let idx = top[k];
+		SHOWN.push(idx);
+		let r = ROWS[idx];
+		h.append("<a class=\"lib-r");
+		if k == 0 { h.append(" sel"); }
+		h.append("\" href=\"");
+		html_esc(h, col(r, 3));
+		h.append("\"><b>");
+		html_esc(h, col(r, 0));
+		h.append("</b><em>");
+		html_esc(h, col(r, 1));
+		h.append(" in ");
+		html_esc(h, col(r, 2));
+		h.append("</em>");
+		if col(r, 4).len > 0 {
+			h.append("<small>");
+			html_esc(h, col(r, 4));
+			h.append("</small>");
+		}
+		h.append("</a>");
+	}
+	if SHOWN.len == 0 {
+		SEL = -1;
+		web::html(RES, "<p class=\"lib-rn\">Nothing matches. Try a shorter word.</p>");
+	} else {
+		SEL = 0;
+		web::html(RES, h);
+	}
+	web::del_attr(RES, "hidden");
+}
+=== -50a33ed9ad42068a
+fn move_sel(by int) {
+	let n = SHOWN.len;
+	if n == 0 { return; }
+	let old = SEL;
+	var nw = 0;
+	if old < 0 {
+		if by > 0 { nw = 0; } else { nw = n - 1; }
+	} else {
+		nw = (old + by) % n;
+	}
+	if old >= 0 {
+		let c = web::child(RES, old as i32);
+		web::cls(c, "sel", false);
+		web::release(c);
+	}
+	let c2 = web::child(RES, nw as i32);
+	web::cls(c2, "sel", true);
+	web::scroll_into(c2, false, false);
+	web::release(c2);
+	SEL = nw;
+}
+=== 7d85a0bfc701dafa
+fn load_index() {
+	if LOADING { return; }
+	LOADING = true;
+	web::fetch("/api-library/search.tsv", TAG_INDEX);
+}
+=== -30701e23fc41da39
+export fn he_event(tag i32, kind i32) {
+	if tag == TAG_FOCUS {
+		load_index();
+		if QUERY.len > 0 { render(); }
+	} else if tag == TAG_INPUT {
+		var tmp byte[>..] = [];
+		web::ev_value(tmp);
+		let t = trim(tmp);
+		QUERY.clear();
+		for c in t { QUERY.push(lc(c)); }
+		load_index();
+		render();
+	} else if tag == TAG_INDEX {
+		if kind == web::EV_FETCH {
+			web::fetch_take(web::ev_id(), IDX);
+			parse_index();
+			LOADED = true;
+			render();
+		}
+	} else if tag == TAG_KEY {
+		var k byte[>..] = [];
+		web::ev_key(k);
+		if k == "ArrowDown" {
+			web::ev_prevent();
+			move_sel(1);
+		} else if k == "ArrowUp" {
+			web::ev_prevent();
+			move_sel(-1);
+		} else if k == "Enter" {
+			web::ev_prevent();
+			if SEL >= 0 {
+				web::navigate(col(ROWS[SHOWN[SEL]], 3));
+				web::attr(RES, "hidden", "");
+			}
+		} else if k == "Escape" {
+			web::attr(RES, "hidden", "");
+			web::call(Q, "blur");
+		}
+	} else if tag == TAG_DOCKEY {
+		var k byte[>..] = [];
+		web::ev_key(k);
+		if k == "/" {
+			let t = web::ev_target();
+			var tn byte[>..] = [];
+			web::get_prop(t, "tagName", tn);
+			if tn != "INPUT" && tn != "TEXTAREA" {
+				web::ev_prevent();
+				web::call(Q, "focus");
+			}
+			web::release(t);
+		}
+	} else if tag == TAG_CLICK {
+		let t = web::ev_target();
+		let c = web::closest(t, ".lib-search");
+		if c == 0 { web::attr(RES, "hidden", ""); }
+		if c != 0 { web::release(c); }
+		if t != 0 { web::release(t); }
+	}
+}
+=== 2b22c6881f5fb59d
+fn main() {
+	Q = web::el("lib-q");
+	RES = web::el("lib-results");
+	if Q == 0 || RES == 0 { return; }
+	web::listen(Q, "input", TAG_INPUT, 0);
+	web::listen(Q, "focus", TAG_FOCUS, 0);
+	web::listen(Q, "keydown", TAG_KEY, 0);
+	web::listen(web::DOCUMENT, "keydown", TAG_DOCKEY, 0);
+	web::listen(web::DOCUMENT, "click", TAG_CLICK, 0);
+	var tmp byte[>..] = [];
+	web::get_prop(Q, "value", tmp);
+	let t = trim(tmp);
+	if t.len > 0 {
+		QUERY.clear();
+		for c in t { QUERY.push(lc(c)); }
+		load_index();
+		render();
+	}
+}

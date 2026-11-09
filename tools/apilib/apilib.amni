@@ -1,0 +1,2193 @@
+import os;
+import dictionary;
+import json;
+var TXT byte[>..];
+struct Str { off int, len int }
+fn nostr() Str { Str { 0, 0 } }
+fn keep(s const byte[:]) Str {
+	let o = TXT.len;
+	TXT.append(s);
+	Str { o, s.len }
+}
+fn txt(s Str) const byte[:] { TXT[s.off..s.off + s.len] }
+struct Sym { ns Str, name Str, kind int, decl Str, file Str, line int, doc Str, topic Str, level Str, desc Str }
+var SYMS Sym[>..];
+fn kind_of(s const byte[:]) int {
+	if s == "function" || s == "fn" { return 0; }
+	if s == "type" || s == "struct" { return 1; }
+	if s == "constant" || s == "const" || s == "global" { return 2; }
+	let n, ok = parse_int(s);
+	if ok { return n; }
+	return 0;
+}
+fn load_syms(path const byte[:]) bool {
+	var data byte[>..] = [];
+	if !read_file(path, data) { return false; }
+	SYMS.clear();
+	let lines = split(data, '\n');
+	for ln in lines {
+		let f = split(trim_end(ln), '\t');
+		if f.len < 5 { continue; }
+		let full = f[0];
+		let p = find(full, "::");
+		var ns = nostr();
+		var name = keep(full);
+		if p >= 0 {
+			ns = keep(full[..p]);
+			name = keep(full[p + 2..]);
+		}
+		var doc = nostr();
+		if f.len > 5 { doc = keep(f[5]); }
+		var line_no = 0;
+		let v, ok = parse_int(trim(f[4]));
+		if ok { line_no = v; }
+		SYMS.push(Sym { ns, name, kind_of(trim(f[1])), keep(f[2]), keep(f[3]), line_no, doc, nostr(), nostr(), nostr() });
+	}
+	true
+}
+struct Mod { file Str, cat Str, blurb Str, dev bool }
+var MODS Mod[>..];
+fn load_mods(data const byte[:]) bool {
+	var buf byte[>..] = [];
+	let mp = str(data, "/modules.tsv");
+	if !read_file(mp, buf) { return false; }
+	var devbuf byte[>..] = [];
+	let dp = str(data, "/devonly.txt");
+	read_file(dp, devbuf);
+	let devs = split(devbuf, '\n');
+	MODS.clear();
+	let lines = split(buf, '\n');
+	for ln in lines {
+		let f = split(trim_end(ln), '\t');
+		if f.len < 2 { continue; }
+		let file = trim(f[0]);
+		var isdev = false;
+		for d in devs { if trim(d) == file { isdev = true; } }
+		var blurb = nostr();
+		if f.len > 2 { blurb = keep(f[2]); }
+		MODS.push(Mod { keep(file), keep(trim(f[1])), blurb, isdev });
+	}
+	true
+}
+fn blurb_of(file const byte[:]) const byte[:] {
+	for &m in MODS { if txt(m.file) == file { return txt(m.blurb); } }
+	return "";
+}
+fn set_desc3(i int, tp Str, lv Str, ds Str) {
+	SYMS[i].topic = tp;
+	SYMS[i].level = lv;
+	SYMS[i].desc = ds;
+}
+fn load_descs(data const byte[:]) {
+	var d = dictionary<const byte[:], int> {};
+	var dup = dictionary<const byte[:], bool> {};
+	for i in SYMS.len {
+		var k byte[>..] = [];
+		format(k, txt(SYMS[i].file), "\t", txt(SYMS[i].decl));
+		if d.contains(k) {
+			dup.insert(txt(keep(k)), true);
+		} else {
+			d.insert(txt(keep(k)), i);
+		}
+	}
+	var listing byte[>..] = [];
+	if !list_dir(data, listing) { return; }
+	var names Str[>..] = [];
+	let entries = split(listing, '\n');
+	for e in entries {
+		let nm = trim(e);
+		if starts_with(nm, "desc.") && ends_with(nm, ".tsv") { names.push(keep(nm)); }
+	}
+	sort(names) { a, b => compare(txt(a), txt(b)) < 0 };
+	for nm in names {
+		var buf byte[>..] = [];
+		let fp = str(data, "/", txt(nm));
+		if !read_file(fp, buf) { continue; }
+		let lines = split(buf, '\n');
+		for ln in lines {
+			let f = split(trim_end(ln), '\t');
+			if f.len < 5 { continue; }
+			var k byte[>..] = [];
+			format(k, f[0], "\t", f[1]);
+			let g = d.get(k);
+			if g {
+				let tp = keep(f[2]);
+				let lv = keep(f[3]);
+				let ds = keep(f[4]);
+				set_desc3(g, tp, lv, ds);
+				if dup.contains(k) {
+					var j = g + 1;
+					while j < SYMS.len {
+						if txt(SYMS[j].file) == f[0] && txt(SYMS[j].decl) == f[1] { set_desc3(j, tp, lv, ds); }
+						j++;
+					}
+				}
+			}
+		}
+	}
+}
+fn ask(model const byte[:], sys_path const byte[:], prompt const byte[:], tag const byte[:], out byte[>..]&) bool {
+	let pf = str("/tmp/apilib-", tag, ".prompt");
+	let rf = str("/tmp/apilib-", tag, ".reply");
+	if !write_file(pf, prompt) { return false; }
+	var cmd byte[>..] = [];
+	format(cmd, "claude -p --model ", model, " --setting-sources '' --strict-mcp-config --tools '' --no-session-persistence --output-format text --system-prompt \"$(cat '", sys_path, "')\" < '", pf, "' > '", rf, "' 2>/dev/null");
+	let code = run_command(cmd);
+	out.clear();
+	let got = read_file(rf, out);
+	delete_file(pf);
+	delete_file(rf);
+	code == 0 && got && out.len > 0
+}
+fn describe_chunk(lib const byte[:], data const byte[:], model const byte[:], tag const byte[:], ids const int[:], topics byte[][>..]&, want_topics int) int {
+	if ids.len == 0 { return 0; }
+	let file = txt(SYMS[ids[0]].file);
+	var prompt byte[>..] = [];
+	format(prompt, "Module file: ", file, "\nBlurb: ", blurb_of(file), "\n");
+	prompt.append("Topics already used in this module:");
+	for t, k in topics {
+		if k > 0 { prompt.append(","); }
+		format(prompt, " ", t);
+	}
+	format(prompt, "\nAim for about ", want_topics, " topics for the whole module.\n");
+	prompt.append("Declarations:\n");
+	for k in ids.len { format(prompt, k, "\t", txt(SYMS[ids[k]].decl), "\n"); }
+	prompt.append("Source:\n");
+	let src, ok = src_text(lib, file);
+	if ok {
+		let lines = split(src, '\n');
+		let head = min(30, lines.len);
+		for k in head { format(prompt, lines[k], "\n"); }
+		prompt.append("...\n");
+		let a = max(SYMS[ids[0]].line - 3, 1);
+		let b = min(SYMS[ids[ids.len - 1]].line + 25, lines.len);
+		var q = a;
+		while q <= b {
+			format(prompt, lines[q - 1], "\n");
+			q++;
+		}
+	}
+	var reply byte[>..] = [];
+	let sp = str(data, "/describe.txt");
+	if !ask(model, sp, prompt, tag, reply) { return 0; }
+	let outp = str(data, "/desc.", tag, ".tsv");
+	var counted = 0;
+	let rl = split(reply, '\n');
+	for ln in rl {
+		let f = split(trim_end(ln), '\t');
+		if f.len < 4 { continue; }
+		let pos, pok = parse_int(trim(f[0]));
+		if !pok || pos < 0 || pos >= ids.len { continue; }
+		let tp = trim(f[f.len - 3]);
+		let lv = trim(f[f.len - 2]);
+		let ds = trim(f[f.len - 1]);
+		if tp.len == 0 || ds.len == 0 { continue; }
+		if lv != "pub" && lv != "int" { continue; }
+		let id = ids[pos];
+		var rec byte[>..] = [];
+		format(rec, file, "\t", txt(SYMS[id].decl), "\t", tp, "\t", lv, "\t", ds, "\n");
+		append_file(outp, rec);
+		set_desc3(id, keep(tp), keep(lv), keep(ds));
+		var have = false;
+		for t in topics { if t == tp { have = true; } }
+		if !have { topics.push(tp); }
+		counted++;
+	}
+	counted
+}
+fn cmd_describe(lib const byte[:], data const byte[:], model const byte[:], shard int, shards int) {
+	var files Str[>..] = [];
+	var seen = dictionary<const byte[:], int> {};
+	for i in SYMS.len {
+		let f = txt(SYMS[i].file);
+		if !seen.contains(f) {
+			seen.insert(f, files.len);
+			files.push(SYMS[i].file);
+		}
+	}
+	var left = 0;
+	for i in SYMS.len {
+		if txt(SYMS[i].desc).len > 0 { continue; }
+		let g = seen.get(txt(SYMS[i].file));
+		if g {
+			if g % shards == shard { left++; }
+		}
+	}
+	var done = 0;
+	let tag = str(shard);
+	for fi in files.len {
+		if fi % shards != shard { continue; }
+		let file = txt(files[fi]);
+		var all = 0;
+		var pending int[>..] = [];
+		var topics byte[][>..] = [];
+		for i in SYMS.len {
+			if txt(SYMS[i].file) != file { continue; }
+			all++;
+			if txt(SYMS[i].desc).len == 0 { pending.push(i); }
+			let tp = txt(SYMS[i].topic);
+			if tp.len > 0 {
+				var have = false;
+				for t in topics { if t == tp { have = true; } }
+				if !have { topics.push(tp); }
+			}
+		}
+		let want = clamp(all / 25, 2, 35);
+		var c0 = 0;
+		while c0 < pending.len {
+			var c1 = c0;
+			while c1 < pending.len && c1 - c0 < 90 && SYMS[pending[c1]].line - SYMS[pending[c0]].line <= 900 { c1++; }
+			if c1 == c0 { c1 = c0 + 1; }
+			var todo int[>..] = [];
+			for q in c0..c1 { todo.push(pending[q]); }
+			let size = todo.len;
+			var attempt = 0;
+			while attempt < 3 && todo.len > 0 {
+				let got = describe_chunk(lib, data, model, tag, todo, topics, want);
+				done += got;
+				var rest int[>..] = [];
+				for id in todo { if txt(SYMS[id].desc).len == 0 { rest.push(id); } }
+				todo.clear();
+				todo.append(rest);
+				attempt++;
+			}
+			print(file, " ", size, " done ", done, " left ", left - done);
+			c0 = c1;
+		}
+	}
+}
+
+fn esc(out byte[>..]&, s const byte[:]) {
+	for c in s {
+		if c == '&' {
+			out.append("&amp;");
+		} else if c == '<' {
+			out.append("&lt;");
+		} else if c == '>' {
+			out.append("&gt;");
+		} else if c == '"' {
+			out.append("&quot;");
+		} else {
+			out.push(c);
+		}
+	}
+}
+fn slug(out byte[>..]&, s const byte[:]) {
+	var pend = false;
+	var started = false;
+	for c in s {
+		var d = c;
+		if c >= 'A' && c <= 'Z' { d = c + 32; }
+		if (d >= 'a' && d <= 'z') || (d >= '0' && d <= '9') {
+			if pend && started { out.push('-'); }
+			pend = false;
+			started = true;
+			out.push(d);
+		} else {
+			pend = true;
+		}
+	}
+}
+fn idx(s const byte[:], from int, c byte) int {
+	var i = from;
+	while i < s.len {
+		if s[i] == c { return i; }
+		i++;
+	}
+	return -1;
+}
+fn spans(out byte[>..]&, s const byte[:]) {
+	var i = 0;
+	while i < s.len {
+		if s[i] == '`' {
+			let j = idx(s, i + 1, '`');
+			if j > 0 {
+				out.append("<code>");
+				esc(out, s[i + 1..j]);
+				out.append("</code>");
+				i = j + 1;
+				continue;
+			}
+		}
+		esc(out, s[i..i + 1]);
+		i++;
+	}
+}
+fn inline_md(out byte[>..]&, s const byte[:]) {
+	var i = 0;
+	while i < s.len {
+		let c = s[i];
+		if c == '`' {
+			let j = idx(s, i + 1, '`');
+			if j > 0 {
+				out.append("<code>");
+				esc(out, s[i + 1..j]);
+				out.append("</code>");
+				i = j + 1;
+				continue;
+			}
+		} else if c == '*' && i + 1 < s.len && s[i + 1] == '*' {
+			let k = find(s[i + 2..], "**");
+			if k >= 0 {
+				out.append("<strong>");
+				spans(out, s[i + 2..i + 2 + k]);
+				out.append("</strong>");
+				i += k + 4;
+				continue;
+			}
+		} else if c == '[' {
+			let j = idx(s, i + 1, ']');
+			if j > 0 && j + 1 < s.len && s[j + 1] == '(' {
+				let k = idx(s, j + 2, ')');
+				if k > 0 {
+					let url = s[j + 2..k];
+					out.append("<a href=\"");
+					esc(out, url);
+					out.append("\"");
+					if starts_with(url, "https://") { out.append(" target=\"_blank\" rel=\"noopener noreferrer\""); }
+					out.append(">");
+					spans(out, s[i + 1..j]);
+					out.append("</a>");
+					i = k + 1;
+					continue;
+				}
+			}
+		}
+		esc(out, s[i..i + 1]);
+		i++;
+	}
+}
+struct Heading { text Str, id Str, level int }
+var HEADS Heading[>..];
+struct Hit { name Str, kind Str, module Str, url Str, desc Str, level Str }
+var HITS Hit[>..];
+fn add_hit(name const byte[:], kind const byte[:], modname const byte[:], url const byte[:], desc const byte[:], level const byte[:]) {
+	if kind == "guide" {
+		for &h in HITS {
+			if txt(h.name) == name && txt(h.module) == modname {
+				if url.len > txt(h.url).len { h.url = keep(url); }
+				if txt(h.desc).len == 0 { h.desc = keep(desc); }
+				return;
+			}
+		}
+	}
+	HITS.push(Hit { keep(name), keep(kind), keep(modname), keep(url), keep(desc), keep(level) });
+}
+fn ticks(s const byte[:]) int {
+	var n = 0;
+	while n < s.len && s[n] == '`' { n++; }
+	n
+}
+fn ol_len(t const byte[:]) int {
+	var n = 0;
+	while n < t.len && t[n] >= '0' && t[n] <= '9' { n++; }
+	if n > 0 && n + 1 < t.len && t[n] == '.' && t[n + 1] == ' ' { return n + 2; }
+	return 0;
+}
+fn heading_level(t const byte[:]) int {
+	if starts_with(t, "### ") { return 3; }
+	if starts_with(t, "## ") { return 2; }
+	if starts_with(t, "# ") { return 1; }
+	return 0;
+}
+fn block_start(t const byte[:]) bool {
+	ticks(t) >= 3 || heading_level(t) > 0 || starts_with(t, "- ") || ol_len(t) > 0 || (t.len > 0 && t[0] == '|')
+}
+fn unescape_pipes(out byte[>..]&, s const byte[:]) {
+	var i = 0;
+	while i < s.len {
+		if s[i] == '\\' && i + 1 < s.len && s[i + 1] == '|' {
+			i++;
+			continue;
+		}
+		out.push(s[i]);
+		i++;
+	}
+}
+fn plain_md(out byte[>..]&, s const byte[:]) {
+	var i = 0;
+	while i < s.len {
+		let c = s[i];
+		if c == '`' || c == '*' {
+			i++;
+			continue;
+		}
+		if c == '[' {
+			let j = idx(s, i + 1, ']');
+			if j > 0 && j + 1 < s.len && s[j + 1] == '(' {
+				let k = idx(s, j + 2, ')');
+				if k > 0 {
+					for q in i + 1..j {
+						if s[q] != '`' && s[q] != '*' { out.push(s[q]); }
+					}
+					i = k + 1;
+					continue;
+				}
+			}
+		}
+		if c == '\\' && i + 1 < s.len && s[i + 1] == '|' {
+			i++;
+			continue;
+		}
+		out.push(c);
+		i++;
+	}
+}
+fn split_cells(line const byte[:], cells byte[:][>..]&) {
+	let s = line;
+	var k = 0;
+	if s.len > 0 && s[0] == '|' { k = 1; }
+	var start = k;
+	var inc = false;
+	var j = k;
+	while j < s.len {
+		let c = s[j];
+		if c == '\\' && j + 1 < s.len && s[j + 1] == '|' {
+			j += 2;
+			continue;
+		}
+		if c == '`' { inc = !inc; }
+		if c == '|' && !inc {
+			cells.push(trim(s[start..j]));
+			start = j + 1;
+		}
+		j++;
+	}
+	let rest = trim(s[start..]);
+	if rest.len > 0 { cells.push(rest); }
+}
+fn is_sep(s const byte[:]) bool {
+	for c in s {
+		if c != '|' && c != '-' && c != ':' && c != ' ' && c != '\t' { return false; }
+	}
+	idx(s, 0, '-') >= 0
+}
+fn cell_html(out byte[>..]&, c const byte[:]) {
+	var u byte[>..] = [];
+	unescape_pipes(u, c);
+	inline_md(out, u);
+}
+fn render_md(out byte[>..]&, md const byte[:], page_url const byte[:], page_title const byte[:]) {
+	let lines = split(md, '\n');
+	var cur_id byte[>..] = [];
+	var i = 0;
+	while i < lines.len {
+		let t = trim(lines[i]);
+		if t.len == 0 {
+			i++;
+			continue;
+		}
+		let fence = ticks(t);
+		if fence >= 3 {
+			i++;
+			out.append("<pre><code>");
+			while i < lines.len {
+				let l = lines[i];
+				if ticks(trim(l)) >= fence { break; }
+				esc(out, trim_end(l));
+				out.push('\n');
+				i++;
+			}
+			i++;
+			out.append("</code></pre>\n");
+			continue;
+		}
+		let hl = heading_level(t);
+		if hl > 0 {
+			let text = trim(t[hl + 1..]);
+			if hl == 1 {
+				out.append("<h1>");
+				inline_md(out, text);
+				out.append("</h1>\n");
+			} else {
+				var plain byte[>..] = [];
+				for c in text { if c != '`' { plain.push(c); } }
+				var id byte[>..] = [];
+				slug(id, plain);
+				HEADS.push(Heading { keep(plain), keep(id), hl });
+				cur_id.clear();
+				cur_id.append(id);
+				format(out, "<h", hl, " id=\"", id, "\">");
+				inline_md(out, text);
+				format(out, "</h", hl, ">\n");
+				var u byte[>..] = [];
+				format(u, page_url, "#", id);
+				add_hit(plain, "guide", page_title, u, "", "pub");
+			}
+			i++;
+			continue;
+		}
+		if starts_with(t, "- ") {
+			out.append("<ul>\n");
+			while i < lines.len {
+				let tt = trim(lines[i]);
+				if !starts_with(tt, "- ") { break; }
+				out.append("<li>");
+				inline_md(out, trim(tt[2..]));
+				out.append("</li>\n");
+				i++;
+			}
+			out.append("</ul>\n");
+			continue;
+		}
+		if ol_len(t) > 0 {
+			out.append("<ol>\n");
+			while i < lines.len {
+				let tt = trim(lines[i]);
+				let on = ol_len(tt);
+				if on == 0 { break; }
+				out.append("<li>");
+				inline_md(out, trim(tt[on..]));
+				out.append("</li>\n");
+				i++;
+			}
+			out.append("</ol>\n");
+			continue;
+		}
+		if t[0] == '|' {
+			let a = i;
+			while i < lines.len {
+				let tt = trim(lines[i]);
+				if tt.len == 0 || tt[0] != '|' { break; }
+				i++;
+			}
+			out.append("<div class=\"lib-tw\"><table>\n");
+			var r = 0;
+			for k in a..i {
+				var cells byte[:][>..] = [];
+				split_cells(trim(lines[k]), cells);
+				if r == 1 && is_sep(trim(lines[k])) {
+					r++;
+					continue;
+				}
+				if r == 0 {
+					out.append("<thead><tr>");
+					for c in cells {
+						out.append("<th>");
+						cell_html(out, c);
+						out.append("</th>");
+					}
+					out.append("</tr></thead>\n<tbody>\n");
+				} else {
+					out.append("<tr>");
+					for c in cells {
+						out.append("<td>");
+						cell_html(out, c);
+						out.append("</td>");
+					}
+					out.append("</tr>\n");
+					if cells.len > 0 {
+						let c0 = cells[0];
+						if c0.len > 0 && c0[0] == '`' {
+							let j = idx(c0, 1, '`');
+							if j > 1 {
+								var d byte[>..] = [];
+								plain_md(d, cells[cells.len - 1]);
+								var u byte[>..] = [];
+								u.append(page_url);
+								if cur_id.len > 0 {
+									u.push('#');
+									u.append(cur_id);
+								}
+								add_hit(c0[1..j], "guide", page_title, u, d, "pub");
+							}
+						}
+					}
+				}
+				r++;
+			}
+			out.append("</tbody></table></div>\n");
+			continue;
+		}
+		var para byte[>..] = [];
+		var first = true;
+		while i < lines.len {
+			let t2 = trim(lines[i]);
+			if t2.len == 0 || block_start(t2) { break; }
+			if !first { para.push('\n'); }
+			para.append(t2);
+			first = false;
+			i++;
+		}
+		out.append("<p>");
+		inline_md(out, para);
+		out.append("</p>\n");
+	}
+}
+fn include_md(out byte[>..]&, md const byte[:], gold_dir const byte[:]) {
+	let lines = split(md, '\n');
+	for ln, k in lines {
+		if k > 0 { out.push('\n'); }
+		let t = trim_end(ln);
+		if starts_with(t, "@include ") {
+			var buf byte[>..] = [];
+			let fp = str(gold_dir, "/", trim(t[9..]));
+			if read_file(fp, buf) { out.append(trim_end(buf)); }
+		} else {
+			out.append(ln);
+		}
+	}
+}
+fn stem_len(file const byte[:]) int {
+	var dot = -1;
+	var i = 0;
+	while i < file.len {
+		if file[i] == '.' { dot = i; }
+		if file[i] == '/' { dot = -1; }
+		i++;
+	}
+	if dot > 0 { return dot; }
+	return file.len;
+}
+fn mod_slug(out byte[>..]&, file const byte[:]) {
+	let n = stem_len(file);
+	for i in n {
+		if file[i] == '/' { out.push('-'); } else { out.push(file[i]); }
+	}
+}
+fn mod_name(out byte[>..]&, file const byte[:]) {
+	let n = stem_len(file);
+	out.append(file[..n]);
+}
+fn mod_import(out byte[>..]&, file const byte[:]) {
+	let n = stem_len(file);
+	for i in n {
+		if file[i] == '/' { out.push('.'); } else { out.push(file[i]); }
+	}
+}
+struct Page { slug Str, title Str, url Str, group int, md Str }
+var PAGES Page[>..];
+fn title_of(md const byte[:]) Str {
+	let lines = split(md, '\n');
+	for ln in lines {
+		let t = trim(ln);
+		if starts_with(t, "# ") { return keep(trim(t[2..])); }
+	}
+	return nostr();
+}
+fn renamed(h const byte[:]) const byte[:] {
+	if h == "Standard library (std is implicit)" { return "The standard library at a glance"; }
+	if h == "Minimal by construction (std constructs and waste warnings)" { return "Compact constructs and warnings"; }
+	if h == "Core" { return "Core language"; }
+	if h == "Web" { return "Web builds"; }
+	return "";
+}
+fn emit_section(heading const byte[:], body const byte[:]) {
+	var ph byte[>..] = [];
+	for c in heading { if c != '`' { ph.push(c); } }
+	let rn = renamed(ph);
+	var title byte[>..] = [];
+	var mdh byte[>..] = [];
+	if rn.len > 0 {
+		title.append(rn);
+		mdh.append(rn);
+	} else {
+		title.append(ph);
+		mdh.append(heading);
+	}
+	var sl byte[>..] = [];
+	slug(sl, title);
+	var url byte[>..] = [];
+	format(url, "/api-library/helium/language/", sl);
+	var md byte[>..] = [];
+	format(md, "# ", mdh, body);
+	PAGES.push(Page { keep(sl), keep(title), keep(url), 1, keep(md) });
+}
+fn load_group(content const byte[:], gold_dir const byte[:], dir const byte[:], group int) {
+	let dp = str(content, "/", dir);
+	var listing byte[>..] = [];
+	if !list_dir(dp, listing) { return; }
+	var names Str[>..] = [];
+	let entries = split(listing, '\n');
+	for e in entries {
+		let n = trim(e);
+		if ends_with(n, ".md") && n != "language.md" && n.len > 6 { names.push(keep(n)); }
+	}
+	sort(names) { a, b => compare(txt(a), txt(b)) < 0 };
+	for nm in names {
+		var raw byte[>..] = [];
+		let fp = str(dp, "/", txt(nm));
+		if !read_file(fp, raw) { continue; }
+		var md byte[>..] = [];
+		include_md(md, raw, gold_dir);
+		let n = txt(nm);
+		let sl = n[3..n.len - 3];
+		var url byte[>..] = [];
+		if sl == "start" || sl == "overview" {
+			if group == 0 { url.append("/api-library/gold/"); } else { url.append("/api-library/helium/"); }
+		} else if group == 0 {
+			format(url, "/api-library/gold/", sl);
+		} else {
+			format(url, "/api-library/helium/language/", sl);
+		}
+		var title = title_of(md);
+		if title.len == 0 { title = keep(sl); }
+		PAGES.push(Page { keep(sl), title, keep(url), group, keep(md) });
+	}
+}
+fn load_pages(content const byte[:], gold_dir const byte[:]) {
+	PAGES.clear();
+	load_group(content, gold_dir, "gold", 0);
+	load_group(content, gold_dir, "helium", 1);
+	var buf byte[>..] = [];
+	let lp = str(content, "/helium/language.md");
+	if !read_file(lp, buf) { return; }
+	let lines = split(buf, '\n');
+	var heading byte[>..] = [];
+	var body byte[>..] = [];
+	var have = false;
+	for ln in lines {
+		if starts_with(ln, "## ") {
+			if have { emit_section(heading, body); }
+			heading.clear();
+			body.clear();
+			heading.append(trim(ln[3..]));
+			have = true;
+		} else if have {
+			body.push('\n');
+			body.append(ln);
+		}
+	}
+	if have { emit_section(heading, body); }
+}
+struct Cat { slug Str, title Str, blurb Str }
+var CATS Cat[>..];
+fn load_cats(data const byte[:]) {
+	CATS.clear();
+	var buf byte[>..] = [];
+	let p = str(data, "/categories.tsv");
+	if !read_file(p, buf) { return; }
+	let lines = split(buf, '\n');
+	for ln in lines {
+		let f = split(trim_end(ln), '\t');
+		if f.len < 2 { continue; }
+		var b = nostr();
+		if f.len > 2 { b = keep(f[2]); }
+		CATS.push(Cat { keep(trim(f[0])), keep(f[1]), b });
+	}
+}
+var CC dictionary<const byte[:], int>;
+var CC_N int = -1;
+fn count_of(file const byte[:], kind int) int {
+	var n = 0;
+	for &s in SYMS {
+		if s.kind == kind && (file.len == 0 || txt(s.file) == file) { n++; }
+	}
+	n
+}
+fn cat_count(cat const byte[:]) int {
+	if CC_N != SYMS.len {
+		CC.clear();
+		CC_N = SYMS.len;
+	}
+	let g = CC.get(cat);
+	if g { return g; }
+	var fs = dictionary<const byte[:], bool> {};
+	for &m in MODS {
+		if txt(m.cat) == cat { fs.insert(txt(m.file), true); }
+	}
+	var total = 0;
+	for &s in SYMS {
+		if fs.contains(txt(s.file)) { total++; }
+	}
+	CC.insert(txt(keep(cat)), total);
+	total
+}
+var PD dictionary<const byte[:], Str>;
+fn load_page_descs(data const byte[:]) {
+	PD.clear();
+	var buf byte[>..] = [];
+	let p = str(data, "/pagedesc.tsv");
+	if !read_file(p, buf) { return; }
+	let lines = split(buf, '\n');
+	for ln in lines {
+		let f = split(trim_end(ln), '\t');
+		if f.len < 2 { continue; }
+		let k = keep(trim(f[0]));
+		let v = keep(trim(f[1]));
+		PD.insert(txt(k), v);
+	}
+}
+fn page_desc(url const byte[:]) const byte[:] {
+	let g = PD.get(url);
+	if g { return txt(g); }
+	abort(str("no description for page ", url));
+	return "";
+}
+fn side_item(out byte[>..]&, current const byte[:], url const byte[:], text const byte[:], sub const byte[:]) {
+	out.append("<li><a href=\"");
+	esc(out, url);
+	out.append("\"");
+	let cur = current == url;
+	if cur { out.append(" class=\"on\""); }
+	out.append(">");
+	esc(out, text);
+	out.append("</a>");
+	if cur { out.append(sub); }
+	out.append("</li>\n");
+}
+fn side_group(out byte[>..]&, current const byte[:], name const byte[:], group int, sub const byte[:]) {
+	var open = current == "/api-library/";
+	for &p in PAGES {
+		if p.group == group && txt(p.url) == current { open = true; }
+	}
+	if open {
+		format(out, "<details class=\"lib-g\" open><summary>", name, "</summary>\n");
+	} else {
+		format(out, "<details class=\"lib-g\"><summary>", name, "</summary>\n");
+	}
+	out.append("<ul>\n");
+	for &p in PAGES {
+		if p.group != group { continue; }
+		side_item(out, current, txt(p.url), txt(p.title), sub);
+	}
+	out.append("</ul>\n</details>\n");
+}
+fn side_html(out byte[>..]&, current const byte[:], current_cat const byte[:], sub const byte[:] = "") {
+	out.append("<h2>Helium library</h2>\n<ul>\n");
+	for c in CATS {
+		let slug_c = txt(c.slug);
+		var url byte[>..] = [];
+		format(url, "/api-library/helium/", slug_c);
+		out.append("<li><a href=\"");
+		esc(out, url);
+		out.append("\"");
+		let cur = current == url;
+		if cur { out.append(" class=\"on\""); }
+		out.append(">");
+		esc(out, txt(c.title));
+		format(out, "<span>", cat_count(slug_c), "</span></a>");
+		if cur { out.append(sub); }
+		if slug_c == current_cat {
+			out.append("\n<ul>\n");
+			for &m in MODS {
+				if txt(m.cat) != slug_c { continue; }
+				var ms byte[>..] = [];
+				mod_slug(ms, txt(m.file));
+				var mu byte[>..] = [];
+				format(mu, "/api-library/helium/lib/", ms);
+				var mn byte[>..] = [];
+				mod_name(mn, txt(m.file));
+				side_item(out, current, mu, mn, sub);
+			}
+			out.append("</ul>\n");
+		}
+		out.append("</li>\n");
+	}
+	out.append("</ul>\n");
+	side_group(out, current, "Gold", 0, sub);
+	side_group(out, current, "Helium language", 1, sub);
+}
+fn fill_page(site const byte[:], data const byte[:], rel const byte[:], title const byte[:], desc const byte[:], url const byte[:], crumbs const byte[:], main_html const byte[:], side const byte[:], ver const byte[:], date const byte[:]) {
+	var tpl byte[>..] = [];
+	let tp = str(data, "/page.html");
+	read_file(tp, tpl);
+	var nav byte[>..] = [];
+	let np = str(site, "/tools/nav.html");
+	read_file(np, nav);
+	let navt = trim(nav);
+	var et byte[>..] = [];
+	esc(et, title);
+	var dd byte[>..] = [];
+	for c in desc { if c != '`' { dd.push(c); } }
+	var ed byte[>..] = [];
+	esc(ed, dd);
+	var page byte[>..] = [];
+	var i = 0;
+	while i < tpl.len {
+		if tpl[i] == '{' && starts_with(tpl[i..], "{{") {
+			let e = find(tpl[i..], "}}");
+			if e > 0 {
+				let k = tpl[i + 2..i + e];
+				var hit = true;
+				if k == "title" {
+					page.append(et);
+				} else if k == "desc" {
+					page.append(ed);
+				} else if k == "url" {
+					page.append(url);
+				} else if k == "crumbs" {
+					page.append(crumbs);
+				} else if k == "main" {
+					page.append(main_html);
+				} else if k == "side" {
+					page.append(side);
+				} else if k == "ver" {
+					page.append(ver);
+				} else if k == "date" {
+					page.append(date);
+				} else if k == "nav" {
+					page.append(navt);
+				} else {
+					hit = false;
+				}
+				if hit {
+					i += e + 2;
+					continue;
+				}
+			}
+		}
+		page.push(tpl[i]);
+		i++;
+	}
+	let full = str(site, "/api-library/", rel);
+	var cut = full.len;
+	while cut > 0 && full[cut - 1] != '/' { cut--; }
+	if cut > 1 {
+		var cmd byte[>..] = [];
+		format(cmd, "mkdir -p '", full[..cut - 1], "'");
+		run_command(cmd);
+	}
+	write_file(full, page);
+}
+fn crumb(out byte[>..]&, url const byte[:], text const byte[:]) {
+	if out.len > 0 { out.append(" <span>&rsaquo;</span> "); }
+	if url.len > 0 {
+		out.append("<a href=\"");
+		esc(out, url);
+		out.append("\">");
+		esc(out, text);
+		out.append("</a>");
+	} else {
+		esc(out, text);
+	}
+}
+fn crumb_root(out byte[>..]&) {
+	crumb(out, "/api-library/", "API Library");
+}
+fn page_rel(out byte[>..]&, p Page) {
+	let u = txt(p.url);
+	if u == "/api-library/gold/" {
+		out.append("gold/index.html");
+	} else if u == "/api-library/helium/" {
+		out.append("helium/index.html");
+	} else if p.group == 0 {
+		format(out, "gold/", txt(p.slug), ".html");
+	} else {
+		format(out, "helium/language/", txt(p.slug), ".html");
+	}
+}
+fn write_guide_pages(site const byte[:], data const byte[:], ver const byte[:], date const byte[:]) {
+	for pi in PAGES.len {
+		let pg = PAGES[pi];
+		let url = txt(pg.url);
+		let title = txt(pg.title);
+		HEADS.clear();
+		var body byte[>..] = [];
+		render_md(body, txt(pg.md), url, title);
+		if pg.group == 1 && url == "/api-library/helium/" {
+			body.append("<h2 id=\"library\">Standard library</h2>\n");
+			cat_cards(body);
+		}
+		var sub byte[>..] = [];
+		var nh = 0;
+		for &h in HEADS { if h.level == 2 { nh++; } }
+		if nh > 0 {
+			sub.append("<ul class=\"lib-sub\">\n");
+			for &h in HEADS {
+				if h.level != 2 { continue; }
+				format(sub, "<li><a href=\"#", txt(h.id), "\">");
+				esc(sub, txt(h.text));
+				sub.append("</a></li>\n");
+			}
+			sub.append("</ul>\n");
+		}
+		body.append("<nav class=\"lib-pn\">\n");
+		if pi > 0 && PAGES[pi - 1].group == pg.group {
+			let pp = PAGES[pi - 1];
+			body.append("<a class=\"prev\" href=\"");
+			esc(body, txt(pp.url));
+			body.append("\">&larr; ");
+			esc(body, txt(pp.title));
+			body.append("</a>\n");
+		} else {
+			body.append("<span></span>\n");
+		}
+		if pi + 1 < PAGES.len && PAGES[pi + 1].group == pg.group {
+			let np = PAGES[pi + 1];
+			body.append("<a class=\"next\" href=\"");
+			esc(body, txt(np.url));
+			body.append("\">");
+			esc(body, txt(np.title));
+			body.append(" &rarr;</a>\n");
+		} else {
+			body.append("<span></span>\n");
+		}
+		body.append("</nav>\n");
+		var gname = "Gold";
+		var gurl = "/api-library/gold/";
+		if pg.group != 0 {
+			gname = "Helium";
+			gurl = "/api-library/helium/";
+		}
+		var cr byte[>..] = [];
+		crumb_root(cr);
+		if url == "/api-library/gold/" || url == "/api-library/helium/" {
+			crumb(cr, "", gname);
+		} else {
+			crumb(cr, gurl, gname);
+			crumb(cr, "", title);
+		}
+		var side byte[>..] = [];
+		side_html(side, url, "", sub);
+		var rel byte[>..] = [];
+		page_rel(rel, pg);
+		let desc = page_desc(url);
+		fill_page(site, data, rel, title, desc, url, cr, body, side, ver, date);
+		add_hit(title, "guide", gname, url, desc, "pub");
+	}
+}
+fn cat_cards(out byte[>..]&) {
+	out.append("<div class=\"lib-grid\">\n");
+	for c in CATS {
+		format(out, "<a class=\"lib-card\" href=\"/api-library/helium/", txt(c.slug), "\"><strong>");
+		esc(out, txt(c.title));
+		out.append("</strong><span>");
+		esc(out, txt(c.blurb));
+		format(out, "</span><small>", cat_count(txt(c.slug)), " functions and types</small></a>\n");
+	}
+	out.append("</div>\n");
+}
+var SRC_CACHE dictionary<const byte[:], Str>;
+fn src_text(lib const byte[:], file const byte[:]) const byte[:], bool {
+	let g = SRC_CACHE.get(file);
+	if g {
+		if g.len < 0 { return "", false; }
+		return txt(g), true;
+	}
+	var buf byte[>..] = [];
+	let p = str(lib, "/", file);
+	let key = txt(keep(file));
+	if !read_file(p, buf) {
+		SRC_CACHE.insert(key, Str { 0, -1 });
+		return "", false;
+	}
+	let s = keep(buf);
+	SRC_CACHE.insert(key, s);
+	return txt(s), true;
+}
+fn is_ident(c byte) bool {
+	(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'
+}
+fn indent_of(s const byte[:]) int {
+	var n = 0;
+	while n < s.len && (s[n] == ' ' || s[n] == '\t') { n++; }
+	n
+}
+fn type_name(decl const byte[:], out byte[>..]&) {
+	let ws = words(decl);
+	for w in ws {
+		if w == "pub" || w == "struct" || w == "enum" || w == "class" || w == "union" || w == "type" || w == "inline" || w == "extern" || w == "recursive" || w == "lut" || w == "fn" { continue; }
+		var n = 0;
+		while n < w.len && is_ident(w[n]) { n++; }
+		out.append(w[..n]);
+		return;
+	}
+}
+fn struct_body(out byte[>..]&, lib const byte[:], file const byte[:], line int, decl const byte[:]) {
+	let src, ok = src_text(lib, file);
+	if !ok {
+		out.append(decl);
+		return;
+	}
+	let lines = split(src, '\n');
+	if line < 1 || line > lines.len {
+		out.append(decl);
+		return;
+	}
+	var name byte[>..] = [];
+	type_name(decl, name);
+	let first = lines[line - 1];
+	if name.len == 0 || find(first, name) < 0 {
+		out.append(decl);
+		return;
+	}
+	var body byte[>..] = [];
+	var taken = 0;
+	var trunc = false;
+	if idx(first, 0, '{') >= 0 {
+		var depth = 0;
+		var k = line - 1;
+		while k < lines.len {
+			if taken == 60 {
+				trunc = true;
+				break;
+			}
+			let l = lines[k];
+			if taken > 0 { body.push('\n'); }
+			body.append(l);
+			taken++;
+			for c in l {
+				if c == '{' {
+					depth++;
+				} else if c == '}' {
+					depth--;
+				}
+			}
+			k++;
+			if depth <= 0 { break; }
+		}
+	} else {
+		let ind = indent_of(first);
+		body.append(first);
+		taken = 1;
+		var k = line;
+		while k < lines.len {
+			let l = lines[k];
+			if trim(l).len == 0 || indent_of(l) <= ind { break; }
+			if taken == 60 {
+				trunc = true;
+				break;
+			}
+			body.push('\n');
+			body.append(l);
+			taken++;
+			k++;
+		}
+	}
+	let tb = trim_end(body);
+	var e = tb.len;
+	if e > 0 && tb[e - 1] == ';' { e--; }
+	out.append(tb[..e]);
+	if trunc { out.append("\n..."); }
+}
+fn clean_sig(out byte[>..]&, decl const byte[:]) {
+	var s = trim(decl);
+	if starts_with(s, "extern ") { s = trim(s[7..]); }
+	if starts_with(s, "fn ") { s = trim(s[3..]); }
+	if s.len > 0 && s[s.len - 1] == ';' { s = s[..s.len - 1]; }
+	out.append(trim(s));
+}
+fn file_notes(out byte[>..]&, lib const byte[:], file const byte[:]) {
+	let src, ok = src_text(lib, file);
+	if !ok { return; }
+	let lines = split(src, '\n');
+	var n = 0;
+	for ln in lines {
+		var rest = ln;
+		if starts_with(ln, "//") {
+			rest = ln[2..];
+		} else if starts_with(ln, "#") {
+			rest = ln[1..];
+		} else {
+			break;
+		}
+		if starts_with(rest, " ") { rest = rest[1..]; }
+		if n > 0 { out.push('\n'); }
+		out.append(trim_end(rest));
+		n++;
+	}
+}
+fn kind_word(k int) const byte[:] {
+	if k == 1 { return "type"; }
+	if k == 2 { return "constant"; }
+	return "function";
+}
+fn sym_card(out byte[>..]&, lib const byte[:], sha const byte[:], dev bool, ids const int[:], anchor const byte[:]) {
+	if ids.len == 0 { return; }
+	let first = SYMS[ids[0]];
+	out.append("<article class=\"sym\" id=\"");
+	esc(out, anchor);
+	out.append("\">\n<h3><a href=\"#");
+	esc(out, anchor);
+	out.append("\">");
+	esc(out, txt(first.name));
+	format(out, "</a> <i>", kind_word(first.kind));
+	if ids.len > 1 { format(out, ", ", ids.len, " forms"); }
+	out.append("</i></h3>\n");
+	for k in ids.len {
+		let s = SYMS[ids[k]];
+		var sig byte[>..] = [];
+		if s.kind == 1 {
+			struct_body(sig, lib, txt(s.file), s.line, txt(s.decl));
+		} else {
+			clean_sig(sig, txt(s.decl));
+		}
+		out.append("<pre>");
+		esc(out, sig);
+		out.append("</pre>\n");
+		let ds = txt(s.desc);
+		if ds.len > 0 {
+			var same = false;
+			if k > 0 && txt(SYMS[ids[k - 1]].desc) == ds { same = true; }
+			if !same {
+				out.append("<p>");
+				esc(out, ds);
+				out.append("</p>\n");
+			}
+		}
+	}
+	var doc = trim(txt(first.doc));
+	var st = 0;
+	while st < doc.len && (doc[st] == '-' || doc[st] == ' ') { st++; }
+	doc = doc[st..];
+	if doc.len > 0 && doc != txt(first.desc) && words(doc).len >= 4 {
+		out.append("<p class=\"note\">");
+		esc(out, doc);
+		out.append("</p>\n");
+	}
+	var loc byte[>..] = [];
+	format(loc, "hc/lib/", txt(first.file), ":", first.line);
+	if dev {
+		out.append("<span class=\"src\">");
+		esc(out, loc);
+		out.append("</span>\n");
+	} else {
+		format(out, "<a class=\"src\" href=\"https://github.com/Amnibro/helium/blob/", sha, "/hc/lib/", txt(first.file), "#L", first.line, "\">");
+		esc(out, loc);
+		out.append("</a>\n");
+	}
+	out.append("</article>\n");
+}
+fn mod_card(out byte[>..]&, lib const byte[:], sha const byte[:], dev bool, ids const int[:], cid const int[:], k int, anchor const byte[:]) {
+	var cids int[>..] = [];
+	for q in ids.len {
+		if cid[q] == k { cids.push(ids[q]); }
+	}
+	sym_card(out, lib, sha, dev, cids, anchor);
+}
+fn write_module(site const byte[:], data const byte[:], lib const byte[:], sha const byte[:], ver const byte[:], date const byte[:], m Mod) {
+	let file = txt(m.file);
+	var cat = Cat { nostr(), nostr(), nostr() };
+	var found = false;
+	for c in CATS {
+		if txt(c.slug) == txt(m.cat) {
+			cat = c;
+			found = true;
+		}
+	}
+	if !found { abort(str("unknown category ", txt(m.cat), " for module ", file)); }
+	var ids int[>..] = [];
+	for i in SYMS.len {
+		if txt(SYMS[i].file) == file { ids.push(i); }
+	}
+	var byname = dictionary<const byte[:], int> {};
+	var cid int[>..] = [];
+	var cfirst int[>..] = [];
+	var cpub bool[>..] = [];
+	for id in ids {
+		let nm = txt(SYMS[id].name);
+		let g = byname.get(nm, -1);
+		var k = g;
+		if g < 0 {
+			k = cfirst.len;
+			byname.insert(nm, k);
+			cfirst.push(id);
+			cpub.push(false);
+		}
+		cid.push(k);
+		if txt(SYMS[id].level) != "int" { cpub[k] = true; }
+	}
+	var tnames Str[>..] = [];
+	var tcount int[>..] = [];
+	var tbyname = dictionary<const byte[:], int> {};
+	var ctopic int[>..] = [];
+	var internal_n = 0;
+	for k in cfirst.len {
+		if !cpub[k] {
+			ctopic.push(-1);
+			internal_n++;
+			continue;
+		}
+		var tp = txt(SYMS[cfirst[k]].topic);
+		if tp.len == 0 { tp = "More"; }
+		var ti = tbyname.get(tp, -1);
+		if ti < 0 {
+			ti = tnames.len;
+			let ks = keep(tp);
+			tbyname.insert(txt(ks), ti);
+			tnames.push(ks);
+			tcount.push(0);
+		}
+		tcount[ti] += 1;
+		ctopic.push(ti);
+	}
+	var used = dictionary<const byte[:], bool> {};
+	used.insert("internal", true);
+	var tslug Str[>..] = [];
+	for t in tnames {
+		var sg byte[>..] = [];
+		slug(sg, txt(t));
+		let ks = keep(sg);
+		used.insert(txt(ks), true);
+		tslug.push(ks);
+	}
+	var anchor Str[>..] = [];
+	for k in cfirst.len {
+		let nm = txt(SYMS[cfirst[k]].name);
+		var a byte[>..] = [];
+		a.append(nm);
+		var n = 2;
+		while used.contains(a) {
+			a.clear();
+			format(a, nm, "-", n);
+			n++;
+		}
+		let ks = keep(a);
+		used.insert(txt(ks), true);
+		anchor.push(ks);
+	}
+	var nsc = dictionary<const byte[:], int> {};
+	for id in ids {
+		let ns = txt(SYMS[id].ns);
+		if ns.len > 0 { nsc.update(ns, 0) { it += 1; }; }
+	}
+	var best = "";
+	var bestn = 0;
+	for id in ids {
+		let ns = txt(SYMS[id].ns);
+		if ns.len == 0 { continue; }
+		let cnt = nsc.get(ns, 0);
+		if cnt > bestn {
+			bestn = cnt;
+			best = ns;
+		}
+	}
+	var mn byte[>..] = [];
+	mod_name(mn, file);
+	var ms byte[>..] = [];
+	mod_slug(ms, file);
+	var imp byte[>..] = [];
+	mod_import(imp, file);
+	var body byte[>..] = [];
+	body.append("<h1>");
+	esc(body, mn);
+	body.append("</h1>\n<p class=\"lib-lede\">");
+	inline_md(body, txt(m.blurb));
+	body.append("</p>\n");
+	if m.dev { body.append("<div class=\"lib-dev\">Coming soon: this module is not in the public Helium repository yet, so importing it from a public checkout will fail.</div>\n"); }
+	body.append("<p class=\"lib-meta\">");
+	if file == "std.he" {
+		body.append("Always available, no import needed");
+	} else {
+		format(body, "<code>import ", imp, ";</code>");
+	}
+	if best.len > 0 { format(body, " &middot; <code>", best, "::</code>"); }
+	format(body, " &middot; ", count_of(file, 0), " functions, ", count_of(file, 1), " types, ", count_of(file, 2), " constants");
+	if !m.dev { format(body, " &middot; <a href=\"https://github.com/Amnibro/helium/blob/", sha, "/hc/lib/", file, "\">Source</a>"); }
+	body.append("</p>\n");
+	var notes byte[>..] = [];
+	file_notes(notes, lib, file);
+	var nl = 0;
+	if notes.len > 0 {
+		nl = 1;
+		for c in notes { if c == '\n' { nl++; } }
+	}
+	if nl >= 3 {
+		body.append("<details class=\"lib-notes\"><summary>Notes from the source</summary><pre>");
+		esc(body, notes);
+		body.append("</pre></details>\n");
+	}
+	var sub byte[>..] = [];
+	if tnames.len > 0 || internal_n > 0 {
+		body.append("<ul class=\"lib-pills\">\n");
+		sub.append("<ul class=\"lib-sub\">\n");
+		for t, ti in tnames {
+			format(body, "<li><a href=\"#", txt(tslug[ti]), "\">");
+			esc(body, txt(t));
+			format(body, " <span class=\"n\">", tcount[ti], "</span></a></li>\n");
+			format(sub, "<li><a href=\"#", txt(tslug[ti]), "\">");
+			esc(sub, txt(t));
+			sub.append("</a></li>\n");
+		}
+		if internal_n > 0 {
+			body.append("<li><a href=\"#internal\">Internal helpers</a></li>\n");
+			sub.append("<li><a href=\"#internal\">Internal helpers</a></li>\n");
+		}
+		body.append("</ul>\n");
+		sub.append("</ul>\n");
+	}
+	for t, ti in tnames {
+		format(body, "<h2 id=\"", txt(tslug[ti]), "\">");
+		esc(body, txt(t));
+		format(body, " <span class=\"n\">", tcount[ti], "</span></h2>\n");
+		for k in cfirst.len {
+			if ctopic[k] != ti { continue; }
+			mod_card(body, lib, sha, m.dev, ids, cid, k, txt(anchor[k]));
+		}
+	}
+	if internal_n > 0 {
+		format(body, "<details class=\"lib-int\" id=\"internal\"><summary>Internal helpers (", internal_n, ")</summary>\n");
+		for k in cfirst.len {
+			if ctopic[k] >= 0 { continue; }
+			mod_card(body, lib, sha, m.dev, ids, cid, k, txt(anchor[k]));
+		}
+		body.append("</details>\n");
+	}
+	body.append("<p class=\"note\">Descriptions and topics were drafted by AI from the source code. Signatures, types and source links come straight from the code.</p>\n");
+	var url byte[>..] = [];
+	format(url, "/api-library/helium/lib/", ms);
+	var cats byte[>..] = [];
+	format(cats, "/api-library/helium/", txt(cat.slug));
+	var cr byte[>..] = [];
+	crumb_root(cr);
+	crumb(cr, "/api-library/helium/", "Helium");
+	crumb(cr, cats, txt(cat.title));
+	crumb(cr, "", mn);
+	var side byte[>..] = [];
+	side_html(side, url, txt(cat.slug), sub);
+	var rel byte[>..] = [];
+	format(rel, "helium/lib/", ms, ".html");
+	fill_page(site, data, rel, mn, txt(m.blurb), url, cr, body, side, ver, date);
+	for q in ids.len {
+		let s = SYMS[ids[q]];
+		var nm byte[>..] = [];
+		if s.ns.len > 0 {
+			format(nm, txt(s.ns), "::", txt(s.name));
+		} else {
+			nm.append(txt(s.name));
+		}
+		var u byte[>..] = [];
+		format(u, url, "#", txt(anchor[cid[q]]));
+		add_hit(nm, kind_word(s.kind), mn, u, txt(s.desc), txt(s.level));
+	}
+}
+fn strip_links(out byte[>..]&, html const byte[:]) {
+	var i = 0;
+	while i < html.len {
+		if starts_with(html[i..], "<a ") {
+			let k = idx(html, i, '>');
+			if k > 0 {
+				i = k + 1;
+				continue;
+			}
+		}
+		if starts_with(html[i..], "</a>") {
+			i += 4;
+			continue;
+		}
+		out.push(html[i]);
+		i++;
+	}
+}
+fn write_category(site const byte[:], data const byte[:], ver const byte[:], date const byte[:], c Cat) {
+	var body byte[>..] = [];
+	body.append("<h1>");
+	esc(body, txt(c.title));
+	body.append("</h1>\n<p class=\"lib-lede\">");
+	inline_md(body, txt(c.blurb));
+	body.append("</p>\n<div class=\"lib-grid\">\n");
+	for m in MODS {
+		if txt(m.cat) != txt(c.slug) { continue; }
+		let file = txt(m.file);
+		var ms byte[>..] = [];
+		mod_slug(ms, file);
+		var mn byte[>..] = [];
+		mod_name(mn, file);
+		format(body, "<a class=\"lib-card\" href=\"/api-library/helium/lib/", ms, "\"><strong>");
+		esc(body, mn);
+		body.append("</strong><span>");
+		var h byte[>..] = [];
+		inline_md(h, txt(m.blurb));
+		strip_links(body, h);
+		format(body, "</span><small>", count_of(file, 0), " functions, ", count_of(file, 1), " types, ", count_of(file, 2), " constants</small>");
+		if m.dev { body.append("<em class=\"lib-tag\">Coming soon</em>"); }
+		body.append("</a>\n");
+	}
+	body.append("</div>\n");
+	var url byte[>..] = [];
+	format(url, "/api-library/helium/", txt(c.slug));
+	var cr byte[>..] = [];
+	crumb_root(cr);
+	crumb(cr, "/api-library/helium/", "Helium");
+	crumb(cr, "", txt(c.title));
+	var side byte[>..] = [];
+	side_html(side, url, txt(c.slug));
+	var rel byte[>..] = [];
+	format(rel, "helium/", txt(c.slug), ".html");
+	fill_page(site, data, rel, txt(c.title), txt(c.blurb), url, cr, body, side, ver, date);
+}
+fn guide_cards(out byte[>..]&, group int) {
+	out.append("<div class=\"lib-grid\">\n");
+	for &p in PAGES {
+		if p.group != group { continue; }
+		out.append("<a class=\"lib-card\" href=\"");
+		esc(out, txt(p.url));
+		out.append("\"><strong>");
+		esc(out, txt(p.title));
+		out.append("</strong><span>");
+		esc(out, page_desc(txt(p.url)));
+		out.append("</span></a>\n");
+	}
+	out.append("</div>\n");
+}
+fn write_landing(site const byte[:], data const byte[:], ver const byte[:], date const byte[:]) {
+	let desc = "Every Gold command and every Helium function, type and constant, grouped by what it does and searchable.";
+	var body byte[>..] = [];
+	body.append("<h1>API Library</h1>\n<p class=\"lib-lede\">");
+	esc(body, desc);
+	body.append("</p>\n<h2>Helium library</h2>\n");
+	format(body, "<p>", SYMS.len, " functions, types and constants in ", MODS.len, " modules.</p>\n");
+	cat_cards(body);
+	body.append("<h2>Gold</h2>\n");
+	guide_cards(body, 0);
+	body.append("<h2>Helium language</h2>\n");
+	guide_cards(body, 1);
+	body.append("<h2>For AI agents</h2>\n<p>The full library as JSON: <a href=\"/api-library/index.json\">/api-library/index.json</a>.</p>\n");
+	var cr byte[>..] = [];
+	crumb_root(cr);
+	var side byte[>..] = [];
+	side_html(side, "/api-library/", "");
+	fill_page(site, data, "index.html", "API Library", desc, "/api-library/", cr, body, side, ver, date);
+}
+fn clean_field(out byte[>..]&, s const byte[:]) {
+	for c in s {
+		if c == '\t' || c == '\n' || c == '\r' { out.push(' '); } else { out.push(c); }
+	}
+}
+fn write_search(site const byte[:]) {
+	var o byte[>..] = [];
+	for h in HITS {
+		clean_field(o, txt(h.name));
+		o.push('\t');
+		clean_field(o, txt(h.kind));
+		o.push('\t');
+		clean_field(o, txt(h.module));
+		o.push('\t');
+		clean_field(o, txt(h.url));
+		o.push('\t');
+		clean_field(o, txt(h.desc));
+		o.push('\t');
+		clean_field(o, txt(h.level));
+		o.push('\n');
+	}
+	let p = str(site, "/api-library/search.tsv");
+	write_file(p, o);
+}
+fn jstr(out byte[>..]&, s const byte[:]) {
+	let hx = "0123456789abcdef";
+	out.push('"');
+	for c in s {
+		if c == '"' {
+			out.append("\\\"");
+		} else if c == '\\' {
+			out.append("\\\\");
+		} else if c == '\n' {
+			out.append("\\n");
+		} else if c == '\r' {
+			out.append("\\r");
+		} else if c == '\t' {
+			out.append("\\t");
+		} else if c < 32 {
+			out.append("\\u00");
+			out.push(hx[c / 16]);
+			out.push(hx[c % 16]);
+		} else {
+			out.push(c);
+		}
+	}
+	out.push('"');
+}
+fn write_json(site const byte[:], lib const byte[:], sha const byte[:]) {
+	var o byte[>..] = [];
+	o.append("{\"source\":\"https://github.com/Amnibro/helium\",\"commit\":");
+	jstr(o, sha);
+	o.append(",\"modules\":[");
+	for m, mi in MODS {
+		if mi > 0 { o.push(','); }
+		let file = txt(m.file);
+		o.append("\n{\"file\":");
+		jstr(o, file);
+		var imp byte[>..] = [];
+		mod_import(imp, file);
+		o.append(",\"import\":");
+		jstr(o, imp);
+		o.append(",\"category\":");
+		jstr(o, txt(m.cat));
+		if m.dev { o.append(",\"public\":false"); } else { o.append(",\"public\":true"); }
+		o.append(",\"summary\":");
+		jstr(o, txt(m.blurb));
+		o.append(",\"symbols\":[");
+		var first = true;
+		for s in SYMS {
+			if txt(s.file) != file { continue; }
+			if !first { o.push(','); }
+			first = false;
+			var sig byte[>..] = [];
+			clean_sig(sig, txt(s.decl));
+			o.append("\n{\"name\":");
+			jstr(o, txt(s.name));
+			o.append(",\"kind\":");
+			jstr(o, kind_word(s.kind));
+			o.append(",\"signature\":");
+			jstr(o, sig);
+			o.append(",\"topic\":");
+			jstr(o, txt(s.topic));
+			o.append(",\"level\":");
+			jstr(o, txt(s.level));
+			o.append(",\"description\":");
+			jstr(o, txt(s.desc));
+			format(o, ",\"line\":", s.line, "}");
+		}
+		o.append("]}");
+	}
+	o.append("\n]}\n");
+	let p = str(site, "/api-library/index.json");
+	write_file(p, o);
+}
+fn cmd_build(lib const byte[:], data const byte[:], content const byte[:], site const byte[:], gold_dir const byte[:], sha const byte[:], ver const byte[:], date const byte[:], hc const byte[:], hc_lib const byte[:], search const byte[:]) {
+	load_cats(data);
+	load_page_descs(data);
+	load_pages(content, gold_dir);
+	HITS.clear();
+	HEADS.clear();
+	write_guide_pages(site, data, ver, date);
+	for c in CATS { write_category(site, data, ver, date, c); }
+	for m in MODS { write_module(site, data, lib, sha, ver, date, m); }
+	write_landing(site, data, ver, date);
+	write_search(site);
+	write_json(site, lib, sha);
+	var css byte[>..] = [];
+	let cp = str(data, "/lib.css");
+	if !read_file(cp, css) { abort(str("cannot read ", cp)); }
+	let op = str(site, "/api-library/lib.css");
+	if !write_file(op, css) { abort(str("cannot write ", op)); }
+	var cmd byte[>..] = [];
+	format(cmd, "HC_LIB='", hc_lib, "' '", hc, "' build --web '", search, "' -o '", site, "/api-library/search.wasm'");
+	let code = run_command(cmd);
+	if code != 0 { abort("building the search box failed"); }
+	print("wrote ", PAGES.len + CATS.len + MODS.len + 1, " pages and ", HITS.len, " search rows");
+}
+
+fn capture(cmd const byte[:], out byte[>..]&) bool {
+	out.clear();
+	var full byte[>..] = [];
+	format(full, "{ ", cmd, "; } > /tmp/apilib-capture.txt 2>&1");
+	let code = run_command(full);
+	read_file("/tmp/apilib-capture.txt", out);
+	delete_file("/tmp/apilib-capture.txt");
+	code == 0
+}
+fn shq(out byte[>..]&, s const byte[:]) {
+	out.push('\'');
+	for c in s {
+		if c == '\'' {
+			out.append("'\\''");
+		} else {
+			out.push(c);
+		}
+	}
+	out.push('\'');
+}
+fn read_state(state const byte[:], name const byte[:], out byte[>..]&) {
+	out.clear();
+	let p = str(state, "/", name);
+	var b byte[>..] = [];
+	if read_file(p, b) { out.append(trim(b)); }
+}
+fn write_state(state const byte[:], name const byte[:], value const byte[:]) {
+	let p = str(state, "/", name);
+	write_file(p, value);
+}
+fn top_of(f const byte[:]) const byte[:] {
+	let p = idx(f, 0, '/');
+	if p >= 0 { return f[..p]; }
+	return "";
+}
+fn ensure_modules(lib const byte[:], data const byte[:], model const byte[:]) {
+	var seen = dictionary<const byte[:], bool> {};
+	var files Str[>..] = [];
+	for &s in SYMS {
+		let f = txt(s.file);
+		if !seen.contains(f) {
+			seen.insert(f, true);
+			files.push(s.file);
+		}
+	}
+	let sp = str(data, "/module.txt");
+	let mp = str(data, "/modules.tsv");
+	for fs in files {
+		let file = txt(fs);
+		var has = false;
+		for &m in MODS { if txt(m.file) == file { has = true; } }
+		if has { continue; }
+		var prompt byte[>..] = [];
+		prompt.append("Categories:\n");
+		for c in CATS { format(prompt, txt(c.slug), "\t", txt(c.title), "\n"); }
+		format(prompt, "File: ", file, "\nFirst lines:\n");
+		let src, ok = src_text(lib, file);
+		if ok {
+			let lines = split(src, '\n');
+			for k in min(70, lines.len) { format(prompt, lines[k], "\n"); }
+		}
+		var reply byte[>..] = [];
+		if !ask(model, sp, prompt, "mod", reply) { continue; }
+		let rl = split(reply, '\n');
+		var cat byte[>..] = [];
+		var summary byte[>..] = [];
+		if rl.len > 0 {
+			let f = split(trim_end(rl[0]), '\t');
+			if f.len > 0 { cat.append(trim(f[0])); }
+			if f.len > 1 { summary.append(trim(f[1])); }
+		}
+		var isc = false;
+		for c in CATS { if txt(c.slug) == cat { isc = true; } }
+		if !isc {
+			cat.clear();
+			var found = false;
+			let top = top_of(file);
+			for &m in MODS {
+				if !found && top_of(txt(m.file)) == top {
+					cat.append(txt(m.cat));
+					found = true;
+				}
+			}
+			if !found { cat.append("logic"); }
+		}
+		if summary.len == 0 {
+			var mn byte[>..] = [];
+			mod_name(mn, file);
+			format(summary, "The ", mn, " library module.");
+		}
+		MODS.push(Mod { keep(file), keep(cat), keep(summary), false });
+		var rec byte[>..] = [];
+		format(rec, file, "\t", cat, "\t", summary, "\n");
+		append_file(mp, rec);
+	}
+	var tmp Mod[>..] = [];
+	for m in MODS {
+		if seen.contains(txt(m.file)) { tmp.push(m); }
+	}
+	MODS.clear();
+	for m in tmp { MODS.push(m); }
+}
+fn refresh_language(helium const byte[:], content const byte[:]) {
+	var buf byte[>..] = [];
+	let sp = str(helium, "/HELIUM.md");
+	if !read_file(sp, buf) { return; }
+	var start = 0;
+	if !starts_with(buf, "## ") {
+		let p = find(buf, "\n## ");
+		if p < 0 { return; }
+		start = p + 1;
+	}
+	let dp = str(content, "/helium/language.md");
+	write_file(dp, buf[start..]);
+}
+fn first_line(s const byte[:]) const byte[:] {
+	let ls = split(s, '\n');
+	if ls.len == 0 { return ""; }
+	return trim_end(ls[0]);
+}
+fn refresh_guide(data const byte[:], model const byte[:], path const byte[:], source const byte[:]) {
+	var cur byte[>..] = [];
+	if !read_file(path, cur) { return; }
+	var prompt byte[>..] = [];
+	format(prompt, "Current page:\n", cur, "\nCurrent help text and source:\n", source);
+	var reply byte[>..] = [];
+	let sp = str(data, "/guide.txt");
+	if !ask(model, sp, prompt, "guide", reply) { return; }
+	let r = trim(reply);
+	if first_line(r) != first_line(cur) || r.len * 2 < cur.len { return; }
+	var o byte[>..] = [];
+	format(o, r, "\n");
+	write_file(path, o);
+}
+fn lines_with(src const byte[:], a const byte[:], b const byte[:], out byte[>..]&) {
+	let lines = split(src, '\n');
+	for ln in lines {
+		if find(ln, a) >= 0 || find(ln, b) >= 0 {
+			out.append(ln);
+			out.push('\n');
+		}
+	}
+}
+fn state_differs(state const byte[:], name const byte[:], text const byte[:]) bool {
+	let p = str(state, "/", name);
+	if !file_exists(p) {
+		write_state(state, name, trim(text));
+		return false;
+	}
+	var old byte[>..] = [];
+	read_state(state, name, old);
+	return old != trim(text);
+}
+fn refresh_guides(helium const byte[:], gold const byte[:], content const byte[:], data const byte[:], model const byte[:], state const byte[:]) {
+	let hbin = str(helium, "/build/hcn");
+	var hcmd byte[>..] = [];
+	shq(hcmd, hbin);
+	hcmd.append(" help");
+	var ht byte[>..] = [];
+	capture(hcmd, ht);
+	var hsrc byte[>..] = [];
+	let hp = str(helium, "/hc/hc.he");
+	if read_file(hp, hsrc) { lines_with(hsrc, "m[..] == \"-", "m[..] == \"-", ht); }
+	let gbin = str(gold, "/gold");
+	var gcmd byte[>..] = [];
+	shq(gcmd, gbin);
+	var gt byte[>..] = [];
+	capture(gcmd, gt);
+	var scmd byte[>..] = [];
+	scmd.append("git -C ");
+	shq(scmd, gold);
+	scmd.append(" show HEAD:gold.amni");
+	var gsrc byte[>..] = [];
+	capture(scmd, gsrc);
+	lines_with(gsrc, "envor(\"GOLD_", "env(\"GOLD_", gt);
+	if state_differs(state, "helium-help", ht) {
+		let p = str(content, "/helium/10-commands.md");
+		refresh_guide(data, model, p, ht);
+		write_state(state, "helium-help", trim(ht));
+	}
+	if state_differs(state, "gold-help", gt) {
+		let p1 = str(content, "/gold/10-commands.md");
+		let p2 = str(content, "/gold/30-settings.md");
+		refresh_guide(data, model, p1, gt);
+		refresh_guide(data, model, p2, gt);
+		write_state(state, "gold-help", trim(gt));
+	}
+}
+fn gitc(dir const byte[:], args const byte[:]) int {
+	var c byte[>..] = [];
+	c.append("git -C ");
+	shq(c, dir);
+	c.push(' ');
+	c.append(args);
+	run_command(c)
+}
+fn in_site(site const byte[:], cmd const byte[:]) int {
+	var c byte[>..] = [];
+	c.append("cd ");
+	shq(c, site);
+	format(c, " && ", cmd);
+	run_command(c)
+}
+fn publish_site(site const byte[:], sha const byte[:], old_rows int) bool {
+	if HITS.len * 5 < old_rows * 4 {
+		gitc(site, "checkout -- api-library");
+		gitc(site, "clean -fdq api-library");
+		return false;
+	}
+	in_site(site, "node tools/nav.js");
+	in_site(site, "node tools/build-sitemap.js");
+	gitc(site, "add api-library sitemap.xml");
+	gitc(site, "checkout -- .");
+	if gitc(site, "diff --cached --quiet") == 0 { return true; }
+	var msg byte[>..] = [];
+	format(msg, "API library: update to Helium ", sha[..min(7, sha.len)]);
+	var a byte[>..] = [];
+	a.append("commit -q -m ");
+	shq(a, msg);
+	gitc(site, a);
+	if gitc(site, "push -q origin HEAD:main") == 0 { return true; }
+	gitc(site, "pull -q --rebase origin main");
+	return gitc(site, "push -q origin HEAD:main") == 0;
+}
+fn cred_char(c byte) bool {
+	is_ident(c) || c == '-'
+}
+fn has_cred_run(s const byte[:], pre const byte[:]) bool {
+	var from = 0;
+	while from <= s.len {
+		let k = find(s[from..], pre);
+		if k < 0 { return false; }
+		let e = from + k + pre.len;
+		var n = 0;
+		while e + n < s.len && cred_char(s[e + n]) { n++; }
+		if n >= 16 { return true; }
+		from += k + 1;
+	}
+	return false;
+}
+fn cred_shaped(s const byte[:]) bool {
+	if has_cred_run(s, "ghp_") { return true; }
+	if has_cred_run(s, "gho_") { return true; }
+	if has_cred_run(s, "github_pat_") { return true; }
+	if has_cred_run(s, "sk-ant-") { return true; }
+	if has_cred_run(s, "AKIA") { return true; }
+	if has_cred_run(s, "AIza") { return true; }
+	if has_cred_run(s, "xoxb-") { return true; }
+	if has_cred_run(s, "AMNIPRO") { return true; }
+	let b = find(s, "-----BEGIN ");
+	if b >= 0 {
+		let rest = s[b + 11..];
+		let p = find(rest, "PRIVATE KEY-----");
+		if p >= 0 { return true; }
+	}
+	return false;
+}
+fn gitcap(dir const byte[:], args const byte[:], out byte[>..]&) bool {
+	var c byte[>..] = [];
+	c.append("git -C ");
+	shq(c, dir);
+	c.push(' ');
+	c.append(args);
+	capture(c, out)
+}
+fn under_dir(path const byte[:], d const byte[:]) bool {
+	path == d || (starts_with(path, d) && path.len > d.len && path[d.len] == '/')
+}
+fn path_allowed(p const byte[:]) bool {
+	if under_dir(p, "README.md") { return true; }
+	if under_dir(p, "GOLD.md") { return true; }
+	if under_dir(p, "gold") { return true; }
+	if under_dir(p, "gold.amni") { return true; }
+	if under_dir(p, "goldc.amni") { return true; }
+	if under_dir(p, ".gitignore") { return true; }
+	if under_dir(p, "dialects") { return true; }
+	if under_dir(p, "primers") { return true; }
+	if under_dir(p, "spec") { return true; }
+	if under_dir(p, "runtime") { return true; }
+	if under_dir(p, "examples") { return true; }
+	if under_dir(p, "tools") { return true; }
+	if under_dir(p, "tests") { return true; }
+	if under_dir(p, "packs/std") { return true; }
+	if under_dir(p, "demos") { return true; }
+	if under_dir(p, "bench") { return true; }
+	if under_dir(p, "codex") { return true; }
+	return false;
+}
+fn publish_gold(gold const byte[:], public_dir const byte[:], state const byte[:], date const byte[:]) {
+	var last byte[>..] = [];
+	read_state(state, "public-date", last);
+	if last == date { return; }
+	if !is_dir(str(public_dir, "/.git")) {
+		var cl byte[>..] = [];
+		cl.append("git clone -q https://github.com/Amnibro/gold.git ");
+		shq(cl, public_dir);
+		run_command(cl);
+	}
+	gitc(public_dir, "pull -q --ff-only");
+	let wt = str(state, "/gold-export");
+	var wa byte[>..] = [];
+	wa.append("worktree add -q --detach ");
+	shq(wa, wt);
+	wa.append(" HEAD");
+	gitc(gold, wa);
+	var sc byte[>..] = [];
+	shq(sc, str(wt, "/tools/public.sh"));
+	sc.push(' ');
+	shq(sc, public_dir);
+	run_command(sc);
+	var wr byte[>..] = [];
+	wr.append("worktree remove --force ");
+	shq(wr, wt);
+	gitc(gold, wr);
+	gitc(public_dir, "checkout -q HEAD -- lib");
+	gitc(public_dir, "clean -fdq lib");
+	var api byte[>..] = [];
+	if read_file(str(gold, "/tools/apilib/data/api.tsv"), api) {
+		write_file(str(public_dir, "/packs/std/api.tsv"), api);
+	}
+	gitc(public_dir, "add -A");
+	if gitc(public_dir, "diff --cached --quiet") == 0 {
+		write_state(state, "public-date", date);
+		return;
+	}
+	var names byte[>..] = [];
+	gitcap(public_dir, "diff --cached --name-only", names);
+	for ln in split(names, '\n') {
+		let p = trim(ln);
+		if p.len == 0 { continue; }
+		if !path_allowed(p) {
+			print("not publishing Gold: staged path outside the allowed list: ", p);
+			gitc(public_dir, "reset -q --hard HEAD");
+			return;
+		}
+	}
+	var diff byte[>..] = [];
+	gitcap(public_dir, "diff --cached", diff);
+	for ln in split(diff, '\n') {
+		if starts_with(ln, "+") && !starts_with(ln, "+++") && cred_shaped(ln[1..]) {
+			print("not publishing Gold: an added line looks like a credential");
+			gitc(public_dir, "reset -q --hard HEAD");
+			return;
+		}
+	}
+	var an byte[>..] = [];
+	gitcap(gold, "log -1 --format=%an", an);
+	var ae byte[>..] = [];
+	gitcap(gold, "log -1 --format=%ae", ae);
+	var nm byte[>..] = [];
+	format(nm, "user.name=", trim(an));
+	var em byte[>..] = [];
+	format(em, "user.email=", trim(ae));
+	var msg byte[>..] = [];
+	format(msg, "Update Gold to ", date);
+	var ca byte[>..] = [];
+	ca.append("-c ");
+	shq(ca, nm);
+	ca.append(" -c ");
+	shq(ca, em);
+	ca.append(" commit -q -m ");
+	shq(ca, msg);
+	gitc(public_dir, ca);
+	if gitc(public_dir, "push -q origin HEAD") == 0 {
+		write_state(state, "public-date", date);
+	}
+}
+fn sync_key(gold const byte[:], sha const byte[:], out byte[>..]&) {
+	var t1 byte[>..] = [];
+	gitcap(gold, "rev-parse HEAD:tools/apilib", t1);
+	var t2 byte[>..] = [];
+	gitcap(gold, "rev-parse HEAD:dialects", t2);
+	out.clear();
+	format(out, sha, " ", trim(t1), " ", trim(t2));
+}
+fn cmd_sync(helium const byte[:], gold const byte[:], site const byte[:], public_dir const byte[:], state const byte[:], data const byte[:], content const byte[:], model const byte[:]) int {
+	var mk byte[>..] = [];
+	mk.append("mkdir -p ");
+	shq(mk, state);
+	run_command(mk);
+	if file_exists(str(state, "/pause")) {
+		print("paused");
+		return 0;
+	}
+	var st byte[>..] = [];
+	gitcap(gold, "status --porcelain -- tools/apilib dialects", st);
+	if trim(st).len > 0 {
+		print("skipping: the files are being edited");
+		return 0;
+	}
+	gitc(helium, "fetch -q helium main");
+	var so byte[>..] = [];
+	gitcap(helium, "rev-parse helium/main", so);
+	var sha byte[>..] = [];
+	sha.append(trim(so));
+	var hs byte[>..] = [];
+	read_state(state, "helium-sha", hs);
+	if hs != sha {
+		var co byte[>..] = [];
+		format(co, "checkout -q -f --detach ", sha);
+		gitc(helium, co);
+		var bc byte[>..] = [];
+		bc.append("BUILD=");
+		shq(bc, str(helium, "/build.new"));
+		bc.push(' ');
+		shq(bc, str(helium, "/hc/bootstrap.sh"));
+		if run_command(bc) != 0 { return 1; }
+		var rm byte[>..] = [];
+		rm.append("rm -rf ");
+		shq(rm, str(helium, "/build.old"));
+		run_command(rm);
+		rename_file(str(helium, "/build"), str(helium, "/build.old"));
+		rename_file(str(helium, "/build.new"), str(helium, "/build"));
+		write_state(state, "helium-sha", sha);
+	}
+	var key byte[>..] = [];
+	sync_key(gold, sha, key);
+	var dout byte[>..] = [];
+	capture("date +%F", dout);
+	var date byte[>..] = [];
+	date.append(trim(dout));
+	var oldkey byte[>..] = [];
+	read_state(state, "key", oldkey);
+	if oldkey == key {
+		publish_gold(gold, public_dir, state, date);
+		return 0;
+	}
+	let lib = str(helium, "/hc/lib");
+	var pc byte[>..] = [];
+	shq(pc, str(gold, "/gold"));
+	pc.append(" pack apilib ");
+	shq(pc, lib);
+	pc.append(" lang=he ");
+	shq(pc, "skip=^(rt|lutgpu|physics_engine)\\.he$");
+	var pout byte[>..] = [];
+	if !capture(pc, pout) { return 1; }
+	var api byte[>..] = [];
+	let src = str(gold, "/packs/apilib/api.tsv");
+	let apath = str(data, "/api.tsv");
+	if read_file(src, api) { write_file(apath, api); }
+	var rp byte[>..] = [];
+	rp.append("rm -rf ");
+	shq(rp, str(gold, "/packs/apilib"));
+	run_command(rp);
+	load_syms(apath);
+	load_cats(data);
+	load_mods(data);
+	load_descs(data);
+	ensure_modules(lib, data, model);
+	cmd_describe(lib, data, model, 0, 1);
+	refresh_language(helium, content);
+	refresh_guides(helium, gold, content, data, model, state);
+	gitc(site, "fetch -q origin main");
+	gitc(site, "checkout -q --detach origin/main");
+	gitc(site, "checkout -- .");
+	var old_rows = 0;
+	var sbuf byte[>..] = [];
+	if read_file(str(site, "/api-library/search.tsv"), sbuf) {
+		for c in sbuf { if c == '\n' { old_rows++; } }
+	}
+	var rs byte[>..] = [];
+	rs.append("rm -rf ");
+	shq(rs, str(site, "/api-library"));
+	run_command(rs);
+	var tr byte[>..] = [];
+	gitcap(gold, "rev-parse HEAD:tools/apilib", tr);
+	let tree = trim(tr);
+	var ver byte[>..] = [];
+	ver.append(sha[..min(7, sha.len)]);
+	ver.append(tree[..min(3, tree.len)]);
+	let hc = str(helium, "/build/hcn");
+	cmd_build(lib, data, content, site, gold, sha, ver, date, hc, lib, "search.amni");
+	if !publish_site(site, sha, old_rows) { return 1; }
+	gitc(gold, "add -- tools/apilib");
+	if gitc(gold, "diff --cached --quiet -- tools/apilib") != 0 {
+		var msg byte[>..] = [];
+		format(msg, "API library: update to Helium ", sha[..min(7, sha.len)]);
+		var ca byte[>..] = [];
+		ca.append("commit -q -m ");
+		shq(ca, msg);
+		ca.append(" -- tools/apilib");
+		gitc(gold, ca);
+		gitc(gold, "push -q amni HEAD");
+	}
+	publish_gold(gold, public_dir, state, date);
+	var missing = 0;
+	for &s in SYMS {
+		if txt(s.desc).len == 0 { missing++; }
+	}
+	var tb byte[>..] = [];
+	read_state(state, "tries", tb);
+	let tv, tok = parse_int(tb);
+	var tries = 0;
+	if tok { tries = tv; }
+	if missing > 0 { tries++; }
+	if missing == 0 || tries >= 3 {
+		print(missing, " symbols still have no description");
+		write_state(state, "tries", "0");
+		var nk byte[>..] = [];
+		sync_key(gold, sha, nk);
+		write_state(state, "key", nk);
+	} else {
+		write_state(state, "tries", str(tries));
+	}
+	return 0;
+}
+fn arg_val(name const byte[:], fallback const byte[:]) const byte[:] {
+	let prefix = str(name, "=");
+	let all = args();
+	for a in all {
+		if starts_with(a, prefix) { return a[prefix.len..]; }
+	}
+	return fallback;
+}
+fn main() {
+	let a = args();
+	if a.len < 2 {
+		print("usage: apilib describe|build|sync [data=] [gold=] [model=] ...");
+		exit(2);
+	}
+	let cmd = a[1];
+	let data = arg_val("data", "data");
+	let gold = arg_val("gold", "../..");
+	let model = arg_val("model", "sonnet");
+	if cmd == "describe" || cmd == "build" {
+		load_syms(str(data, "/api.tsv"));
+		load_mods(data);
+		load_descs(data);
+		if cmd == "describe" {
+			let sh, ok1 = parse_int(arg_val("shard", "0"));
+			let shs, ok2 = parse_int(arg_val("shards", "1"));
+			cmd_describe(arg_val("lib", ""), data, model, sh, shs);
+		} else {
+			cmd_build(arg_val("lib", ""), data, arg_val("content", "content"), arg_val("site", ""), gold, arg_val("sha", ""), arg_val("ver", ""), arg_val("date", ""), arg_val("hc", ""), arg_val("hclib", ""), arg_val("search", "search.amni"));
+		}
+	} else if cmd == "sync" {
+		exit(cmd_sync(arg_val("helium", ""), gold, arg_val("site", ""), arg_val("public", ""), arg_val("state", ""), data, arg_val("content", "content"), model));
+	} else {
+		print("usage: apilib describe|build|sync [data=] [gold=] [model=] ...");
+		exit(2);
+	}
+}
