@@ -20,4 +20,4 @@ Gold reads these environment variables.
 | `GOLD_K` | `70` | How many product functions the model sees per build. |
 | `GOLD_CACHE` | `~/.cache/gold` | The cache folder. |
 | `GOLD_VERBOSE` | Off | Print each step. Set it to any non-empty value to turn it on. |
-| `GOLD_LINT` | Off | Set it to `warn` to build paragraphs that still read as code instead of stopping. |
+| `GOLD_LINT` | Off | Set it to `warn` to build lines that still read as code instead of stopping. |

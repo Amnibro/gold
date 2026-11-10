@@ -2029,53 +2029,55 @@ fn cred_shaped(s const byte[:]) bool {
 	}
 	return false;
 }
-=== -51e9dce11cbfbb10
-fn under(p const byte[:], root const byte[:]) bool {
-	p == root || (starts_with(p, root) && p.len > root.len && p[root.len] == '/')
-}
+=== -1b7cae6ffc9ecf53
 fn path_allowed(p const byte[:]) bool {
-	under(p, "README.md") || under(p, "GOLD.md") || under(p, "gold") || under(p, "gold.amni") || under(p, "goldc.amni") || under(p, ".gitignore") || under(p, "dialects") || under(p, "primers") || under(p, "spec") || under(p, "runtime") || under(p, "examples") || under(p, "tools") || under(p, "tests") || under(p, "packs/std") || under(p, "demos") || under(p, "bench") || under(p, "codex")
+	let ok_list const byte[:][16] = ["README.md", "GOLD.md", "gold", "gold.amni", "goldc.amni", ".gitignore", "dialects", "primers", "spec", "runtime", "examples", "tools", "tests", "packs/std", "demos", "bench"];
+	for a in ok_list {
+		if p == a { return true; }
+		if p.len > a.len && starts_with(p, a) && p[a.len] == '/' { return true; }
+	}
+	for a in ["codex"] {
+		if p == a { return true; }
+		if p.len > a.len && starts_with(p, a) && p[a.len] == '/' { return true; }
+	}
+	return false;
 }
 fn publish_gold(gold const byte[:], public_dir const byte[:], state const byte[:], date const byte[:]) {
 	var last byte[>..] = [];
 	read_state(state, "public-date", last);
 	if last == date { return; }
-	if !file_exists(str(public_dir, "/.git")) {
-		var c byte[>..] = [];
-		c.append("git clone -q https://github.com/Amnibro/gold.git ");
-		shq(c, public_dir);
-		if run_command(c) != 0 {
+	if !is_dir(str(public_dir, "/.git")) {
+		var cl byte[>..] = [];
+		cl.append("git clone -q https://github.com/Amnibro/gold.git ");
+		shq(cl, public_dir);
+		if run_command(cl) != 0 {
 			print("public clone failed");
 			return;
 		}
 	}
 	git_run(public_dir, "pull -q --ff-only");
-	let wt = str(state, "/gold-export");
-	var w byte[>..] = [];
-	w.append("worktree add -q --detach ");
-	shq(w, wt);
-	w.append(" HEAD");
-	if git_run(gold, w) != 0 {
+	let ex = str(state, "/gold-export");
+	var wa byte[>..] = [];
+	wa.append("worktree add -q --detach ");
+	shq(wa, ex);
+	wa.append(" HEAD");
+	if git_run(gold, wa) != 0 {
 		print("could not add the export worktree");
 		return;
 	}
 	var ps byte[>..] = [];
-	shq(ps, str(wt, "/tools/public.sh"));
+	shq(ps, str(ex, "/tools/public.sh"));
 	ps.push(' ');
 	shq(ps, public_dir);
 	run_command(ps);
-	var rm byte[>..] = [];
-	rm.append("worktree remove --force ");
-	shq(rm, wt);
-	git_run(gold, rm);
+	var wr byte[>..] = [];
+	wr.append("worktree remove --force ");
+	shq(wr, ex);
+	git_run(gold, wr);
 	git_run(public_dir, "checkout -q HEAD -- lib");
 	git_run(public_dir, "clean -fdq lib");
 	var api byte[>..] = [];
 	if read_file(str(gold, "/tools/apilib/data/api.tsv"), api) {
-		var mk byte[>..] = [];
-		mk.append("mkdir -p ");
-		shq(mk, str(public_dir, "/packs/std"));
-		run_command(mk);
 		write_file(str(public_dir, "/packs/std/api.tsv"), api);
 	}
 	git_run(public_dir, "add -A");
@@ -2085,23 +2087,22 @@ fn publish_gold(gold const byte[:], public_dir const byte[:], state const byte[:
 	}
 	var diff byte[>..] = [];
 	git_out(public_dir, "diff --cached", diff);
-	var bad = false;
 	let dl = split(diff, NL);
 	for l in dl {
-		if starts_with(l, "+") && !starts_with(l, "+++") && cred_shaped(l[1..]) { bad = true; }
-	}
-	if bad {
-		print("not publishing Gold: a staged line looks like a credential");
-		git_run(public_dir, "reset -q --hard HEAD");
-		return;
+		if starts_with(l, "+") && !starts_with(l, "+++") && cred_shaped(l[1..]) {
+			print("refusing to publish: an added line looks like a credential");
+			git_run(public_dir, "reset -q --hard HEAD");
+			return;
+		}
 	}
 	var names byte[>..] = [];
 	git_out(public_dir, "diff --cached --name-only", names);
 	let nl = split(names, NL);
-	for l in nl {
-		let t = trim(l);
-		if t.len > 0 && !path_allowed(t) {
-			print("not publishing Gold: staged path outside the public list: ", t);
+	for n in nl {
+		let p = trim(n);
+		if p.len == 0 { continue; }
+		if !path_allowed(p) {
+			print("refusing to publish: staged path outside the allowed list: ", p);
 			git_run(public_dir, "reset -q --hard HEAD");
 			return;
 		}
@@ -2113,19 +2114,19 @@ fn publish_gold(gold const byte[:], public_dir const byte[:], state const byte[:
 	var msg byte[>..] = [];
 	format(msg, "Update Gold to ", date);
 	var cm byte[>..] = [];
-	cm.append("git -c user.name=");
+	cm.append("-c user.name=");
 	shq(cm, trim(an));
 	cm.append(" -c user.email=");
 	shq(cm, trim(ae));
-	cm.append(" -C ");
-	shq(cm, public_dir);
 	cm.append(" commit -q -m ");
 	shq(cm, msg);
-	if run_command(cm) != 0 {
+	if git_run(public_dir, cm) != 0 {
 		print("commit to the public Gold repository failed");
 		return;
 	}
-	if git_run(public_dir, "push -q origin HEAD") == 0 { write_state(state, "public-date", date); }
+	if git_run(public_dir, "push -q origin HEAD") == 0 {
+		write_state(state, "public-date", date);
+	}
 }
 === 76077aa30d0447ed
 fn sync_key(gold const byte[:], sha const byte[:], out byte[>..]&) {

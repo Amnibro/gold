@@ -73,3 +73,4 @@ tiles/py.he	data	Lets a program convert text and JSON values into integers and f
 gfx/bc.amni	graphics	Decodes BC1, BC3, BC4, BC5, and BC7 block-compressed texture data into raw RGBA pixels and computes compressed sizes.
 gfx/ktx2.amni	graphics	Parses KTX2 texture files, validating headers and reading dimensions, color space, and mip levels for block-compressed or raw images.
 gfx/meshlet.amni	graphics	Builds meshlets from triangle meshes by welding vertices and grouping triangles into clusters and hierarchy levels for efficient rendering.
+gfx/cloth.amni	physics	Simulates cloth as a mesh of particles with gravity, drag, and collisions so fabric drapes and moves realistically.

@@ -651,12 +651,12 @@ gf::init	0	init()	gf.he	11
 gf::mul	0	mul(a int, b int) int	gf.he	25	a times b in the field
 gf::dot64	0	inline dot64(out byte[:], at int, vecs const byte[:], vat int, s const byte[:], sat int, rot int = 0, orot int = -1)	gf.he	33	out[at..at+64] = XOR over j < 16 of vecs[vat+64j .. +64] times, byte by byte, the 4-byte group s[sat + 4*((j+rot)%16) ..] repeated across the 64 bytes. With orot from 0 to 15 the result is turned up by that many 4-byte groups before it is stored: result byte k lands at out[at + (k + 4*orot) % 64]. out must not overlap vecs or s
 gf::dot16	0	inline dot16(out byte[:], vecs const byte[:], s const byte[:])	gf.he	40	sixteen dot64 products at once over whole 1024-byte blocks: row y of out is the dot64 of vecs with row y of s, a row being 64 bytes
-gf::dot16	0	inline dot16(out byte[:], vecs const byte[:], s const byte[:], perm const byte[:], rot const byte[:], mode int = 0)	gf.he	46	the same with the rows moved. mode 0 gathers: row y of out is the dot64 of vecs with row perm[y] of s, taken with dot64's rot set to rot[y]. mode 1 scatters: row y of s goes to row perm[y] of out, with dot64's orot set to rot[y]. perm and rot hold 16 bytes, each used modulo 16. out must not overlap vecs or s
-gf::dots	0	dots(o byte[:], v const byte[:], g const byte[:], rot int, orot int)	gf.he	59	
-gf::mix	0	mix(buf byte[:], at int, n int)	gf.he	70	each 4-byte group of buf[at..at+n]: S-box on every byte, then AES MixColumns
-gf::mix_inv	0	mix_inv(buf byte[:], at int, n int)	gf.he	72	the inverse: InvMixColumns, then the inverse S-box
-gf::mixk	0	inline mixk(buf byte[:], at int, n int, inv int)	gf.he	73	
-gf::mixs	0	mixs(b byte[:], n int, inv int)	gf.he	76	
+gf::dot16	0	inline dot16(out byte[:], vecs const byte[:], s const byte[:], perm const byte[:], rot const byte[:], mode int = 0)	gf.he	50	the same with the rows moved. mode 0 gathers: row y of out is the dot64 of vecs with row perm[y] of s, taken with dot64's rot set to rot[y]. mode 1 scatters: row y of s goes to row perm[y] of out, with dot64's orot set to rot[y]. perm and rot hold 16 bytes, each used modulo 16. mode 3 moves the rows of vecs instead: row j of vecs is taken as row
+gf::dots	0	dots(o byte[:], v const byte[:], g const byte[:], rot int, orot int)	gf.he	70	
+gf::mix	0	mix(buf byte[:], at int, n int)	gf.he	81	each 4-byte group of buf[at..at+n]: S-box on every byte, then AES MixColumns
+gf::mix_inv	0	mix_inv(buf byte[:], at int, n int)	gf.he	83	the inverse: InvMixColumns, then the inverse S-box
+gf::mixk	0	inline mixk(buf byte[:], at int, n int, inv int)	gf.he	84	
+gf::mixs	0	mixs(b byte[:], n int, inv int)	gf.he	87	
 bc::BC1	2	let BC1 = 1;	gfx/bc.amni	3	Namespace bc; imports math. Block-compressed texture formats BC1, BC3, BC4, BC5 and BC7 on the CPU: decoders that give the same texels a GPU gives, and encoders. A format is named by an int kind: constants `BC1 = 1`, `BC3 = 3`, `BC4 = 4`, `BC5 = 5`, `BC7 = 7`. Every format stores a picture as 4 by 4 texel blocks in row order (blocks across = (w + 3) / 4, blocks down = (h + 3) / 4); a block is 8 by
 bc::BC3	2	let BC3 = 3;	gfx/bc.amni	4	Namespace bc; imports math. Block-compressed texture formats BC1, BC3, BC4, BC5 and BC7 on the CPU: decoders that give the same texels a GPU gives, and encoders. A format is named by an int kind: constants `BC1 = 1`, `BC3 = 3`, `BC4 = 4`, `BC5 = 5`, `BC7 = 7`. Every format stores a picture as 4 by 4 texel blocks in row order (blocks across = (w + 3) / 4, blocks down = (h + 3) / 4); a block is 8 by
 bc::BC4	2	let BC4 = 4;	gfx/bc.amni	5	Namespace bc; imports math. Block-compressed texture formats BC1, BC3, BC4, BC5 and BC7 on the CPU: decoders that give the same texels a GPU gives, and encoders. A format is named by an int kind: constants `BC1 = 1`, `BC3 = 3`, `BC4 = 4`, `BC5 = 5`, `BC7 = 7`. Every format stores a picture as 4 by 4 texel blocks in row order (blocks across = (w + 3) / 4, blocks down = (h + 3) / 4); a block is 8 by
@@ -704,6 +704,53 @@ bc::encode	0	fn encode(kind int, rgba const byte[:], w int, h int, out byte[>..]
 bc::srgb_dec	2	var srgb_dec real[256];	gfx/bc.amni	702	
 bc::srgb_ok	2	var srgb_ok bool = false;	gfx/bc.amni	703	
 bc::halve	0	fn halve(rgba const byte[:], w int, h int, srgb bool, out byte[>..]&) int, int	gfx/bc.amni	704	`halve(rgba, w int, h int, srgb bool, out)` returning two ints (rgba: read-only byte slice; out: growable byte array by reference) makes the next smaller mip: the result is `max(w / 2, 1)` by `max(h / 2, 1)`, written into `out` (cleared first), and those two sizes are returned. Each result pixel is the average of the 2 by 2 source pixels it covers (source coordinates clamped to the edge when a sid
+cloth::Cloth	1	struct Cloth	gfx/cloth.amni	4	`Cloth` is a struct with these fields, in this order: where its particles start in the particle arrays and how many it has (`p0`, `np`), the same for its edges (`e0`, `ne`), its bends (`b0`, `nb`), its triangles (`t0`, `nt`) and its mesh vertices (`v0`, `nv`), all int; then the settings, all real with these defaults: `density` 0.2 (kilograms per square meter), `gravity` 9.81, `thickness` 0.005, `d
+cloth::cloths	2	var cloths Cloth[>..];	gfx/cloth.amni	5	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::pos	2	var pos real[>..];	gfx/cloth.amni	6	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::old	2	var old real[>..];	gfx/cloth.amni	7	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::vel	2	var vel real[>..];	gfx/cloth.amni	8	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::nrm	2	var nrm real[>..];	gfx/cloth.amni	9	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::last	2	var last real[>..];	gfx/cloth.amni	10	`Cloth` is a struct with these fields, in this order: where its particles start in the particle arrays and how many it has (`p0`, `np`), the same for its edges (`e0`, `ne`), its bends (`b0`, `nb`), its triangles (`t0`, `nt`) and its mesh vertices (`v0`, `nv`), all int; then the settings, all real with these defaults: `density` 0.2 (kilograms per square meter), `gravity` 9.81, `thickness` 0.005, `d
+cloth::rest	2	var rest real[>..];	gfx/cloth.amni	11	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::goal	2	var goal real[>..];	gfx/cloth.amni	12	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::push	2	var push real[>..];	gfx/cloth.amni	14	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::inv	2	var inv real[>..];	gfx/cloth.amni	15	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::inv0	2	var inv0 real[>..];	gfx/cloth.amni	16	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::held	2	var held bool[>..];	gfx/cloth.amni	17	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::reach_to	2	var reach_to int[>..];	gfx/cloth.amni	18	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::reach	2	var reach real[>..];	gfx/cloth.amni	19	
+cloth::edges	2	var edges int[>..];	gfx/cloth.amni	20	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::edge_len	2	var edge_len real[>..];	gfx/cloth.amni	21	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::bends	2	var bends int[>..];	gfx/cloth.amni	22	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::bend_len	2	var bend_len real[>..];	gfx/cloth.amni	23	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::tris	2	var tris int[>..];	gfx/cloth.amni	24	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::vmap	2	var vmap int[>..];	gfx/cloth.amni	25	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::balls	2	var balls real[>..];	gfx/cloth.amni	26	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::pills	2	var pills real[>..];	gfx/cloth.amni	27	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::floor_on	2	var floor_on bool = false;	gfx/cloth.amni	28	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::floor_y	2	var floor_y real = 0.0;	gfx/cloth.amni	29	Module vars, all growable arrays that every cloth appends to: `cloths` (of Cloth); `pos`, `old`, `vel`, `nrm`, `last`, `rest`, `goal`, `from` and `push` (real, three numbers per particle: position now, position at the start of the substep, velocity, normal, position at the end of the step before, position when made, the point a pinned particle is held at, where a pinned particle was when the step 
+cloth::key_bits	0	fn key_bits(x f32, y f32, z f32) uint	gfx/cloth.amni	30	
+cloth::add3	0	fn add3(a real[>..]&, x real, y real, z real)	gfx/cloth.amni	40	
+cloth::pdist	0	fn pdist(i int, j int) real	gfx/cloth.amni	45	
+cloth::make	0	fn make(p const f32[:], stride int, at int, nv int, indices const u32[:]) int	gfx/cloth.amni	51	`make(p, stride int, at int, nv int, indices) int` (p: read-only f32 slice; indices: read-only u32 slice) builds a cloth from a mesh and returns its number. Vertex v's position is the three floats at `p[v * stride + at]`. `indices` holds three vertex numbers per triangle, each below nv. - Particles: vertices whose three coordinates are exactly equal share one particle (meshes repeat vertices along
+cloth::pin	0	fn pin(c int, vertex int, x real, y real, z real)	gfx/cloth.amni	159	`pin(c int, vertex int, x real, y real, z real)` holds the particle of the cloth's mesh vertex `vertex` at the point: sets its `goal`, and when it was not held yet marks it held, sets its `inv` to 0 and marks the cloth stale. `unpin(c int, vertex int)` frees it again: when held, `held` becomes false, `inv` becomes `inv0` and the cloth is marked stale.
+cloth::unpin	0	fn unpin(c int, vertex int)	gfx/cloth.amni	170	`pin(c int, vertex int, x real, y real, z real)` holds the particle of the cloth's mesh vertex `vertex` at the point: sets its `goal`, and when it was not held yet marks it held, sets its `inv` to 0 and marks the cloth stale. `unpin(c int, vertex int)` frees it again: when held, `held` becomes false, `inv` becomes `inv0` and the cloth is marked stale.
+cloth::reset	0	fn reset()	gfx/cloth.amni	178	`reset()` forgets every cloth and every collider: it empties all the module arrays and turns the floor off.
+cloth::clear_colliders	0	fn clear_colliders()	gfx/cloth.amni	202	`clear_colliders()` empties `balls` and `pills` and turns the floor off. `ball(x real, y real, z real, r real)` adds a sphere, `pill(ax real, ay real, az real, bx real, by real, bz real, r real)` adds a capsule, `ground(y real)` turns the floor on at that height.
+cloth::ball	0	fn ball(x real, y real, z real, r real)	gfx/cloth.amni	207	
+cloth::pill	0	fn pill(ax real, ay real, az real, bx real, by real, bz real, r real)	gfx/cloth.amni	213	
+cloth::ground	0	fn ground(y real)	gfx/cloth.amni	222	`clear_colliders()` empties `balls` and `pills` and turns the floor off. `ball(x real, y real, z real, r real)` adds a sphere, `pill(ax real, ay real, az real, bx real, by real, bz real, r real)` adds a capsule, `ground(y real)` turns the floor on at that height.
+cloth::normals	0	fn normals(c int)	gfx/cloth.amni	226	`normals(c int)` recomputes the cloth's particle normals: zero them, add each triangle's cross product (the edge from its first to its second corner cross the edge from its first to its third, at the current positions) to its three particles, then scale each to length one, or set (0, 1, 0) where the sum is shorter than 1e-20.
+cloth::limits	0	fn limits(c int)	gfx/cloth.amni	266	`limits(c int)` rebuilds the reach limits and clears `stale`: for every particle of the cloth that is not held, `reach_to` is the held particle of the same cloth whose `rest` position is nearest to the particle's `rest` position and `reach` is that distance; -1 when the cloth has no held particle. Held particles get -1.
+cloth::contact	0	fn contact(i int, cx real, cy real, cz real, r real, friction real)	gfx/cloth.amni	292	`contact(i int, cx real, cy real, cz real, r real, friction real)` keeps particle i (three numbers at `pos[i * 3]`) at least r from the point (cx, cy, cz): when its distance d is below r, and above 1e-12, it moves straight away from the point to distance r. Then friction: take the particle's movement this substep (its position minus `old`), remove from it the part along the direction from the poin
+cloth::solve	0	fn solve(a int, b int, rest_len real, soft real, h real)	gfx/cloth.amni	321	
+cloth::step	0	fn step(c int, dt real, wx real, wy real, wz real)	gfx/cloth.amni	341	`step(c int, dt real, wx real, wy real, wz real)` advances cloth c by dt seconds in a wind of velocity (wx, wy, wz). Nothing happens when dt is not above 0 or the cloth has no particles. - First: when the cloth is stale and `limit` is true, run `limits`. Copy the cloth's `pos` to `from`, and also to `last` unless `keep` is true. - Wind, once for the whole step: zero the cloth's `push`. For each tr
+cloth::write	0	fn write(c int, p const f32[:], stride int, at int, at_n int, out f32[:])	gfx/cloth.amni	473	`write(c int, p, stride int, at int, at_n int, out)` (p: read-only f32 slice, the mesh's vertices as given to `make`, with vertex v's normal at `p[v * stride + at_n]`; out: writable f32 slice of at least `nv * 16` floats) writes the cloth as two morph targets of eight floats per vertex. For vertex v with particle i, target one at `out[v * 8]`: `pos` of i minus the vertex's position, then 0, then `
+cloth::count	0	fn count(c int) int	gfx/cloth.amni	490	Readers: `count(c int) int` is the cloth's particle count; `particle(c int, vertex int) int` is the mesh vertex's particle as an index into the shared arrays; `stretch_now(c int) real` is the largest, over the cloth's edges, of the edge's current length over its stored length (1.0 with no edges); `speed(c int) real` is the mean length of the cloth's particle velocities (0 with no particles); `boun
+cloth::particle	0	fn particle(c int, vertex int) int	gfx/cloth.amni	493	Readers: `count(c int) int` is the cloth's particle count; `particle(c int, vertex int) int` is the mesh vertex's particle as an index into the shared arrays; `stretch_now(c int) real` is the largest, over the cloth's edges, of the edge's current length over its stored length (1.0 with no edges); `speed(c int) real` is the mean length of the cloth's particle velocities (0 with no particles); `boun
+cloth::stretch_now	0	fn stretch_now(c int) real	gfx/cloth.amni	496	Readers: `count(c int) int` is the cloth's particle count; `particle(c int, vertex int) int` is the mesh vertex's particle as an index into the shared arrays; `stretch_now(c int) real` is the largest, over the cloth's edges, of the edge's current length over its stored length (1.0 with no edges); `speed(c int) real` is the mean length of the cloth's particle velocities (0 with no particles); `boun
+cloth::speed	0	fn speed(c int) real	gfx/cloth.amni	505	Readers: `count(c int) int` is the cloth's particle count; `particle(c int, vertex int) int` is the mesh vertex's particle as an index into the shared arrays; `stretch_now(c int) real` is the largest, over the cloth's edges, of the edge's current length over its stored length (1.0 with no edges); `speed(c int) real` is the mean length of the cloth's particle velocities (0 with no particles); `boun
+cloth::bounds	0	fn bounds(c int) real, real, real, real, real, real	gfx/cloth.amni	515	Readers: `count(c int) int` is the cloth's particle count; `particle(c int, vertex int) int` is the mesh vertex's particle as an index into the shared arrays; `stretch_now(c int) real` is the largest, over the cloth's edges, of the edge's current length over its stored length (1.0 with no edges); `speed(c int) real` is the mean length of the cloth's particle velocities (0 with no particles); `boun
 clusters::CX	2	let CX = 16;	gfx/clusters.amni	4	Module constants: `CX = 16`, `CY = 9`, `CZ = 24`, `MAX_PER = 255`. Module vars, kept between calls so no call allocates once they have grown: `counts int[>..]`, `pair_c int[>..]`, `pair_l int[>..]`.
 clusters::CY	2	let CY = 9;	gfx/clusters.amni	5	Module constants: `CX = 16`, `CY = 9`, `CZ = 24`, `MAX_PER = 255`. Module vars, kept between calls so no call allocates once they have grown: `counts int[>..]`, `pair_c int[>..]`, `pair_l int[>..]`.
 clusters::CZ	2	let CZ = 24;	gfx/clusters.amni	6	Module constants: `CX = 16`, `CY = 9`, `CZ = 24`, `MAX_PER = 255`. Module vars, kept between calls so no call allocates once they have grown: `counts int[>..]`, `pair_c int[>..]`, `pair_l int[>..]`.
@@ -1604,584 +1651,618 @@ scal::scale_of	0	fn scale_of(l int) f32	gfx/scalability.amni	7
 scal::apply	0	fn apply(l int)	gfx/scalability.amni	8	
 scal::init	0	fn init(w int, h int, l int) bool	gfx/scalability.amni	16	
 scal::pick	0	fn pick(budget_ms f32, ms f32[4]) int	gfx/scalability.amni	17	
-s3d::CASCADES	2	let CASCADES = 3;	gfx/scene3d.amni	43	
-s3d::MAX_LIGHTS	2	let MAX_LIGHTS = 16;	gfx/scene3d.amni	44	
-s3d::MAX_PROBES	2	let MAX_PROBES = 8;	gfx/scene3d.amni	45	
-s3d::GI_LIGHTS	2	let GI_LIGHTS = 8;	gfx/scene3d.amni	46	
-s3d::GLOW_LEVELS	2	let GLOW_LEVELS = 5;	gfx/scene3d.amni	47	
-s3d::MSAA	2	let MSAA = 4;	gfx/scene3d.amni	48	
-s3d::LOCAL_LAYERS	2	let LOCAL_LAYERS = 12;	gfx/scene3d.amni	49	
-s3d::HIZ_LEVELS	2	let HIZ_LEVELS = 7;	gfx/scene3d.amni	50	
-s3d::Camera	1	struct Camera	gfx/scene3d.amni	52	
-s3d::Sun	1	struct Sun	gfx/scene3d.amni	53	
-s3d::Light	1	struct Light	gfx/scene3d.amni	54	
-s3d::Sky	1	struct Sky	gfx/scene3d.amni	55	
-s3d::Look	1	struct Look	gfx/scene3d.amni	56	
-s3d::NodeOv	1	struct NodeOv	gfx/scene3d.amni	57	
-s3d::WeightOv	1	struct WeightOv	gfx/scene3d.amni	58	
-s3d::Item	1	struct Item	gfx/scene3d.amni	59	
-s3d::InstSet	1	struct InstSet	gfx/scene3d.amni	60	
-s3d::Caustics	1	struct Caustics	gfx/scene3d.amni	61	
-s3d::Wind	1	struct Wind	gfx/scene3d.amni	62	
-s3d::Batch	1	struct Batch	gfx/scene3d.amni	63	
-s3d::DrawU	1	struct DrawU	gfx/scene3d.amni	65	
-s3d::FrameU	1	struct FrameU	gfx/scene3d.amni	66	
-s3d::GiU	1	struct GiU	gfx/scene3d.amni	72	
-s3d::SurfaceU	1	struct SurfaceU	gfx/scene3d.amni	73	
-s3d::ExtU	1	struct ExtU	gfx/scene3d.amni	74	
-s3d::CutU	1	struct CutU	gfx/scene3d.amni	75	
-s3d::CutViewU	1	struct CutViewU	gfx/scene3d.amni	76	
-s3d::SkyU	1	struct SkyU	gfx/scene3d.amni	77	
-s3d::AoU	1	struct AoU	gfx/scene3d.amni	78	
-s3d::ContactU	1	struct ContactU	gfx/scene3d.amni	79	
-s3d::GtaoU	1	struct GtaoU	gfx/scene3d.amni	80	
-s3d::TileU	1	struct TileU	gfx/scene3d.amni	81	
-s3d::NearU	1	struct NearU	gfx/scene3d.amni	82	
-s3d::MblurU	1	struct MblurU	gfx/scene3d.amni	83	
-s3d::DofU	1	struct DofU	gfx/scene3d.amni	84	
-s3d::TexelU	1	struct TexelU	gfx/scene3d.amni	85	
-s3d::GlowU	1	struct GlowU	gfx/scene3d.amni	86	
-s3d::GradeU	1	struct GradeU	gfx/scene3d.amni	87	
-s3d::HistU	1	struct HistU	gfx/scene3d.amni	88	
-s3d::AdaptU	1	struct AdaptU	gfx/scene3d.amni	89	
-s3d::FogU	1	struct FogU	gfx/scene3d.amni	90	
-s3d::QuadG	1	struct QuadG	gfx/scene3d.amni	91	
-s3d::QuadViewU	1	struct QuadViewU	gfx/scene3d.amni	92	
-s3d::SsrU	1	struct SsrU	gfx/scene3d.amni	93	
-s3d::SsgiU	1	struct SsgiU	gfx/scene3d.amni	94	
-s3d::SsgiAU	1	struct SsgiAU	gfx/scene3d.amni	95	
-s3d::SsgiUpU	1	struct SsgiUpU	gfx/scene3d.amni	96	
-s3d::HizU	1	struct HizU	gfx/scene3d.amni	97	
-s3d::TemporalU	1	struct TemporalU	gfx/scene3d.amni	98	
-s3d::view	2	var view Camera = Camera { eye: float3 { 0.0, 1.5, 5.0 }, target: float3 { 0.0, 0.5, 0.0 }, up: float3 { 0.0, 1.0, 0.0 }, fov_y: 0.9, near: 0.1, far: 200.0 };	gfx/scene3d.amni	100	
-s3d::sun	2	var sun Sun = Sun { to_sun: float3 { 0.4, 0.8, 0.45 }, rgb: float3 { 3.0, 2.85, 2.6 }, shadows: true, shadow_far: 40.0, map_size: 2048 };	gfx/scene3d.amni	101	
-s3d::sky	2	var sky Sky = Sky { zenith: float3 { 0.25, 0.42, 0.75 }, horizon: float3 { 0.65, 0.72, 0.8 }, ground: float3 { 0.2, 0.18, 0.16 }, ambient: 1.0, draw: true };	gfx/scene3d.amni	102	
-s3d::look	2	var look Look = Look { exposure: 1.0, white: 6.0, bloom: 0.6, bloom_cut: 1.2, desaturate: 0.5, ssao: true, ao_radius: 0.5, ao_power: 1.5, ao_samples: 16 };	gfx/scene3d.amni	103	
-s3d::debug_view	2	var debug_view = 0;	gfx/scene3d.amni	106	Debug view for the colour pass: 0 shaded; 1 shading normal; 2 vertex normal; 3 tangent; 4 ambient term; 5 direct light; 6 occlusion; 7 base colour; 8 n.v.
-s3d::ao_mode	2	var ao_mode = 0;	gfx/scene3d.amni	107	
-s3d::gtao_steps	2	var gtao_steps = 8;	gfx/scene3d.amni	108	
-s3d::gtao_falloff	2	var gtao_falloff f32 = 0.1;	gfx/scene3d.amni	109	
-s3d::spec_occlusion	2	var spec_occlusion = true;	gfx/scene3d.amni	110	
-s3d::ssr_on	2	var ssr_on = false;	gfx/scene3d.amni	111	
-s3d::ssr_steps	2	var ssr_steps = 48;	gfx/scene3d.amni	112	
-s3d::ssr_thickness	2	var ssr_thickness f32 = 0.05;	gfx/scene3d.amni	113	
-s3d::ssr_max_dist	2	var ssr_max_dist f32 = 3.0;	gfx/scene3d.amni	114	
-s3d::ssr_rough	2	var ssr_rough f32 = 0.5;	gfx/scene3d.amni	115	
-s3d::ssr_edge	2	var ssr_edge f32 = 0.07;	gfx/scene3d.amni	116	
-s3d::ssr_hit	2	var ssr_hit gfx::Texture;	gfx/scene3d.amni	117	
-s3d::ssr_prev	2	var ssr_prev gfx::Texture;	gfx/scene3d.amni	118	
-s3d::hiz	2	var hiz gfx::Texture[>..] = [];	gfx/scene3d.amni	119	
-s3d::ssr_have	2	var ssr_have = false;	gfx/scene3d.amni	120	
-s3d::bent_ran	2	var bent_ran = false;	gfx/scene3d.amni	121	
-s3d::mt_ran	2	var mt_ran = false;	gfx/scene3d.amni	122	
-s3d::pipe_hiz	2	var pipe_hiz gfx::Pipeline;	gfx/scene3d.amni	123	
-s3d::pipe_ssr	2	var pipe_ssr gfx::Pipeline;	gfx/scene3d.amni	124	
-s3d::pipe_ssr_copy	2	var pipe_ssr_copy gfx::Pipeline;	gfx/scene3d.amni	125	
-s3d::ssgi_on	2	var ssgi_on = false;	gfx/scene3d.amni	126	
-s3d::ssgi_rays	2	var ssgi_rays = 4;	gfx/scene3d.amni	127	
-s3d::ssgi_steps	2	var ssgi_steps = 64;	gfx/scene3d.amni	128	
-s3d::ssgi_dist	2	var ssgi_dist f32 = 10.0;	gfx/scene3d.amni	129	
-s3d::ssgi_thickness	2	var ssgi_thickness f32 = 0.05;	gfx/scene3d.amni	130	
-s3d::ssgi_edge	2	var ssgi_edge f32 = 0.02;	gfx/scene3d.amni	131	
-s3d::ssgi_intensity	2	var ssgi_intensity f32 = 1.0;	gfx/scene3d.amni	132	
-s3d::ssgi_ao	2	var ssgi_ao f32 = 1.0;	gfx/scene3d.amni	133	
-s3d::ssgi_frames	2	var ssgi_frames f32 = 17.0;	gfx/scene3d.amni	134	
-s3d::ssgi_new	2	var ssgi_new gfx::Texture;	gfx/scene3d.amni	135	
-s3d::ssgi_hc	2	var ssgi_hc gfx::Texture[>..] = [];	gfx/scene3d.amni	136	
-s3d::ssgi_hz	2	var ssgi_hz gfx::Texture[>..] = [];	gfx/scene3d.amni	137	
-s3d::ssgi_buf	2	var ssgi_buf gfx::Buffer;	gfx/scene3d.amni	138	
-s3d::ssgi_cur	2	var ssgi_cur = 0;	gfx/scene3d.amni	139	
-s3d::ssgi_valid	2	var ssgi_valid = false;	gfx/scene3d.amni	140	
-s3d::pipe_ssgi_trace	2	var pipe_ssgi_trace gfx::Pipeline;	gfx/scene3d.amni	141	
-s3d::pipe_ssgi_accum	2	var pipe_ssgi_accum gfx::Pipeline;	gfx/scene3d.amni	142	
-s3d::pipe_ssgi_up	2	var pipe_ssgi_up gfx::ComputePipeline;	gfx/scene3d.amni	143	
-s3d::motion_blur	2	var motion_blur f32 = 0.0;	gfx/scene3d.amni	144	
-s3d::mb_samples	2	var mb_samples = 15;	gfx/scene3d.amni	145	
-s3d::mb_soft_z	2	var mb_soft_z f32 = 0.02;	gfx/scene3d.amni	146	
-s3d::lens_tile_px	2	var lens_tile_px = 20;	gfx/scene3d.amni	147	
-s3d::dof_aperture	2	var dof_aperture f32 = 0.0;	gfx/scene3d.amni	148	
-s3d::dof_focus	2	var dof_focus f32 = 10.0;	gfx/scene3d.amni	149	
-s3d::dof_max_px	2	var dof_max_px f32 = 24.0;	gfx/scene3d.amni	150	
-s3d::dof_samples	2	var dof_samples = 48;	gfx/scene3d.amni	151	
-s3d::lens_offset	2	var lens_offset float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	152	
-s3d::fx_dt	2	var fx_dt f32 = 0.0;	gfx/scene3d.amni	153	
-s3d::nd_ran	2	var nd_ran = false;	gfx/scene3d.amni	154	
-s3d::gi_on	2	var gi_on = false;	gfx/scene3d.amni	155	
-s3d::rt_shadows	2	var rt_shadows = false;	gfx/scene3d.amni	156	
-s3d::rt_reflect	2	var rt_reflect = false;	gfx/scene3d.amni	157	
-s3d::rt_rough	2	var rt_rough f32 = 0.3;	gfx/scene3d.amni	158	
-s3d::rt_reach	2	var rt_reach f32 = 1000.0;	gfx/scene3d.amni	159	
-s3d::gi_ao	2	var gi_ao = true;	gfx/scene3d.amni	160	
-s3d::gi_rt_visibility	2	var gi_rt_visibility = true;	gfx/scene3d.amni	161	
-s3d::gi_dims	2	var gi_dims = [16, 16, 16];	gfx/scene3d.amni	162	
-s3d::gi_rays	2	var gi_rays = 256;	gfx/scene3d.amni	163	
-s3d::gi_hysteresis	2	var gi_hysteresis f32 = 0.97;	gfx/scene3d.amni	164	
-s3d::gi_bias	2	var gi_bias f32 = 0.3;	gfx/scene3d.amni	165	
-s3d::gi_max_dist	2	var gi_max_dist f32 = 0.0;	gfx/scene3d.amni	166	
-s3d::gi_updates_per_frame	2	var gi_updates_per_frame = 1;	gfx/scene3d.amni	167	
-s3d::gi_interval	2	var gi_interval = 1;	gfx/scene3d.amni	168	
-s3d::shadow_reach	2	var shadow_reach f32 = 0.0;	gfx/scene3d.amni	169	
-s3d::gi_built	2	var gi_built = false;	gfx/scene3d.amni	170	
-s3d::gi_np	2	var gi_np = 0;	gfx/scene3d.amni	171	
-s3d::gi_nr	2	var gi_nr = 0;	gfx/scene3d.amni	172	
-s3d::gi_updates	2	var gi_updates = 0;	gfx/scene3d.amni	173	
-s3d::gi_lo	2	var gi_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	174	
-s3d::gi_box	2	var gi_box = false;	gfx/scene3d.amni	176	optional probe volume; off = the whole scene's bounds
-s3d::gi_box_lo	2	var gi_box_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	177	
-s3d::gi_box_hi	2	var gi_box_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	178	
-s3d::img_avg	2	var img_avg float4[>..] = [];	gfx/scene3d.amni	179	
-s3d::gi_step	2	var gi_step float3 = float3 { 1.0, 1.0, 1.0 };	gfx/scene3d.amni	180	
-s3d::gi_irr	2	var gi_irr gfx::Buffer;	gfx/scene3d.amni	181	
-s3d::gi_dist	2	var gi_dist gfx::Buffer;	gfx/scene3d.amni	182	
-s3d::gi_rays_buf	2	var gi_rays_buf gfx::Buffer;	gfx/scene3d.amni	183	
-s3d::gi_dummy	2	var gi_dummy gfx::Buffer;	gfx/scene3d.amni	184	
-s3d::gi_have	2	var gi_have = false;	gfx/scene3d.amni	185	
-s3d::pipe_gi_trace	2	var pipe_gi_trace gfx::ComputePipeline;	gfx/scene3d.amni	186	
-s3d::pipe_gi_update	2	var pipe_gi_update gfx::ComputePipeline;	gfx/scene3d.amni	187	
-s3d::multiscatter	2	var multiscatter = true;	gfx/scene3d.amni	189	Multiple-scattering energy compensation of the specular lobe (surface.frag ms_factor).
-s3d::furnace_scale	2	var furnace_scale f32 = 1.0;	gfx/scene3d.amni	191	Test hook for the furnace control: scales the direct light; 1.0 in normal use.
-s3d::furnace_mode	2	var furnace_mode = 0;	gfx/scene3d.amni	194	Test hook for the furnace controls that must fail, 0 in normal use: 1 gives dielectrics F0 = 1 in the specular lobe only, 2 weights diffuse by the older per-light 1 - F(v.h).
-s3d::test_rect_naive	2	var test_rect_naive = false;	gfx/scene3d.amni	195	
-s3d::alpha_to_coverage	2	var alpha_to_coverage = false;	gfx/scene3d.amni	196	
-s3d::mip_bias	2	var mip_bias f32 = 0.0;	gfx/scene3d.amni	197	
-s3d::mip_bias_auto	2	var mip_bias_auto = true;	gfx/scene3d.amni	198	
-s3d::test_morph_still	2	var test_morph_still = false;	gfx/scene3d.amni	199	
-s3d::temporal	2	var temporal = 0;	gfx/scene3d.amni	201	Temporal accumulation. 0 off (unless the output is upscaled), 1 on.
-s3d::temporal_blend	2	var temporal_blend f32 = 0.0625;     // weight of a new frame on a still pixel	gfx/scene3d.amni	202	
-s3d::temporal_motion	2	var temporal_motion f32 = 0.01;      // extra weight per output pixel of motion	gfx/scene3d.amni	203	
-s3d::temporal_max	2	var temporal_max f32 = 0.5;	gfx/scene3d.amni	204	
-s3d::temporal_gamma	2	var temporal_gamma f32 = 1.25;       // neighbourhood clip width in standard deviations (0 = no clip)	gfx/scene3d.amni	205	
-s3d::temporal_reset	2	var temporal_reset = false;          // drop the history on the next frame (camera cut)	gfx/scene3d.amni	206	
-s3d::temporal_depth_reject	2	var temporal_depth_reject f32 = 0.1;	gfx/scene3d.amni	211	Depth-based history rejection (shaders/temporal.frag): a pixel whose history shows a surface in front of it (nearer by more than this fraction of its depth) that is no longer anywhere in its 3x3 neighbourhood was hidden last frame, so its history is dropped. 0 turns it off (a test control).
-s3d::temporal_motion_scale	2	var temporal_motion_scale f32 = 1.0;	gfx/scene3d.amni	214	Test hook: scales the motion vectors the temporal pass reads; 1 in normal use, 0 is the "motion forced to zero" control of the ghost gate.
-s3d::jitter_phases	2	var jitter_phases = 16;	gfx/scene3d.amni	215	
-s3d::motion_vectors	2	var motion_vectors = false;	gfx/scene3d.amni	218	Write the motion target even when temporal is off (for a caller that reads motion_target()). With both off the target is neither allocated nor drawn.
-s3d::shadow_test_shift	2	var shadow_test_shift float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	223	Test hooks for gfx_smoke's must-fail shadow controls (leave at their defaults): the shadow map is drawn with each cascade shifted along light-space x by this many texels (x, y, z = cascades 0, 1, 2; sampling is unshifted), and every cascade's clear cycles the whole map (what a layer-only cycling rule did before S5).
-s3d::shadow_test_cycle_all	2	var shadow_test_cycle_all = false;	gfx/scene3d.amni	224	
-s3d::shadow_test_cycle_never	2	var shadow_test_cycle_never = false;	gfx/scene3d.amni	226	and never cycles at all (reported only: does the driver serialise frames anyway)
-s3d::lights	2	var lights Light[>..] = [];	gfx/scene3d.amni	227	
-s3d::fog_on	2	var fog_on = false;	gfx/scene3d.amni	228	
-s3d::fog_density	2	var fog_density f32 = 0.03;	gfx/scene3d.amni	229	
-s3d::fog_falloff	2	var fog_falloff f32 = 0.25;	gfx/scene3d.amni	230	
-s3d::fog_height	2	var fog_height f32 = 0.0;	gfx/scene3d.amni	231	
-s3d::fog_far	2	var fog_far f32 = 60.0;	gfx/scene3d.amni	232	
-s3d::fog_steps	2	var fog_steps = 32;	gfx/scene3d.amni	233	
-s3d::fog_g	2	var fog_g f32 = 0.6;	gfx/scene3d.amni	234	
-s3d::fog_ambient	2	var fog_ambient float3 = float3 { 0.05, 0.06, 0.07 };	gfx/scene3d.amni	235	
-s3d::fog_sun	2	var fog_sun f32 = 1.0;	gfx/scene3d.amni	236	
-s3d::pipe_fog	2	var pipe_fog gfx::Pipeline;	gfx/scene3d.amni	237	
-s3d::quads	2	var quads QuadG[>..] = [];	gfx/scene3d.amni	238	
-s3d::quad_buf	2	var quad_buf gfx::Buffer;	gfx/scene3d.amni	239	
-s3d::quad_cap	2	var quad_cap = 0;	gfx/scene3d.amni	240	
-s3d::pipe_quad_add	2	var pipe_quad_add gfx::Pipeline;	gfx/scene3d.amni	241	
-s3d::pipe_quad_mul	2	var pipe_quad_mul gfx::Pipeline;	gfx/scene3d.amni	242	
-s3d::items	2	var items Item[>..] = [];	gfx/scene3d.amni	243	
-s3d::batch	2	var batch Batch[>..] = [];	gfx/scene3d.amni	244	
-s3d::ready	2	var ready bool = false;	gfx/scene3d.amni	247	---- GPU state
-s3d::width	2	var width int = 0;	gfx/scene3d.amni	248	
-s3d::height	2	var height int = 0;	gfx/scene3d.amni	249	
-s3d::pipe_lit	2	var pipe_lit gfx::Pipeline;	gfx/scene3d.amni	250	
-s3d::pipe_lit_two	2	var pipe_lit_two gfx::Pipeline;     // double sided	gfx/scene3d.amni	251	
-s3d::pipe_cut	2	var pipe_cut gfx::Pipeline;	gfx/scene3d.amni	252	
-s3d::pipe_cut_two	2	var pipe_cut_two gfx::Pipeline;	gfx/scene3d.amni	253	
-s3d::pipe_blend	2	var pipe_blend gfx::Pipeline;	gfx/scene3d.amni	254	
-s3d::pipe_blend_back	2	var pipe_blend_back gfx::Pipeline;	gfx/scene3d.amni	255	
-s3d::pipe_trans_copy	2	var pipe_trans_copy gfx::Pipeline;	gfx/scene3d.amni	256	
-s3d::Probe	1	struct Probe	gfx/scene3d.amni	257	
-s3d::Decal	1	struct Decal	gfx/scene3d.amni	258	
-s3d::decals	2	var decals Decal[>..] = [];	gfx/scene3d.amni	259	
-s3d::ProbeCopyU	1	struct ProbeCopyU	gfx/scene3d.amni	260	
-s3d::probes	2	var probes Probe[>..] = [];	gfx/scene3d.amni	261	
-s3d::probe_res	2	var probe_res = 256;	gfx/scene3d.amni	262	
-s3d::probe_near	2	var probe_near f32 = 0.05;	gfx/scene3d.amni	263	
-s3d::probe_intensity	2	var probe_intensity f32 = 1.0;	gfx/scene3d.amni	264	
-s3d::probe_parallax	2	var probe_parallax = true;	gfx/scene3d.amni	265	
-s3d::probe_bounces	2	var probe_bounces = 3;	gfx/scene3d.amni	266	
-s3d::cap_np	2	var cap_np = 0;	gfx/scene3d.amni	267	
-s3d::probes_dirty	2	var probes_dirty = false;	gfx/scene3d.amni	268	
-s3d::probe_gen	2	var probe_gen = -1;	gfx/scene3d.amni	269	
-s3d::capturing	2	var capturing = false;	gfx/scene3d.amni	270	
-s3d::pipe_probe_copy	2	var pipe_probe_copy gfx::Pipeline;	gfx/scene3d.amni	271	
-s3d::pipe_shadow	2	var pipe_shadow gfx::Pipeline;	gfx/scene3d.amni	272	
-s3d::pipe_normals	2	var pipe_normals gfx::Pipeline;	gfx/scene3d.amni	273	
-s3d::pipe_normals_two	2	var pipe_normals_two gfx::Pipeline;	gfx/scene3d.amni	274	
-s3d::pipe_sky	2	var pipe_sky gfx::Pipeline;	gfx/scene3d.amni	275	
-s3d::pipe_sky_motion	2	var pipe_sky_motion gfx::Pipeline;	gfx/scene3d.amni	276	
-s3d::pipe_ao	2	var pipe_ao gfx::Pipeline;	gfx/scene3d.amni	277	
-s3d::pipe_ao_blur	2	var pipe_ao_blur gfx::Pipeline;	gfx/scene3d.amni	278	
-s3d::pipe_gtao	2	var pipe_gtao gfx::Pipeline;	gfx/scene3d.amni	279	
-s3d::pipe_contact	2	var pipe_contact gfx::Pipeline;	gfx/scene3d.amni	280	
-s3d::contact_tex	2	var contact_tex gfx::Texture;	gfx/scene3d.amni	281	
-s3d::contact_steps	2	var contact_steps = 12;	gfx/scene3d.amni	282	
-s3d::contact_thick	2	var contact_thick f32 = 0.02;	gfx/scene3d.amni	283	
-s3d::pipe_lens_tile	2	var pipe_lens_tile gfx::Pipeline;	gfx/scene3d.amni	284	
-s3d::pipe_lens_near	2	var pipe_lens_near gfx::Pipeline;	gfx/scene3d.amni	285	
-s3d::pipe_mblur	2	var pipe_mblur gfx::Pipeline;	gfx/scene3d.amni	286	
-s3d::pipe_dof	2	var pipe_dof gfx::Pipeline;	gfx/scene3d.amni	287	
-s3d::pipe_dof_pack	2	var pipe_dof_pack gfx::Pipeline;	gfx/scene3d.amni	288	
-s3d::fx	2	var fx gfx::Texture;	gfx/scene3d.amni	289	
-s3d::tile_a	2	var tile_a gfx::Texture;	gfx/scene3d.amni	290	
-s3d::tile_b	2	var tile_b gfx::Texture;	gfx/scene3d.amni	291	
-s3d::pipe_gtao_blur	2	var pipe_gtao_blur gfx::Pipeline;	gfx/scene3d.amni	292	
-s3d::pipe_bright	2	var pipe_bright gfx::Pipeline;	gfx/scene3d.amni	293	
-s3d::pipe_down	2	var pipe_down gfx::Pipeline;	gfx/scene3d.amni	294	
-s3d::pipe_up	2	var pipe_up gfx::Pipeline;	gfx/scene3d.amni	295	
-s3d::pipe_grade	2	var pipe_grade gfx::Pipeline;	gfx/scene3d.amni	296	
-s3d::pipe_temporal	2	var pipe_temporal gfx::Pipeline;	gfx/scene3d.amni	297	
-s3d::pipe_hist	2	var pipe_hist gfx::ComputePipeline;	gfx/scene3d.amni	298	
-s3d::pipe_adapt	2	var pipe_adapt gfx::ComputePipeline;	gfx/scene3d.amni	299	
-s3d::hist_buf	2	var hist_buf gfx::Buffer;	gfx/scene3d.amni	300	
-s3d::expo_buf	2	var expo_buf gfx::Buffer;	gfx/scene3d.amni	301	
-s3d::expo_fresh	2	var expo_fresh = true;	gfx/scene3d.amni	302	
-s3d::exposure_dt	2	var exposure_dt f32 = 0.0166667;	gfx/scene3d.amni	303	
-s3d::lut_tex	2	var lut_tex gfx::Texture;	gfx/scene3d.amni	304	
-s3d::lut_n	2	var lut_n = 0;	gfx/scene3d.amni	305	
-s3d::ae_log_min	2	var ae_log_min f32 = -10.0;	gfx/scene3d.amni	306	
-s3d::ae_log_max	2	var ae_log_max f32 = 10.0;	gfx/scene3d.amni	307	
-s3d::color_ms	2	var color_ms gfx::Texture;	gfx/scene3d.amni	308	
-s3d::depth_ms	2	var depth_ms gfx::Texture;	gfx/scene3d.amni	309	
-s3d::hdr	2	var hdr gfx::Texture;	gfx/scene3d.amni	310	
-s3d::motion_tex	2	var motion_tex gfx::Texture;	gfx/scene3d.amni	311	
-s3d::history	2	var history gfx::Texture[>..] = [];	gfx/scene3d.amni	312	
-s3d::hist_cur	2	var hist_cur = 0;	gfx/scene3d.amni	313	
-s3d::hist_valid	2	var hist_valid = false;	gfx/scene3d.amni	314	
-s3d::out_width	2	var out_width int = 0;	gfx/scene3d.amni	315	
-s3d::out_height	2	var out_height int = 0;	gfx/scene3d.amni	316	
-s3d::jitter	2	var jitter float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	317	
-s3d::temporal_used	2	var temporal_used = false;	gfx/scene3d.amni	318	
-s3d::nd	2	var nd gfx::Texture;	gfx/scene3d.amni	319	
-s3d::nd_depth	2	var nd_depth gfx::Texture;	gfx/scene3d.amni	320	
-s3d::ao_raw	2	var ao_raw gfx::Texture;	gfx/scene3d.amni	321	
-s3d::lin_depth	2	var lin_depth gfx::Texture;	gfx/scene3d.amni	322	
-s3d::bent_raw	2	var bent_raw gfx::Texture;	gfx/scene3d.amni	323	
-s3d::bent	2	var bent gfx::Texture;	gfx/scene3d.amni	324	
-s3d::ao	2	var ao gfx::Texture;	gfx/scene3d.amni	325	
-s3d::shadow_map	2	var shadow_map gfx::Texture;	gfx/scene3d.amni	326	
-s3d::local_map	2	var local_map gfx::Texture;	gfx/scene3d.amni	327	
-s3d::local_size	2	var local_size = 0;	gfx/scene3d.amni	328	
-s3d::local_shadow_size	2	var local_shadow_size = 1024;	gfx/scene3d.amni	329	
-s3d::local_used	2	var local_used = 0;	gfx/scene3d.amni	330	
-s3d::local_vp	2	var local_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	331	
-s3d::shadow_size	2	var shadow_size int = 0;	gfx/scene3d.amni	332	
-s3d::glow	2	var glow gfx::Texture[>..] = [];	gfx/scene3d.amni	333	
-s3d::white	2	var white gfx::Texture;	gfx/scene3d.amni	334	
-s3d::flat_normal	2	var flat_normal gfx::Texture;	gfx/scene3d.amni	335	
-s3d::smp_linear	2	var smp_linear gfx::Sampler;	gfx/scene3d.amni	336	
-s3d::smp_point	2	var smp_point gfx::Sampler;	gfx/scene3d.amni	337	
-s3d::smp_shadow	2	var smp_shadow gfx::Sampler;	gfx/scene3d.amni	338	
-s3d::smp_cache	2	var smp_cache gfx::Sampler[>..] = [];	gfx/scene3d.amni	339	
-s3d::spec_aa	2	var spec_aa = true;	gfx/scene3d.amni	340	
-s3d::wet	2	var wet f32 = 0.0;	gfx/scene3d.amni	341	
-s3d::world_time	2	var world_time f32 = 0.0;	gfx/scene3d.amni	342	
-s3d::snow	2	var snow f32 = 0.0;	gfx/scene3d.amni	343	
-s3d::shelter	2	var shelter = true;	gfx/scene3d.amni	344	
-s3d::shelter_res	2	var shelter_res = 512;	gfx/scene3d.amni	345	
-s3d::shelter_size	2	var shelter_size = 0;	gfx/scene3d.amni	346	
-s3d::shelter_map	2	var shelter_map gfx::Texture;	gfx/scene3d.amni	347	
-s3d::shelter_depth	2	var shelter_depth gfx::Texture;	gfx/scene3d.amni	348	
-s3d::pipe_shelter	2	var pipe_shelter gfx::Pipeline;	gfx/scene3d.amni	349	
-s3d::light_data	2	var light_data float4[>..] = [];	gfx/scene3d.amni	350	
-s3d::light_xr	2	var light_xr float4[>..] = [];	gfx/scene3d.amni	351	
-s3d::cluster_words	2	var cluster_words u32[>..] = [];	gfx/scene3d.amni	352	
-s3d::light_buf	2	var light_buf gfx::Buffer;	gfx/scene3d.amni	353	
-s3d::cluster_buf	2	var cluster_buf gfx::Buffer;	gfx/scene3d.amni	354	
-s3d::light_cap	2	var light_cap = 0;	gfx/scene3d.amni	355	
-s3d::cluster_cap	2	var cluster_cap = 0;	gfx/scene3d.amni	356	
-s3d::ext_size	2	var ext_size = 1024;	gfx/scene3d.amni	357	
-s3d::ext_arr	2	var ext_arr gfx::Texture[2] = [gfx::Texture { 0 }, gfx::Texture { 0 }];	gfx/scene3d.amni	358	
-s3d::ext_cap	2	var ext_cap int[2] = [0, 0];	gfx/scene3d.amni	359	
-s3d::ext_cnt	2	var ext_cnt int[2] = [0, 0];	gfx/scene3d.amni	360	
-s3d::ext_dirty	2	var ext_dirty bool[2] = [false, false];	gfx/scene3d.amni	361	
-s3d::ext_map	2	var ext_map int[>..] = [];	gfx/scene3d.amni	362	
-s3d::ext_src	2	var ext_src int[>..] = [];	gfx/scene3d.amni	363	
-s3d::ext_zero	2	var ext_zero ExtU;	gfx/scene3d.amni	364	
-s3d::ext_pushed	2	var ext_pushed = false;	gfx/scene3d.amni	365	
-s3d::smp_ext	2	var smp_ext gfx::Sampler;	gfx/scene3d.amni	366	
-s3d::pipe_ext_copy	2	var pipe_ext_copy gfx::Pipeline;	gfx/scene3d.amni	367	
-s3d::trans_tex	2	var trans_tex gfx::Texture;	gfx/scene3d.amni	368	
-s3d::trans_w	2	var trans_w = 0;	gfx/scene3d.amni	369	
-s3d::trans_h	2	var trans_h = 0;	gfx/scene3d.amni	370	
-s3d::smp_trans	2	var smp_trans gfx::Sampler;	gfx/scene3d.amni	371	
-s3d::tex_srgb	2	var tex_srgb gfx::Texture[>..] = [];	gfx/scene3d.amni	372	
-s3d::tex_linear	2	var tex_linear gfx::Texture[>..] = [];	gfx/scene3d.amni	373	
-s3d::tex_compress	2	var tex_compress = false;	gfx/scene3d.amni	374	
-s3d::tex_gpu_bc	2	var tex_gpu_bc = true;	gfx/scene3d.amni	375	
-s3d::tex_cache	2	var tex_cache byte[>..] = [];	gfx/scene3d.amni	376	
-s3d::tex_encoded	2	var tex_encoded = 0;	gfx/scene3d.amni	377	
-s3d::tex_cached	2	var tex_cached = 0;	gfx/scene3d.amni	378	
-s3d::tex_mem	2	var tex_mem = 0;	gfx/scene3d.amni	379	
-s3d::tex_ns	2	var tex_ns = 0;	gfx/scene3d.amni	380	
-s3d::tex_stream	2	var tex_stream = false;	gfx/scene3d.amni	381	
-s3d::tex_budget	2	var tex_budget = 0;	gfx/scene3d.amni	382	
-s3d::tex_upload_cap	2	var tex_upload_cap = 4194304;	gfx/scene3d.amni	383	
-s3d::tex_hold	2	var tex_hold = 30;	gfx/scene3d.amni	384	
-s3d::tex_wait	2	var tex_wait = false;	gfx/scene3d.amni	385	
-s3d::tex_stream_bias	2	var tex_stream_bias = 0;	gfx/scene3d.amni	386	
-s3d::tex_streamed	2	var tex_streamed = 0;	gfx/scene3d.amni	387	
-s3d::tex_steps	2	var tex_steps = 0;	gfx/scene3d.amni	388	
-s3d::tex_pending	2	var tex_pending = 0;	gfx/scene3d.amni	389	
-s3d::tex_starved	2	var tex_starved = 0;	gfx/scene3d.amni	390	
-s3d::tex_read	2	var tex_read = 0;	gfx/scene3d.amni	391	
-s3d::tex_stream_ns	2	var tex_stream_ns = 0;	gfx/scene3d.amni	392	
-s3d::TexStream	1	struct TexStream	gfx/scene3d.amni	393	
-s3d::streams	2	var streams TexStream[>..] = [];	gfx/scene3d.amni	394	
-s3d::stream_pool	2	var stream_pool byte[>..] = [];	gfx/scene3d.amni	395	
-s3d::stream_lv	2	var stream_lv int[>..] = [];	gfx/scene3d.amni	396	
-s3d::stream_mem	2	var stream_mem = 0;	gfx/scene3d.amni	397	
-s3d::uv_dens	2	var uv_dens f32[>..] = [];	gfx/scene3d.amni	398	
-s3d::texture_bytes	0	fn texture_bytes() int	gfx/scene3d.amni	399	
-s3d::set_texture_cache	0	fn set_texture_cache(dir const byte[:])	gfx/scene3d.amni	400	
-s3d::vbuf	2	var vbuf gfx::Buffer;	gfx/scene3d.amni	401	
-s3d::ibuf	2	var ibuf gfx::Buffer;	gfx/scene3d.amni	402	
-s3d::mbuf	2	var mbuf gfx::Buffer;	gfx/scene3d.amni	403	
-s3d::jbuf	2	var jbuf gfx::Buffer;	gfx/scene3d.amni	404	
-s3d::jbuf_cap	2	var jbuf_cap int = 0;	gfx/scene3d.amni	405	
-s3d::instances	2	var instances InstSet[>..] = [];	gfx/scene3d.amni	406	
-s3d::inst_m	2	var inst_m gfx::mat4[>..] = [];	gfx/scene3d.amni	407	
-s3d::inst_c	2	var inst_c float4[>..] = [];	gfx/scene3d.amni	408	
-s3d::inst_ids	2	var inst_ids f32[>..] = [];	gfx/scene3d.amni	409	
-s3d::inst_t0	2	var inst_t0 f32[>..] = [];	gfx/scene3d.amni	410	
-s3d::inst_t1	2	var inst_t1 f32[>..] = [];	gfx/scene3d.amni	411	
-s3d::inst_t2	2	var inst_t2 f32[>..] = [];	gfx/scene3d.amni	412	
-s3d::inst_t3	2	var inst_t3 f32[>..] = [];	gfx/scene3d.amni	413	
-s3d::inst_dirty	2	var inst_dirty = true;	gfx/scene3d.amni	414	
-s3d::inst_all	2	var inst_all = false;	gfx/scene3d.amni	415	
-s3d::meshlets	2	var meshlets = false;	gfx/scene3d.amni	416	
-s3d::meshlet_px	2	var meshlet_px f32 = 1.0;	gfx/scene3d.amni	417	
-s3d::meshlet_cone	2	var meshlet_cone = true;	gfx/scene3d.amni	418	
-s3d::meshlet_cpu	2	var meshlet_cpu = false;	gfx/scene3d.amni	419	
-s3d::meshlet_min	2	var meshlet_min = 4000;	gfx/scene3d.amni	420	
-s3d::meshlet_budget	2	var meshlet_budget = 8000000;	gfx/scene3d.amni	421	
-s3d::ml_first	2	var ml_first int[>..] = [];	gfx/scene3d.amni	422	
-s3d::ml_count	2	var ml_count int[>..] = [];	gfx/scene3d.amni	423	
-s3d::ml_tab	2	var ml_tab f32[>..] = [];	gfx/scene3d.amni	424	
-s3d::ml_rng	2	var ml_rng u32[>..] = [];	gfx/scene3d.amni	425	
-s3d::ml_idx	2	var ml_idx u32[>..] = [];	gfx/scene3d.amni	426	
-s3d::ml_draws	2	var ml_draws f32[>..] = [];	gfx/scene3d.amni	427	
-s3d::ml_bases	2	var ml_bases int[>..] = [];	gfx/scene3d.amni	428	
-s3d::ml_sel	2	var ml_sel u32[>..] = [];	gfx/scene3d.amni	429	
-s3d::ml_tab_buf	2	var ml_tab_buf gfx::Buffer;	gfx/scene3d.amni	430	
-s3d::ml_rng_buf	2	var ml_rng_buf gfx::Buffer;	gfx/scene3d.amni	431	
-s3d::ml_idx_buf	2	var ml_idx_buf gfx::Buffer;	gfx/scene3d.amni	432	
-s3d::ml_draw_buf	2	var ml_draw_buf gfx::Buffer;	gfx/scene3d.amni	433	
-s3d::ml_args_buf	2	var ml_args_buf gfx::Buffer;	gfx/scene3d.amni	434	
-s3d::ml_out_buf	2	var ml_out_buf gfx::Buffer;	gfx/scene3d.amni	435	
-s3d::ml_dirty	2	var ml_dirty = false;	gfx/scene3d.amni	436	
-s3d::ml_have	2	var ml_have = false;	gfx/scene3d.amni	437	
-s3d::ml_draw_cap	2	var ml_draw_cap = 0;	gfx/scene3d.amni	438	
-s3d::ml_out_cap	2	var ml_out_cap = 0;	gfx/scene3d.amni	439	
-s3d::pipe_ml_cull	2	var pipe_ml_cull gfx::ComputePipeline;	gfx/scene3d.amni	440	
-s3d::pipe_ml_fit	2	var pipe_ml_fit gfx::ComputePipeline;	gfx/scene3d.amni	441	
-s3d::MlU	1	struct MlU	gfx/scene3d.amni	442	
-s3d::MlFitU	1	struct MlFitU	gfx/scene3d.amni	443	
-s3d::instance_cull	2	var instance_cull = true;	gfx/scene3d.amni	444	
-s3d::xbuf	2	var xbuf gfx::Buffer;	gfx/scene3d.amni	445	
-s3d::xbuf_cap	2	var xbuf_cap int = 0;	gfx/scene3d.amni	446	
-s3d::idbuf	2	var idbuf gfx::Buffer;	gfx/scene3d.amni	447	
-s3d::idbuf_cap	2	var idbuf_cap int = 0;	gfx/scene3d.amni	448	
-s3d::fr	2	var fr float4[6] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 6];	gfx/scene3d.amni	449	
-s3d::caustics	2	var caustics Caustics = Caustics { .. };	gfx/scene3d.amni	450	
-s3d::wind	2	var wind Wind = Wind { dir: float3 { 1.0, 0.0, 0.0 }, strength: 0.0, speed: 1.0, time: 0.0 };	gfx/scene3d.amni	451	
-s3d::wind_prev	2	var wind_prev f32 = 0.0;	gfx/scene3d.amni	452	
-s3d::wind_fresh	2	var wind_fresh = true;	gfx/scene3d.amni	453	
-s3d::wind_u	2	var wind_u float4 = float4 { 0.0, 0.0, 0.0, 1.0 };	gfx/scene3d.amni	454	
-s3d::pushers	2	var pushers float4[>..] = [];	gfx/scene3d.amni	455	
-s3d::prev_pushers	2	var prev_pushers float4[>..] = [];	gfx/scene3d.amni	456	
-s3d::push_u	2	var push_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	457	
-s3d::ppush_u	2	var ppush_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	458	
-s3d::uploaded_verts	2	var uploaded_verts int = -1;	gfx/scene3d.amni	459	
-s3d::uploaded_indices	2	var uploaded_indices int = -1;	gfx/scene3d.amni	460	
-s3d::uploaded_morphs	2	var uploaded_morphs int = -1;	gfx/scene3d.amni	461	
-s3d::joints	2	var joints gfx::mat4[>..] = [];	gfx/scene3d.amni	462	
-s3d::frame_u	2	var frame_u FrameU;	gfx/scene3d.amni	463	
-s3d::view_mat	2	var view_mat gfx::mat4;	gfx/scene3d.amni	464	
-s3d::proj_mat	2	var proj_mat gfx::mat4;	gfx/scene3d.amni	465	
-s3d::view_proj	2	var view_proj gfx::mat4;           // jittered when temporal is on (rasterisation)	gfx/scene3d.amni	466	
-s3d::view_proj_nj	2	var view_proj_nj gfx::mat4;        // without jitter	gfx/scene3d.amni	467	
-s3d::prev_view_proj	2	var prev_view_proj gfx::mat4;      // last frame, without jitter	gfx/scene3d.amni	468	
-s3d::prev_keys	2	var prev_keys int[>..] = [];	gfx/scene3d.amni	470	last frame's model matrix and joint base per (item, node), for motion vectors
-s3d::prev_models	2	var prev_models gfx::mat4[>..] = [];	gfx/scene3d.amni	471	
-s3d::prev_bases	2	var prev_bases int[>..] = [];	gfx/scene3d.amni	472	
-s3d::prev_joints	2	var prev_joints gfx::mat4[>..] = [];	gfx/scene3d.amni	473	
-s3d::cur_keys	2	var cur_keys int[>..] = [];	gfx/scene3d.amni	474	
-s3d::cur_models	2	var cur_models gfx::mat4[>..] = [];	gfx/scene3d.amni	475	
-s3d::cur_bases	2	var cur_bases int[>..] = [];	gfx/scene3d.amni	476	
-s3d::cur_wb	2	var cur_wb int[>..] = [];	gfx/scene3d.amni	477	
-s3d::prev_wb	2	var prev_wb int[>..] = [];	gfx/scene3d.amni	478	
-s3d::cur_w	2	var cur_w f32[>..] = [];	gfx/scene3d.amni	479	
-s3d::old_w	2	var old_w f32[>..] = [];	gfx/scene3d.amni	480	
-s3d::cascade_end	2	var cascade_end f32[>..] = [0.0, 0.0, 0.0];	gfx/scene3d.amni	481	
-s3d::cascade_vp	2	var cascade_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	482	
-s3d::cascade_live	2	var cascade_live = 3;	gfx/scene3d.amni	483	
-s3d::frames	2	var frames int = 0;	gfx/scene3d.amni	484	
-s3d::motion_fresh	2	var motion_fresh = true;            // no previous frame to measure motion against	gfx/scene3d.amni	485	
-s3d::f4	0	fn f4(x f32, y f32, z f32, w f32) float4	gfx/scene3d.amni	487	
-s3d::x4	0	fn x4(v float3, w f32) float4	gfx/scene3d.amni	488	
-s3d::none	0	fn none() gfx::Texture	gfx/scene3d.amni	489	
-s3d::add	0	fn add(asset int) int	gfx/scene3d.amni	493	
-s3d::place	0	fn place(item int, m gfx::mat4)	gfx/scene3d.amni	497	
-s3d::corner	0	fn corner(lo float3, hi float3, k int) float3	gfx/scene3d.amni	498	
-s3d::asset_box	0	fn asset_box(asset int) float3, float3	gfx/scene3d.amni	499	
-s3d::sway	0	fn sway(item int, amount f32)	gfx/scene3d.amni	520	
-s3d::inst_bound	0	fn inst_bound(set int, k int)	gfx/scene3d.amni	525	
-s3d::add_instances	0	fn add_instances(asset int, mats gfx::mat4[:]) int	gfx/scene3d.amni	532	
-s3d::set_instance	0	fn set_instance(set int, k int, m gfx::mat4)	gfx/scene3d.amni	541	
-s3d::clear_instances	0	fn clear_instances()	gfx/scene3d.amni	542	
-s3d::instance_drawn	0	fn instance_drawn(set int, lod int) int	gfx/scene3d.amni	543	
-s3d::instance_list	0	fn instance_list(set int, lod int) int[>..]	gfx/scene3d.amni	544	
-s3d::instance_triangles	0	fn instance_triangles(set int) int	gfx/scene3d.amni	549	
-s3d::animate	0	fn animate(item int, anim int, time f32)	gfx/scene3d.amni	555	
-s3d::crossfade	0	fn crossfade(item int, from int, from_time f32, to int, to_time f32, w f32)	gfx/scene3d.amni	556	
-s3d::bend	0	fn bend(item int, node int, q linalg::Quat)	gfx/scene3d.amni	557	
-s3d::track	0	fn track(item int, slot int, node int)	gfx/scene3d.amni	558	
-s3d::tracked	0	fn tracked(item int, slot int) gfx::mat4	gfx/scene3d.amni	559	
-s3d::pose	0	fn pose(ii int)	gfx/scene3d.amni	560	
-s3d::node_ov	2	var node_ov NodeOv[>..] = [];	gfx/scene3d.amni	571	
-s3d::weight_ov	2	var weight_ov WeightOv[>..] = [];	gfx/scene3d.amni	572	
-s3d::set_node	0	fn set_node(item int, node int, t float3, r linalg::Quat, sc float3)	gfx/scene3d.amni	573	
-s3d::set_weight	0	fn set_weight(item int, node int, k int, w f32)	gfx/scene3d.amni	577	
-s3d::clear_pose	0	fn clear_pose(item int)	gfx/scene3d.amni	582	
-s3d::add_probe	0	fn add_probe(pos float3, lo float3, hi float3, fade f32)	gfx/scene3d.amni	590	
-s3d::clear_probes	0	fn clear_probes()	gfx/scene3d.amni	595	
-s3d::add_decal	0	fn add_decal(d Decal) int	gfx/scene3d.amni	596	
-s3d::clear_decals	0	fn clear_decals()	gfx/scene3d.amni	597	
-s3d::recapture	0	fn recapture()	gfx/scene3d.amni	598	
-s3d::probe_vol	0	fn probe_vol(p Probe) f32	gfx/scene3d.amni	599	
-s3d::add_light	0	fn add_light(pos float3, rgb float3, range f32)	gfx/scene3d.amni	600	
-s3d::studio_soft	0	fn studio_soft(bg float3, key f32)	gfx/scene3d.amni	601	
-s3d::add_rect	0	fn add_rect(pos float3, target float3, axis float3, width f32, height f32, rgb float3, range f32, shadows bool)	gfx/scene3d.amni	608	
-s3d::rect_axis	0	fn rect_axis(l Light) float3	gfx/scene3d.amni	609	
-s3d::add_spot	0	fn add_spot(pos float3, target float3, rgb float3, range f32, cone f32, shadows bool)	gfx/scene3d.amni	614	
-s3d::quad	0	fn quad(a float3, b float3, c float3, d float3, ca float4, cb float4, cc float4, cd float4, shape int)	gfx/scene3d.amni	615	
-s3d::glow_line	0	fn glow_line(a float3, b float3, w f32, rgb float3)	gfx/scene3d.amni	616	
-s3d::ground_mark	0	fn ground_mark(p float3, r f32, rgb float3, a f32, shape int)	gfx/scene3d.amni	628	
-s3d::quad_nadd	2	var quad_nadd = 0;	gfx/scene3d.amni	632	
-s3d::quad_upload	0	fn quad_upload()	gfx/scene3d.amni	633	
-s3d::quad_draw	0	fn quad_draw(mul bool)	gfx/scene3d.amni	646	
-s3d::hdr_target	0	fn hdr_target() gfx::Texture	gfx/scene3d.amni	658	
-s3d::motion_target	0	fn motion_target() gfx::Texture	gfx/scene3d.amni	660	Valid after a frame that wrote motion (motion_wanted()); a null handle before any.
-s3d::ao_target	0	fn ao_target() gfx::Texture	gfx/scene3d.amni	661	
-s3d::bent_target	0	fn bent_target() gfx::Texture	gfx/scene3d.amni	662	
-s3d::nd_target	0	fn nd_target() gfx::Texture	gfx/scene3d.amni	663	
-s3d::motion_wanted	0	fn motion_wanted() bool	gfx/scene3d.amni	664	
-s3d::resolved	0	fn resolved() gfx::Texture	gfx/scene3d.amni	666	The image bloom and grading read: the temporal result when it ran, else `hdr`.
-s3d::temporal_on	0	fn temporal_on() bool	gfx/scene3d.amni	667	
-s3d::surface_desc	0	fn surface_desc(cull i32, blend i32, depth_write bool) gfx::PipelineDesc	gfx/scene3d.amni	671	
-s3d::drop_targets	0	fn drop_targets()	gfx/scene3d.amni	675	
-s3d::make_targets	0	fn make_targets(w int, h int)	gfx/scene3d.amni	683	
-s3d::make_targets	0	fn make_targets(w int, h int, ow int, oh int)	gfx/scene3d.amni	687	w x h is the render size; ow x oh the size of the temporal result, bloom and the caller's target.
-s3d::make_motion	0	fn make_motion()	gfx/scene3d.amni	723	The motion target (one sample per pixel, 8 bytes a pixel) is made on the first frame that wants it.
-s3d::drop_motion	0	fn drop_motion()	gfx/scene3d.amni	728	
-s3d::make_ssr	0	fn make_ssr()	gfx/scene3d.amni	734	
-s3d::make_ssgi	0	fn make_ssgi()	gfx/scene3d.amni	748	
-s3d::drop_ssr	0	fn drop_ssr()	gfx/scene3d.amni	760	
-s3d::make_shadow_map	0	fn make_shadow_map(size int)	gfx/scene3d.amni	778	
-s3d::pixel_texture	0	fn pixel_texture(rgba byte[4], format i32) gfx::Texture	gfx/scene3d.amni	783	
-s3d::init	0	fn init(w int, h int) bool	gfx/scene3d.amni	790	Creates targets and pipelines; gfx must be open. Safe to call again after a resize.
-s3d::init	0	fn init(w int, h int, ow int, oh int) bool	gfx/scene3d.amni	794	Renders at w x h and writes ow x oh: with a larger output the temporal pass upscales (TSR). The caller's target must be ow x oh.
-s3d::forget	0	fn forget()	gfx/scene3d.amni	877	Call after gltf::reset(): drops GPU copies of geometry and images so the next frame uploads the new pools.
-s3d::upload_geometry	0	fn upload_geometry()	gfx/scene3d.amni	911	
-s3d::mip_count	0	fn mip_count(w int, h int) int	gfx/scene3d.amni	934	
-s3d::chain_bytes	0	fn chain_bytes(kind int, w int, h int, levels int) int	gfx/scene3d.amni	941	
-s3d::tex_path	0	fn tex_path(image int, srgb bool, out byte[>..]&)	gfx/scene3d.amni	946	
-s3d::tex_bake	0	fn tex_bake(image int, srgb bool, path const byte[:], file byte[>..]&, mode int) bool	gfx/scene3d.amni	960	
-s3d::tex_format	0	fn tex_format(kind int, srgb bool) i32	gfx/scene3d.amni	990	
-s3d::ktx_texture	0	fn ktx_texture(file const byte[:], srgb bool) gfx::Texture	gfx/scene3d.amni	993	
-s3d::stream_chain	0	fn stream_chain(s TexStream, n int) int	gfx/scene3d.amni	1013	
-s3d::stream_tail	0	fn stream_tail(w int, h int, levels int, blocks bool) int	gfx/scene3d.amni	1014	
-s3d::stream_fetch	0	fn stream_fetch(si int, a int, b int, out byte[>..]&) bool	gfx/scene3d.amni	1019	
-s3d::stream_build	0	fn stream_build(si int, top int)	gfx/scene3d.amni	1038	
-s3d::stream_open	0	fn stream_open(image int, srgb bool) bool	gfx/scene3d.amni	1086	
-s3d::stream_at	0	fn stream_at(image int, srgb bool) int	gfx/scene3d.amni	1121	
-s3d::image_texture	0	fn image_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1125	
-s3d::full_texture	0	fn full_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1151	
-s3d::uv_density	0	fn uv_density(prim int, set int) f32	gfx/scene3d.amni	1162	
-s3d::stream_reach	0	fn stream_reach(b Batch, pr gltf::Primitive) f32	gfx/scene3d.amni	1191	
-s3d::stream_wants	0	fn stream_wants()	gfx/scene3d.amni	1213	
-s3d::stream_update	0	fn stream_update()	gfx/scene3d.amni	1243	
-s3d::warm	0	fn warm(r gltf::TexRef, srgb bool)	gfx/scene3d.amni	1292	
-s3d::ext_fill	0	fn ext_fill(s int, layer int, src gfx::Texture)	gfx/scene3d.amni	1296	
-s3d::ext_make	0	fn ext_make(s int, cap int)	gfx/scene3d.amni	1304	
-s3d::ext_need	0	fn ext_need(r gltf::TexRef, s int)	gfx/scene3d.amni	1314	
-s3d::ext_finish	0	fn ext_finish()	gfx/scene3d.amni	1326	
-s3d::ext_layer	0	fn ext_layer(r gltf::TexRef, s int, none_is int) f32	gfx/scene3d.amni	1332	
-s3d::ext_set	0	fn ext_set(u ExtU&, i int, r gltf::TexRef, s int)	gfx/scene3d.amni	1336	
-s3d::ext_of	0	fn ext_of(m gltf::Material) ExtU	gfx/scene3d.amni	1340	
-s3d::warm_textures	0	fn warm_textures()	gfx/scene3d.amni	1355	Textures are created on first use; uploads must happen outside render passes, so every texture the batch will sample is created before the first pass.
-s3d::wrap_mode	0	fn wrap_mode(gl int) i32	gfx/scene3d.amni	1378	
-s3d::texture_sampler	0	fn texture_sampler(t gltf::Texture) gfx::Sampler	gfx/scene3d.amni	1380	
-s3d::bind_slot	0	fn bind_slot(slot int, r gltf::TexRef, srgb bool, fallback gfx::Texture)	gfx/scene3d.amni	1394	
-s3d::material_of	0	fn material_of(prim int) gltf::Material	gfx/scene3d.amni	1403	
-s3d::cut_of	0	fn cut_of(m gltf::Material) CutU	gfx/scene3d.amni	1408	
-s3d::find_prev	0	fn find_prev(key int) int	gfx/scene3d.amni	1414	
-s3d::in_view	0	fn in_view(m gfx::mat4, lo float3, hi float3) bool	gfx/scene3d.amni	1420	false when the box lies wholly outside one clip plane (camera passes only; shadows keep it)
-s3d::atmosphere	0	fn atmosphere(to_sun float3, power f32, haze f32, clouds f32)	gfx/scene3d.amni	1438	
-s3d::item_lights	0	fn item_lights(ii int)	gfx/scene3d.amni	1444	
-s3d::frustum	0	fn frustum(m gfx::mat4)	gfx/scene3d.amni	1466	
-s3d::gather_instances	0	fn gather_instances()	gfx/scene3d.amni	1474	
-s3d::gather	0	fn gather()	gfx/scene3d.amni	1557	
-s3d::meshlet_prepare	0	fn meshlet_prepare()	gfx/scene3d.amni	1631	
-s3d::meshlet_slot	0	fn meshlet_slot(pi int, m gfx::mat4, two bool) int	gfx/scene3d.amni	1657	
-s3d::ml_at	0	fn ml_at(d int, c int, r int) float3	gfx/scene3d.amni	1668	
-s3d::ml_far	0	fn ml_far(p float3, e float4) f32	gfx/scene3d.amni	1674	
-s3d::ml_keep	0	fn ml_keep(d int, c int, cam bool, u MlU) bool	gfx/scene3d.amni	1675	
-s3d::ml_plane	0	fn ml_plane(a float4, b float4, k f32) float4	gfx/scene3d.amni	1692	
-s3d::meshlet_select	0	fn meshlet_select()	gfx/scene3d.amni	1697	
-s3d::meshlet_stats	0	fn meshlet_stats() int, int, int	gfx/scene3d.amni	1765	
-s3d::forward	0	fn forward() float3	gfx/scene3d.amni	1777	
-s3d::mw	0	fn mw(pool f32[:], base int, j int, n int) f32	gfx/scene3d.amni	1779	
-s3d::draw_uniforms	0	fn draw_uniforms(b Batch, vp gfx::mat4) DrawU	gfx/scene3d.amni	1780	
-s3d::bind_geometry	0	fn bind_geometry()	gfx/scene3d.amni	1801	
-s3d::draw_prim	0	fn draw_prim(b Batch)	gfx/scene3d.amni	1810	
-s3d::halton	0	fn halton(i int, base int) f32	gfx/scene3d.amni	1824	Radical inverse of i in the given base: the Halton low-discrepancy sequence.
-s3d::setup_view	0	fn setup_view()	gfx/scene3d.amni	1836	
-s3d::setup_cascades	0	fn setup_cascades()	gfx/scene3d.amni	1873	Splits [near, shadow_far] between a logarithmic and a uniform spacing, fits a bounding sphere to each slice and aims a texel-snapped orthographic camera at it.
-s3d::fill_frame	0	fn fill_frame()	gfx/scene3d.amni	1940	
-s3d::image_avg	0	fn image_avg(image int) float3	gfx/scene3d.amni	2033	mean linear colour of an image, sampled on a sparse grid; the bounce albedo
-s3d::gi_scene	0	fn gi_scene()	gfx/scene3d.amni	2055	
-s3d::gi_rot	0	fn gi_rot(k int) GiU	gfx/scene3d.amni	2103	
-s3d::gi_pass	0	fn gi_pass()	gfx/scene3d.amni	2117	
-s3d::signed_range	0	fn signed_range(l Light) f32	gfx/scene3d.amni	2151	
-s3d::light_upload	0	fn light_upload()	gfx/scene3d.amni	2152	
-s3d::gi_bind	0	fn gi_bind()	gfx/scene3d.amni	2201	
-s3d::shadow_pass	0	fn shadow_pass()	gfx/scene3d.amni	2214	
-s3d::shelter_pass	0	fn shelter_pass()	gfx/scene3d.amni	2246	
-s3d::local_shadow_pass	0	fn local_shadow_pass()	gfx/scene3d.amni	2271	
-s3d::fullscreen	0	fn fullscreen(p gfx::Pipeline)	gfx/scene3d.amni	2298	
-s3d::sky_u	0	fn sky_u() SkyU	gfx/scene3d.amni	2300	
-s3d::ao_pass	0	fn ao_pass()	gfx/scene3d.amni	2308	Prepass: normal + depth (nd) for SSAO, and the motion target when it is wanted. Both are single-sample, so every pixel's motion and depth belong to the one surface under its (jittered) sample point.
-s3d::contact_on	0	fn contact_on() bool	gfx/scene3d.amni	2390	
-s3d::contact_pass	0	fn contact_pass()	gfx/scene3d.amni	2391	
-s3d::ssr_pass	0	fn ssr_pass()	gfx/scene3d.amni	2406	
-s3d::ssgi_live	0	fn ssgi_live() bool	gfx/scene3d.amni	2437	
-s3d::ssgi_pass	0	fn ssgi_pass()	gfx/scene3d.amni	2438	
-s3d::ssr_capture	0	fn ssr_capture()	gfx/scene3d.amni	2479	
-s3d::cut_cover	0	fn cut_cover(m gltf::Material) bool	gfx/scene3d.amni	2489	
-s3d::lit_pipe	0	fn lit_pipe(m gltf::Material) gfx::Pipeline	gfx/scene3d.amni	2490	
-s3d::mip_scale	0	fn mip_scale() f32	gfx/scene3d.amni	2491	
-s3d::surface_of	0	fn surface_of(m gltf::Material) SurfaceU	gfx/scene3d.amni	2492	
-s3d::draw_lit	0	fn draw_lit(b Batch)	gfx/scene3d.amni	2511	
-s3d::trans_capture	0	fn trans_capture()	gfx/scene3d.amni	2539	
-s3d::color_pass	0	fn color_pass()	gfx/scene3d.amni	2554	
-s3d::lens_tiles	0	fn lens_tiles(src gfx::Texture, mode f32)	gfx/scene3d.amni	2620	
-s3d::lens_swap	0	fn lens_swap()	gfx/scene3d.amni	2637	
-s3d::fog_pass	0	fn fog_pass()	gfx/scene3d.amni	2638	
-s3d::lens_pass	0	fn lens_pass()	gfx/scene3d.amni	2663	
-s3d::temporal_draw	0	fn temporal_draw()	gfx/scene3d.amni	2697	
-s3d::temporal_pass	0	fn temporal_pass()	gfx/scene3d.amni	2719	
-s3d::temporal_repeat	0	fn temporal_repeat(n int)	gfx/scene3d.amni	2728	Runs only the temporal pass n more times on the last frame's inputs (for timing).
-s3d::glow_pass	0	fn glow_pass()	gfx/scene3d.amni	2730	
-s3d::set_lut	0	fn set_lut(rgba const byte[:], n int) bool	gfx/scene3d.amni	2761	
-s3d::identity_lut	0	fn identity_lut(n int)	gfx/scene3d.amni	2769	
-s3d::lut_strip	0	fn lut_strip(rgba const byte[:], w int, h int) bool	gfx/scene3d.amni	2774	
-s3d::lut_cube	0	fn lut_cube(text const byte[:]) bool	gfx/scene3d.amni	2781	
-s3d::exposure_pass	0	fn exposure_pass()	gfx/scene3d.amni	2795	
-s3d::exposure_now	0	fn exposure_now() f32	gfx/scene3d.amni	2812	
-s3d::grade_pass	0	fn grade_pass(target gfx::Texture)	gfx/scene3d.amni	2817	
-s3d::probe_capture	0	fn probe_capture()	gfx/scene3d.amni	2830	Renders the scene into target (RGBA8, COLOR_TARGET, the output size given to init).
-s3d::render	0	fn render(target gfx::Texture)	gfx/scene3d.amni	2923	
-s3d::render_begin	0	fn render_begin() bool	gfx/scene3d.amni	2926	
-s3d::render_end	0	fn render_end(target gfx::Texture)	gfx/scene3d.amni	2951	
+s3d::CASCADES	2	let CASCADES = 3;	gfx/scene3d.amni	44	
+s3d::MAX_LIGHTS	2	let MAX_LIGHTS = 16;	gfx/scene3d.amni	45	
+s3d::MAX_PROBES	2	let MAX_PROBES = 8;	gfx/scene3d.amni	46	
+s3d::GI_LIGHTS	2	let GI_LIGHTS = 8;	gfx/scene3d.amni	47	
+s3d::GLOW_LEVELS	2	let GLOW_LEVELS = 5;	gfx/scene3d.amni	48	
+s3d::MSAA	2	let MSAA = 4;	gfx/scene3d.amni	49	
+s3d::LOCAL_LAYERS	2	let LOCAL_LAYERS = 12;	gfx/scene3d.amni	50	
+s3d::HIZ_LEVELS	2	let HIZ_LEVELS = 7;	gfx/scene3d.amni	51	
+s3d::Camera	1	struct Camera	gfx/scene3d.amni	53	
+s3d::Sun	1	struct Sun	gfx/scene3d.amni	54	
+s3d::Light	1	struct Light	gfx/scene3d.amni	55	
+s3d::Sky	1	struct Sky	gfx/scene3d.amni	56	
+s3d::Look	1	struct Look	gfx/scene3d.amni	57	
+s3d::NodeOv	1	struct NodeOv	gfx/scene3d.amni	58	
+s3d::WeightOv	1	struct WeightOv	gfx/scene3d.amni	59	
+s3d::Item	1	struct Item	gfx/scene3d.amni	60	
+s3d::InstSet	1	struct InstSet	gfx/scene3d.amni	61	
+s3d::Caustics	1	struct Caustics	gfx/scene3d.amni	62	
+s3d::Wind	1	struct Wind	gfx/scene3d.amni	63	
+s3d::Batch	1	struct Batch	gfx/scene3d.amni	64	
+s3d::DrawU	1	struct DrawU	gfx/scene3d.amni	66	
+s3d::FrameU	1	struct FrameU	gfx/scene3d.amni	67	
+s3d::GiU	1	struct GiU	gfx/scene3d.amni	73	
+s3d::SurfaceU	1	struct SurfaceU	gfx/scene3d.amni	74	
+s3d::ExtU	1	struct ExtU	gfx/scene3d.amni	75	
+s3d::CutU	1	struct CutU	gfx/scene3d.amni	76	
+s3d::CutViewU	1	struct CutViewU	gfx/scene3d.amni	77	
+s3d::SkyU	1	struct SkyU	gfx/scene3d.amni	78	
+s3d::AoU	1	struct AoU	gfx/scene3d.amni	79	
+s3d::ContactU	1	struct ContactU	gfx/scene3d.amni	80	
+s3d::SssU	1	struct SssU	gfx/scene3d.amni	81	
+s3d::GtaoU	1	struct GtaoU	gfx/scene3d.amni	82	
+s3d::TileU	1	struct TileU	gfx/scene3d.amni	83	
+s3d::NearU	1	struct NearU	gfx/scene3d.amni	84	
+s3d::MblurU	1	struct MblurU	gfx/scene3d.amni	85	
+s3d::DofU	1	struct DofU	gfx/scene3d.amni	86	
+s3d::TexelU	1	struct TexelU	gfx/scene3d.amni	87	
+s3d::GlowU	1	struct GlowU	gfx/scene3d.amni	88	
+s3d::GradeU	1	struct GradeU	gfx/scene3d.amni	89	
+s3d::HistU	1	struct HistU	gfx/scene3d.amni	90	
+s3d::AdaptU	1	struct AdaptU	gfx/scene3d.amni	91	
+s3d::FogU	1	struct FogU	gfx/scene3d.amni	92	
+s3d::QuadG	1	struct QuadG	gfx/scene3d.amni	93	
+s3d::QuadViewU	1	struct QuadViewU	gfx/scene3d.amni	94	
+s3d::SsrU	1	struct SsrU	gfx/scene3d.amni	95	
+s3d::SsgiU	1	struct SsgiU	gfx/scene3d.amni	96	
+s3d::SsgiAU	1	struct SsgiAU	gfx/scene3d.amni	97	
+s3d::SsgiUpU	1	struct SsgiUpU	gfx/scene3d.amni	98	
+s3d::HizU	1	struct HizU	gfx/scene3d.amni	99	
+s3d::TemporalU	1	struct TemporalU	gfx/scene3d.amni	100	
+s3d::view	2	var view Camera = Camera { eye: float3 { 0.0, 1.5, 5.0 }, target: float3 { 0.0, 0.5, 0.0 }, up: float3 { 0.0, 1.0, 0.0 }, fov_y: 0.9, near: 0.1, far: 200.0 };	gfx/scene3d.amni	102	
+s3d::sun	2	var sun Sun = Sun { to_sun: float3 { 0.4, 0.8, 0.45 }, rgb: float3 { 3.0, 2.85, 2.6 }, shadows: true, shadow_far: 40.0, map_size: 2048 };	gfx/scene3d.amni	103	
+s3d::sky	2	var sky Sky = Sky { zenith: float3 { 0.25, 0.42, 0.75 }, horizon: float3 { 0.65, 0.72, 0.8 }, ground: float3 { 0.2, 0.18, 0.16 }, ambient: 1.0, draw: true };	gfx/scene3d.amni	104	
+s3d::look	2	var look Look = Look { exposure: 1.0, white: 6.0, bloom: 0.6, bloom_cut: 1.2, desaturate: 0.5, ssao: true, ao_radius: 0.5, ao_power: 1.5, ao_samples: 16 };	gfx/scene3d.amni	105	
+s3d::debug_view	2	var debug_view = 0;	gfx/scene3d.amni	108	Debug view for the colour pass: 0 shaded; 1 shading normal; 2 vertex normal; 3 tangent; 4 ambient term; 5 direct light; 6 occlusion; 7 base colour; 8 n.v.
+s3d::ao_mode	2	var ao_mode = 0;	gfx/scene3d.amni	109	
+s3d::gtao_steps	2	var gtao_steps = 8;	gfx/scene3d.amni	110	
+s3d::gtao_falloff	2	var gtao_falloff f32 = 0.1;	gfx/scene3d.amni	111	
+s3d::spec_occlusion	2	var spec_occlusion = true;	gfx/scene3d.amni	112	
+s3d::ssr_on	2	var ssr_on = false;	gfx/scene3d.amni	113	
+s3d::ssr_steps	2	var ssr_steps = 48;	gfx/scene3d.amni	114	
+s3d::ssr_thickness	2	var ssr_thickness f32 = 0.05;	gfx/scene3d.amni	115	
+s3d::ssr_max_dist	2	var ssr_max_dist f32 = 3.0;	gfx/scene3d.amni	116	
+s3d::ssr_rough	2	var ssr_rough f32 = 0.5;	gfx/scene3d.amni	117	
+s3d::ssr_edge	2	var ssr_edge f32 = 0.07;	gfx/scene3d.amni	118	
+s3d::ssr_hit	2	var ssr_hit gfx::Texture;	gfx/scene3d.amni	119	
+s3d::ssr_prev	2	var ssr_prev gfx::Texture;	gfx/scene3d.amni	120	
+s3d::hiz	2	var hiz gfx::Texture[>..] = [];	gfx/scene3d.amni	121	
+s3d::ssr_have	2	var ssr_have = false;	gfx/scene3d.amni	122	
+s3d::bent_ran	2	var bent_ran = false;	gfx/scene3d.amni	123	
+s3d::mt_ran	2	var mt_ran = false;	gfx/scene3d.amni	124	
+s3d::pipe_hiz	2	var pipe_hiz gfx::Pipeline;	gfx/scene3d.amni	125	
+s3d::pipe_ssr	2	var pipe_ssr gfx::Pipeline;	gfx/scene3d.amni	126	
+s3d::pipe_ssr_copy	2	var pipe_ssr_copy gfx::Pipeline;	gfx/scene3d.amni	127	
+s3d::ssgi_on	2	var ssgi_on = false;	gfx/scene3d.amni	128	
+s3d::ssgi_rays	2	var ssgi_rays = 4;	gfx/scene3d.amni	129	
+s3d::ssgi_steps	2	var ssgi_steps = 64;	gfx/scene3d.amni	130	
+s3d::ssgi_dist	2	var ssgi_dist f32 = 10.0;	gfx/scene3d.amni	131	
+s3d::ssgi_thickness	2	var ssgi_thickness f32 = 0.05;	gfx/scene3d.amni	132	
+s3d::ssgi_edge	2	var ssgi_edge f32 = 0.02;	gfx/scene3d.amni	133	
+s3d::ssgi_intensity	2	var ssgi_intensity f32 = 1.0;	gfx/scene3d.amni	134	
+s3d::ssgi_ao	2	var ssgi_ao f32 = 1.0;	gfx/scene3d.amni	135	
+s3d::ssgi_frames	2	var ssgi_frames f32 = 17.0;	gfx/scene3d.amni	136	
+s3d::ssgi_new	2	var ssgi_new gfx::Texture;	gfx/scene3d.amni	137	
+s3d::ssgi_hc	2	var ssgi_hc gfx::Texture[>..] = [];	gfx/scene3d.amni	138	
+s3d::ssgi_hz	2	var ssgi_hz gfx::Texture[>..] = [];	gfx/scene3d.amni	139	
+s3d::ssgi_buf	2	var ssgi_buf gfx::Buffer;	gfx/scene3d.amni	140	
+s3d::ssgi_cur	2	var ssgi_cur = 0;	gfx/scene3d.amni	141	
+s3d::ssgi_valid	2	var ssgi_valid = false;	gfx/scene3d.amni	142	
+s3d::pipe_ssgi_trace	2	var pipe_ssgi_trace gfx::Pipeline;	gfx/scene3d.amni	143	
+s3d::pipe_ssgi_accum	2	var pipe_ssgi_accum gfx::Pipeline;	gfx/scene3d.amni	144	
+s3d::pipe_ssgi_up	2	var pipe_ssgi_up gfx::ComputePipeline;	gfx/scene3d.amni	145	
+s3d::motion_blur	2	var motion_blur f32 = 0.0;	gfx/scene3d.amni	146	
+s3d::mb_samples	2	var mb_samples = 15;	gfx/scene3d.amni	147	
+s3d::mb_soft_z	2	var mb_soft_z f32 = 0.02;	gfx/scene3d.amni	148	
+s3d::lens_tile_px	2	var lens_tile_px = 20;	gfx/scene3d.amni	149	
+s3d::dof_aperture	2	var dof_aperture f32 = 0.0;	gfx/scene3d.amni	150	
+s3d::dof_focus	2	var dof_focus f32 = 10.0;	gfx/scene3d.amni	151	
+s3d::dof_max_px	2	var dof_max_px f32 = 24.0;	gfx/scene3d.amni	152	
+s3d::dof_samples	2	var dof_samples = 48;	gfx/scene3d.amni	153	
+s3d::lens_offset	2	var lens_offset float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	154	
+s3d::fx_dt	2	var fx_dt f32 = 0.0;	gfx/scene3d.amni	155	
+s3d::nd_ran	2	var nd_ran = false;	gfx/scene3d.amni	156	
+s3d::gi_on	2	var gi_on = false;	gfx/scene3d.amni	157	
+s3d::rt_shadows	2	var rt_shadows = false;	gfx/scene3d.amni	158	
+s3d::rt_reflect	2	var rt_reflect = false;	gfx/scene3d.amni	159	
+s3d::rt_rough	2	var rt_rough f32 = 0.3;	gfx/scene3d.amni	160	
+s3d::rt_reach	2	var rt_reach f32 = 1000.0;	gfx/scene3d.amni	161	
+s3d::gi_ao	2	var gi_ao = true;	gfx/scene3d.amni	162	
+s3d::gi_rt_visibility	2	var gi_rt_visibility = true;	gfx/scene3d.amni	163	
+s3d::gi_dims	2	var gi_dims = [16, 16, 16];	gfx/scene3d.amni	164	
+s3d::gi_rays	2	var gi_rays = 256;	gfx/scene3d.amni	165	
+s3d::gi_hysteresis	2	var gi_hysteresis f32 = 0.97;	gfx/scene3d.amni	166	
+s3d::gi_bias	2	var gi_bias f32 = 0.3;	gfx/scene3d.amni	167	
+s3d::gi_max_dist	2	var gi_max_dist f32 = 0.0;	gfx/scene3d.amni	168	
+s3d::gi_updates_per_frame	2	var gi_updates_per_frame = 1;	gfx/scene3d.amni	169	
+s3d::gi_interval	2	var gi_interval = 1;	gfx/scene3d.amni	170	
+s3d::shadow_reach	2	var shadow_reach f32 = 0.0;	gfx/scene3d.amni	171	
+s3d::gi_built	2	var gi_built = false;	gfx/scene3d.amni	172	
+s3d::gi_np	2	var gi_np = 0;	gfx/scene3d.amni	173	
+s3d::gi_nr	2	var gi_nr = 0;	gfx/scene3d.amni	174	
+s3d::gi_updates	2	var gi_updates = 0;	gfx/scene3d.amni	175	
+s3d::gi_lo	2	var gi_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	176	
+s3d::gi_box	2	var gi_box = false;	gfx/scene3d.amni	178	optional probe volume; off = the whole scene's bounds
+s3d::gi_box_lo	2	var gi_box_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	179	
+s3d::gi_box_hi	2	var gi_box_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	180	
+s3d::img_avg	2	var img_avg float4[>..] = [];	gfx/scene3d.amni	181	
+s3d::gi_step	2	var gi_step float3 = float3 { 1.0, 1.0, 1.0 };	gfx/scene3d.amni	182	
+s3d::gi_irr	2	var gi_irr gfx::Buffer;	gfx/scene3d.amni	183	
+s3d::gi_dist	2	var gi_dist gfx::Buffer;	gfx/scene3d.amni	184	
+s3d::gi_rays_buf	2	var gi_rays_buf gfx::Buffer;	gfx/scene3d.amni	185	
+s3d::gi_dummy	2	var gi_dummy gfx::Buffer;	gfx/scene3d.amni	186	
+s3d::gi_have	2	var gi_have = false;	gfx/scene3d.amni	187	
+s3d::pipe_gi_trace	2	var pipe_gi_trace gfx::ComputePipeline;	gfx/scene3d.amni	188	
+s3d::pipe_gi_update	2	var pipe_gi_update gfx::ComputePipeline;	gfx/scene3d.amni	189	
+s3d::multiscatter	2	var multiscatter = true;	gfx/scene3d.amni	191	Multiple-scattering energy compensation of the specular lobe (surface.frag ms_factor).
+s3d::furnace_scale	2	var furnace_scale f32 = 1.0;	gfx/scene3d.amni	193	Test hook for the furnace control: scales the direct light; 1.0 in normal use.
+s3d::furnace_mode	2	var furnace_mode = 0;	gfx/scene3d.amni	196	Test hook for the furnace controls that must fail, 0 in normal use: 1 gives dielectrics F0 = 1 in the specular lobe only, 2 weights diffuse by the older per-light 1 - F(v.h).
+s3d::test_rect_naive	2	var test_rect_naive = false;	gfx/scene3d.amni	197	
+s3d::alpha_to_coverage	2	var alpha_to_coverage = false;	gfx/scene3d.amni	198	
+s3d::mip_bias	2	var mip_bias f32 = 0.0;	gfx/scene3d.amni	199	
+s3d::mip_bias_auto	2	var mip_bias_auto = true;	gfx/scene3d.amni	200	
+s3d::test_morph_still	2	var test_morph_still = false;	gfx/scene3d.amni	201	
+s3d::ClothIt	1	struct ClothIt	gfx/scene3d.amni	202	
+s3d::cloths	2	var cloths ClothIt[>..] = [];	gfx/scene3d.amni	203	
+s3d::temporal	2	var temporal = 0;	gfx/scene3d.amni	205	Temporal accumulation. 0 off (unless the output is upscaled), 1 on.
+s3d::temporal_blend	2	var temporal_blend f32 = 0.0625;     // weight of a new frame on a still pixel	gfx/scene3d.amni	206	
+s3d::temporal_motion	2	var temporal_motion f32 = 0.01;      // extra weight per output pixel of motion	gfx/scene3d.amni	207	
+s3d::temporal_max	2	var temporal_max f32 = 0.5;	gfx/scene3d.amni	208	
+s3d::temporal_gamma	2	var temporal_gamma f32 = 1.25;       // neighbourhood clip width in standard deviations (0 = no clip)	gfx/scene3d.amni	209	
+s3d::temporal_reset	2	var temporal_reset = false;          // drop the history on the next frame (camera cut)	gfx/scene3d.amni	210	
+s3d::temporal_depth_reject	2	var temporal_depth_reject f32 = 0.1;	gfx/scene3d.amni	215	Depth-based history rejection (shaders/temporal.frag): a pixel whose history shows a surface in front of it (nearer by more than this fraction of its depth) that is no longer anywhere in its 3x3 neighbourhood was hidden last frame, so its history is dropped. 0 turns it off (a test control).
+s3d::temporal_motion_scale	2	var temporal_motion_scale f32 = 1.0;	gfx/scene3d.amni	218	Test hook: scales the motion vectors the temporal pass reads; 1 in normal use, 0 is the "motion forced to zero" control of the ghost gate.
+s3d::jitter_phases	2	var jitter_phases = 16;	gfx/scene3d.amni	219	
+s3d::motion_vectors	2	var motion_vectors = false;	gfx/scene3d.amni	222	Write the motion target even when temporal is off (for a caller that reads motion_target()). With both off the target is neither allocated nor drawn.
+s3d::shadow_test_shift	2	var shadow_test_shift float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	227	Test hooks for gfx_smoke's must-fail shadow controls (leave at their defaults): the shadow map is drawn with each cascade shifted along light-space x by this many texels (x, y, z = cascades 0, 1, 2; sampling is unshifted), and every cascade's clear cycles the whole map (what a layer-only cycling rule did before S5).
+s3d::shadow_test_cycle_all	2	var shadow_test_cycle_all = false;	gfx/scene3d.amni	228	
+s3d::shadow_test_cycle_never	2	var shadow_test_cycle_never = false;	gfx/scene3d.amni	230	and never cycles at all (reported only: does the driver serialise frames anyway)
+s3d::lights	2	var lights Light[>..] = [];	gfx/scene3d.amni	231	
+s3d::fog_on	2	var fog_on = false;	gfx/scene3d.amni	232	
+s3d::fog_density	2	var fog_density f32 = 0.03;	gfx/scene3d.amni	233	
+s3d::fog_falloff	2	var fog_falloff f32 = 0.25;	gfx/scene3d.amni	234	
+s3d::fog_height	2	var fog_height f32 = 0.0;	gfx/scene3d.amni	235	
+s3d::fog_far	2	var fog_far f32 = 60.0;	gfx/scene3d.amni	236	
+s3d::fog_steps	2	var fog_steps = 32;	gfx/scene3d.amni	237	
+s3d::fog_g	2	var fog_g f32 = 0.6;	gfx/scene3d.amni	238	
+s3d::fog_ambient	2	var fog_ambient float3 = float3 { 0.05, 0.06, 0.07 };	gfx/scene3d.amni	239	
+s3d::fog_sun	2	var fog_sun f32 = 1.0;	gfx/scene3d.amni	240	
+s3d::pipe_fog	2	var pipe_fog gfx::Pipeline;	gfx/scene3d.amni	241	
+s3d::quads	2	var quads QuadG[>..] = [];	gfx/scene3d.amni	242	
+s3d::quad_buf	2	var quad_buf gfx::Buffer;	gfx/scene3d.amni	243	
+s3d::quad_cap	2	var quad_cap = 0;	gfx/scene3d.amni	244	
+s3d::pipe_quad_add	2	var pipe_quad_add gfx::Pipeline;	gfx/scene3d.amni	245	
+s3d::pipe_quad_mul	2	var pipe_quad_mul gfx::Pipeline;	gfx/scene3d.amni	246	
+s3d::items	2	var items Item[>..] = [];	gfx/scene3d.amni	247	
+s3d::batch	2	var batch Batch[>..] = [];	gfx/scene3d.amni	248	
+s3d::ready	2	var ready bool = false;	gfx/scene3d.amni	251	---- GPU state
+s3d::width	2	var width int = 0;	gfx/scene3d.amni	252	
+s3d::height	2	var height int = 0;	gfx/scene3d.amni	253	
+s3d::pipe_lit	2	var pipe_lit gfx::Pipeline;	gfx/scene3d.amni	254	
+s3d::pipe_lit_two	2	var pipe_lit_two gfx::Pipeline;     // double sided	gfx/scene3d.amni	255	
+s3d::pipe_cut	2	var pipe_cut gfx::Pipeline;	gfx/scene3d.amni	256	
+s3d::pipe_cut_two	2	var pipe_cut_two gfx::Pipeline;	gfx/scene3d.amni	257	
+s3d::pipe_blend	2	var pipe_blend gfx::Pipeline;	gfx/scene3d.amni	258	
+s3d::pipe_blend_back	2	var pipe_blend_back gfx::Pipeline;	gfx/scene3d.amni	259	
+s3d::pipe_trans_copy	2	var pipe_trans_copy gfx::Pipeline;	gfx/scene3d.amni	260	
+s3d::sss_on	2	var sss_on = false;	gfx/scene3d.amni	261	
+s3d::sss_taps	2	var sss_taps = 64;	gfx/scene3d.amni	262	
+s3d::sss_lod	2	var sss_lod f32 = 5.0;	gfx/scene3d.amni	263	
+s3d::sss_depth	2	var sss_depth = true;	gfx/scene3d.amni	264	
+s3d::sss_ran	2	var sss_ran = false;	gfx/scene3d.amni	265	
+s3d::sss_live	2	var sss_live = false;	gfx/scene3d.amni	266	
+s3d::sss_mode	2	var sss_mode = 0;	gfx/scene3d.amni	267	
+s3d::sss_np	2	var sss_np = 0;	gfx/scene3d.amni	268	
+s3d::sss_built	2	var sss_built = 0;	gfx/scene3d.amni	269	
+s3d::sss_w	2	var sss_w = 0;	gfx/scene3d.amni	270	
+s3d::sss_h	2	var sss_h = 0;	gfx/scene3d.amni	271	
+s3d::sss_levels	2	var sss_levels = 1;	gfx/scene3d.amni	272	
+s3d::sss_ps	2	var sss_ps f32 = 0.0;	gfx/scene3d.amni	273	
+s3d::sss_u	2	var sss_u SssU;	gfx/scene3d.amni	274	
+s3d::sss_irr	2	var sss_irr gfx::Texture;	gfx/scene3d.amni	275	
+s3d::sss_set	2	var sss_set gfx::Texture;	gfx/scene3d.amni	276	
+s3d::sss_out	2	var sss_out gfx::Texture;	gfx/scene3d.amni	277	
+s3d::pipe_sss	2	var pipe_sss gfx::Pipeline;	gfx/scene3d.amni	278	
+s3d::pipe_sss_two	2	var pipe_sss_two gfx::Pipeline;	gfx/scene3d.amni	279	
+s3d::pipe_sss_set	2	var pipe_sss_set gfx::Pipeline;	gfx/scene3d.amni	280	
+s3d::pipe_sss_blur	2	var pipe_sss_blur gfx::Pipeline;	gfx/scene3d.amni	281	
+s3d::Probe	1	struct Probe	gfx/scene3d.amni	282	
+s3d::Decal	1	struct Decal	gfx/scene3d.amni	283	
+s3d::decals	2	var decals Decal[>..] = [];	gfx/scene3d.amni	284	
+s3d::ProbeCopyU	1	struct ProbeCopyU	gfx/scene3d.amni	285	
+s3d::probes	2	var probes Probe[>..] = [];	gfx/scene3d.amni	286	
+s3d::probe_res	2	var probe_res = 256;	gfx/scene3d.amni	287	
+s3d::probe_near	2	var probe_near f32 = 0.05;	gfx/scene3d.amni	288	
+s3d::probe_intensity	2	var probe_intensity f32 = 1.0;	gfx/scene3d.amni	289	
+s3d::probe_parallax	2	var probe_parallax = true;	gfx/scene3d.amni	290	
+s3d::probe_bounces	2	var probe_bounces = 3;	gfx/scene3d.amni	291	
+s3d::cap_np	2	var cap_np = 0;	gfx/scene3d.amni	292	
+s3d::probes_dirty	2	var probes_dirty = false;	gfx/scene3d.amni	293	
+s3d::probe_gen	2	var probe_gen = -1;	gfx/scene3d.amni	294	
+s3d::capturing	2	var capturing = false;	gfx/scene3d.amni	295	
+s3d::pipe_probe_copy	2	var pipe_probe_copy gfx::Pipeline;	gfx/scene3d.amni	296	
+s3d::pipe_shadow	2	var pipe_shadow gfx::Pipeline;	gfx/scene3d.amni	297	
+s3d::pipe_normals	2	var pipe_normals gfx::Pipeline;	gfx/scene3d.amni	298	
+s3d::pipe_normals_two	2	var pipe_normals_two gfx::Pipeline;	gfx/scene3d.amni	299	
+s3d::pipe_sky	2	var pipe_sky gfx::Pipeline;	gfx/scene3d.amni	300	
+s3d::pipe_sky_motion	2	var pipe_sky_motion gfx::Pipeline;	gfx/scene3d.amni	301	
+s3d::pipe_ao	2	var pipe_ao gfx::Pipeline;	gfx/scene3d.amni	302	
+s3d::pipe_ao_blur	2	var pipe_ao_blur gfx::Pipeline;	gfx/scene3d.amni	303	
+s3d::pipe_gtao	2	var pipe_gtao gfx::Pipeline;	gfx/scene3d.amni	304	
+s3d::pipe_contact	2	var pipe_contact gfx::Pipeline;	gfx/scene3d.amni	305	
+s3d::contact_tex	2	var contact_tex gfx::Texture;	gfx/scene3d.amni	306	
+s3d::contact_steps	2	var contact_steps = 12;	gfx/scene3d.amni	307	
+s3d::contact_thick	2	var contact_thick f32 = 0.02;	gfx/scene3d.amni	308	
+s3d::pipe_lens_tile	2	var pipe_lens_tile gfx::Pipeline;	gfx/scene3d.amni	309	
+s3d::pipe_lens_near	2	var pipe_lens_near gfx::Pipeline;	gfx/scene3d.amni	310	
+s3d::pipe_mblur	2	var pipe_mblur gfx::Pipeline;	gfx/scene3d.amni	311	
+s3d::pipe_dof	2	var pipe_dof gfx::Pipeline;	gfx/scene3d.amni	312	
+s3d::pipe_dof_pack	2	var pipe_dof_pack gfx::Pipeline;	gfx/scene3d.amni	313	
+s3d::fx	2	var fx gfx::Texture;	gfx/scene3d.amni	314	
+s3d::tile_a	2	var tile_a gfx::Texture;	gfx/scene3d.amni	315	
+s3d::tile_b	2	var tile_b gfx::Texture;	gfx/scene3d.amni	316	
+s3d::pipe_gtao_blur	2	var pipe_gtao_blur gfx::Pipeline;	gfx/scene3d.amni	317	
+s3d::pipe_bright	2	var pipe_bright gfx::Pipeline;	gfx/scene3d.amni	318	
+s3d::pipe_down	2	var pipe_down gfx::Pipeline;	gfx/scene3d.amni	319	
+s3d::pipe_up	2	var pipe_up gfx::Pipeline;	gfx/scene3d.amni	320	
+s3d::pipe_grade	2	var pipe_grade gfx::Pipeline;	gfx/scene3d.amni	321	
+s3d::pipe_temporal	2	var pipe_temporal gfx::Pipeline;	gfx/scene3d.amni	322	
+s3d::pipe_hist	2	var pipe_hist gfx::ComputePipeline;	gfx/scene3d.amni	323	
+s3d::pipe_adapt	2	var pipe_adapt gfx::ComputePipeline;	gfx/scene3d.amni	324	
+s3d::hist_buf	2	var hist_buf gfx::Buffer;	gfx/scene3d.amni	325	
+s3d::expo_buf	2	var expo_buf gfx::Buffer;	gfx/scene3d.amni	326	
+s3d::expo_fresh	2	var expo_fresh = true;	gfx/scene3d.amni	327	
+s3d::exposure_dt	2	var exposure_dt f32 = 0.0166667;	gfx/scene3d.amni	328	
+s3d::lut_tex	2	var lut_tex gfx::Texture;	gfx/scene3d.amni	329	
+s3d::lut_n	2	var lut_n = 0;	gfx/scene3d.amni	330	
+s3d::ae_log_min	2	var ae_log_min f32 = -10.0;	gfx/scene3d.amni	331	
+s3d::ae_log_max	2	var ae_log_max f32 = 10.0;	gfx/scene3d.amni	332	
+s3d::color_ms	2	var color_ms gfx::Texture;	gfx/scene3d.amni	333	
+s3d::depth_ms	2	var depth_ms gfx::Texture;	gfx/scene3d.amni	334	
+s3d::hdr	2	var hdr gfx::Texture;	gfx/scene3d.amni	335	
+s3d::motion_tex	2	var motion_tex gfx::Texture;	gfx/scene3d.amni	336	
+s3d::history	2	var history gfx::Texture[>..] = [];	gfx/scene3d.amni	337	
+s3d::hist_cur	2	var hist_cur = 0;	gfx/scene3d.amni	338	
+s3d::hist_valid	2	var hist_valid = false;	gfx/scene3d.amni	339	
+s3d::out_width	2	var out_width int = 0;	gfx/scene3d.amni	340	
+s3d::out_height	2	var out_height int = 0;	gfx/scene3d.amni	341	
+s3d::jitter	2	var jitter float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	342	
+s3d::temporal_used	2	var temporal_used = false;	gfx/scene3d.amni	343	
+s3d::nd	2	var nd gfx::Texture;	gfx/scene3d.amni	344	
+s3d::nd_depth	2	var nd_depth gfx::Texture;	gfx/scene3d.amni	345	
+s3d::ao_raw	2	var ao_raw gfx::Texture;	gfx/scene3d.amni	346	
+s3d::lin_depth	2	var lin_depth gfx::Texture;	gfx/scene3d.amni	347	
+s3d::bent_raw	2	var bent_raw gfx::Texture;	gfx/scene3d.amni	348	
+s3d::bent	2	var bent gfx::Texture;	gfx/scene3d.amni	349	
+s3d::ao	2	var ao gfx::Texture;	gfx/scene3d.amni	350	
+s3d::shadow_map	2	var shadow_map gfx::Texture;	gfx/scene3d.amni	351	
+s3d::local_map	2	var local_map gfx::Texture;	gfx/scene3d.amni	352	
+s3d::local_size	2	var local_size = 0;	gfx/scene3d.amni	353	
+s3d::local_shadow_size	2	var local_shadow_size = 1024;	gfx/scene3d.amni	354	
+s3d::local_used	2	var local_used = 0;	gfx/scene3d.amni	355	
+s3d::local_vp	2	var local_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	356	
+s3d::shadow_size	2	var shadow_size int = 0;	gfx/scene3d.amni	357	
+s3d::glow	2	var glow gfx::Texture[>..] = [];	gfx/scene3d.amni	358	
+s3d::white	2	var white gfx::Texture;	gfx/scene3d.amni	359	
+s3d::flat_normal	2	var flat_normal gfx::Texture;	gfx/scene3d.amni	360	
+s3d::smp_linear	2	var smp_linear gfx::Sampler;	gfx/scene3d.amni	361	
+s3d::smp_point	2	var smp_point gfx::Sampler;	gfx/scene3d.amni	362	
+s3d::smp_shadow	2	var smp_shadow gfx::Sampler;	gfx/scene3d.amni	363	
+s3d::smp_cache	2	var smp_cache gfx::Sampler[>..] = [];	gfx/scene3d.amni	364	
+s3d::spec_aa	2	var spec_aa = true;	gfx/scene3d.amni	365	
+s3d::wet	2	var wet f32 = 0.0;	gfx/scene3d.amni	366	
+s3d::world_time	2	var world_time f32 = 0.0;	gfx/scene3d.amni	367	
+s3d::snow	2	var snow f32 = 0.0;	gfx/scene3d.amni	368	
+s3d::shelter	2	var shelter = true;	gfx/scene3d.amni	369	
+s3d::shelter_res	2	var shelter_res = 512;	gfx/scene3d.amni	370	
+s3d::shelter_size	2	var shelter_size = 0;	gfx/scene3d.amni	371	
+s3d::shelter_map	2	var shelter_map gfx::Texture;	gfx/scene3d.amni	372	
+s3d::shelter_depth	2	var shelter_depth gfx::Texture;	gfx/scene3d.amni	373	
+s3d::pipe_shelter	2	var pipe_shelter gfx::Pipeline;	gfx/scene3d.amni	374	
+s3d::light_data	2	var light_data float4[>..] = [];	gfx/scene3d.amni	375	
+s3d::light_xr	2	var light_xr float4[>..] = [];	gfx/scene3d.amni	376	
+s3d::cluster_words	2	var cluster_words u32[>..] = [];	gfx/scene3d.amni	377	
+s3d::light_buf	2	var light_buf gfx::Buffer;	gfx/scene3d.amni	378	
+s3d::cluster_buf	2	var cluster_buf gfx::Buffer;	gfx/scene3d.amni	379	
+s3d::light_cap	2	var light_cap = 0;	gfx/scene3d.amni	380	
+s3d::cluster_cap	2	var cluster_cap = 0;	gfx/scene3d.amni	381	
+s3d::ext_size	2	var ext_size = 1024;	gfx/scene3d.amni	382	
+s3d::ext_arr	2	var ext_arr gfx::Texture[2] = [gfx::Texture { 0 }, gfx::Texture { 0 }];	gfx/scene3d.amni	383	
+s3d::ext_cap	2	var ext_cap int[2] = [0, 0];	gfx/scene3d.amni	384	
+s3d::ext_cnt	2	var ext_cnt int[2] = [0, 0];	gfx/scene3d.amni	385	
+s3d::ext_dirty	2	var ext_dirty bool[2] = [false, false];	gfx/scene3d.amni	386	
+s3d::ext_map	2	var ext_map int[>..] = [];	gfx/scene3d.amni	387	
+s3d::ext_src	2	var ext_src int[>..] = [];	gfx/scene3d.amni	388	
+s3d::ext_zero	2	var ext_zero ExtU;	gfx/scene3d.amni	389	
+s3d::ext_pushed	2	var ext_pushed = false;	gfx/scene3d.amni	390	
+s3d::smp_ext	2	var smp_ext gfx::Sampler;	gfx/scene3d.amni	391	
+s3d::pipe_ext_copy	2	var pipe_ext_copy gfx::Pipeline;	gfx/scene3d.amni	392	
+s3d::trans_tex	2	var trans_tex gfx::Texture;	gfx/scene3d.amni	393	
+s3d::trans_w	2	var trans_w = 0;	gfx/scene3d.amni	394	
+s3d::trans_h	2	var trans_h = 0;	gfx/scene3d.amni	395	
+s3d::smp_trans	2	var smp_trans gfx::Sampler;	gfx/scene3d.amni	396	
+s3d::tex_srgb	2	var tex_srgb gfx::Texture[>..] = [];	gfx/scene3d.amni	397	
+s3d::tex_linear	2	var tex_linear gfx::Texture[>..] = [];	gfx/scene3d.amni	398	
+s3d::tex_compress	2	var tex_compress = false;	gfx/scene3d.amni	399	
+s3d::tex_gpu_bc	2	var tex_gpu_bc = true;	gfx/scene3d.amni	400	
+s3d::tex_cache	2	var tex_cache byte[>..] = [];	gfx/scene3d.amni	401	
+s3d::tex_encoded	2	var tex_encoded = 0;	gfx/scene3d.amni	402	
+s3d::tex_cached	2	var tex_cached = 0;	gfx/scene3d.amni	403	
+s3d::tex_mem	2	var tex_mem = 0;	gfx/scene3d.amni	404	
+s3d::tex_ns	2	var tex_ns = 0;	gfx/scene3d.amni	405	
+s3d::tex_stream	2	var tex_stream = false;	gfx/scene3d.amni	406	
+s3d::tex_budget	2	var tex_budget = 0;	gfx/scene3d.amni	407	
+s3d::tex_upload_cap	2	var tex_upload_cap = 4194304;	gfx/scene3d.amni	408	
+s3d::tex_hold	2	var tex_hold = 30;	gfx/scene3d.amni	409	
+s3d::tex_wait	2	var tex_wait = false;	gfx/scene3d.amni	410	
+s3d::tex_stream_bias	2	var tex_stream_bias = 0;	gfx/scene3d.amni	411	
+s3d::tex_streamed	2	var tex_streamed = 0;	gfx/scene3d.amni	412	
+s3d::tex_steps	2	var tex_steps = 0;	gfx/scene3d.amni	413	
+s3d::tex_pending	2	var tex_pending = 0;	gfx/scene3d.amni	414	
+s3d::tex_starved	2	var tex_starved = 0;	gfx/scene3d.amni	415	
+s3d::tex_read	2	var tex_read = 0;	gfx/scene3d.amni	416	
+s3d::tex_stream_ns	2	var tex_stream_ns = 0;	gfx/scene3d.amni	417	
+s3d::TexStream	1	struct TexStream	gfx/scene3d.amni	418	
+s3d::streams	2	var streams TexStream[>..] = [];	gfx/scene3d.amni	419	
+s3d::stream_pool	2	var stream_pool byte[>..] = [];	gfx/scene3d.amni	420	
+s3d::stream_lv	2	var stream_lv int[>..] = [];	gfx/scene3d.amni	421	
+s3d::stream_mem	2	var stream_mem = 0;	gfx/scene3d.amni	422	
+s3d::uv_dens	2	var uv_dens f32[>..] = [];	gfx/scene3d.amni	423	
+s3d::texture_bytes	0	fn texture_bytes() int	gfx/scene3d.amni	424	
+s3d::set_texture_cache	0	fn set_texture_cache(dir const byte[:])	gfx/scene3d.amni	425	
+s3d::vbuf	2	var vbuf gfx::Buffer;	gfx/scene3d.amni	426	
+s3d::ibuf	2	var ibuf gfx::Buffer;	gfx/scene3d.amni	427	
+s3d::mbuf	2	var mbuf gfx::Buffer;	gfx/scene3d.amni	428	
+s3d::jbuf	2	var jbuf gfx::Buffer;	gfx/scene3d.amni	429	
+s3d::jbuf_cap	2	var jbuf_cap int = 0;	gfx/scene3d.amni	430	
+s3d::instances	2	var instances InstSet[>..] = [];	gfx/scene3d.amni	431	
+s3d::inst_m	2	var inst_m gfx::mat4[>..] = [];	gfx/scene3d.amni	432	
+s3d::inst_c	2	var inst_c float4[>..] = [];	gfx/scene3d.amni	433	
+s3d::inst_ids	2	var inst_ids f32[>..] = [];	gfx/scene3d.amni	434	
+s3d::inst_t0	2	var inst_t0 f32[>..] = [];	gfx/scene3d.amni	435	
+s3d::inst_t1	2	var inst_t1 f32[>..] = [];	gfx/scene3d.amni	436	
+s3d::inst_t2	2	var inst_t2 f32[>..] = [];	gfx/scene3d.amni	437	
+s3d::inst_t3	2	var inst_t3 f32[>..] = [];	gfx/scene3d.amni	438	
+s3d::inst_dirty	2	var inst_dirty = true;	gfx/scene3d.amni	439	
+s3d::inst_all	2	var inst_all = false;	gfx/scene3d.amni	440	
+s3d::meshlets	2	var meshlets = false;	gfx/scene3d.amni	441	
+s3d::meshlet_px	2	var meshlet_px f32 = 1.0;	gfx/scene3d.amni	442	
+s3d::meshlet_cone	2	var meshlet_cone = true;	gfx/scene3d.amni	443	
+s3d::meshlet_cpu	2	var meshlet_cpu = false;	gfx/scene3d.amni	444	
+s3d::meshlet_min	2	var meshlet_min = 4000;	gfx/scene3d.amni	445	
+s3d::meshlet_budget	2	var meshlet_budget = 8000000;	gfx/scene3d.amni	446	
+s3d::ml_first	2	var ml_first int[>..] = [];	gfx/scene3d.amni	447	
+s3d::ml_count	2	var ml_count int[>..] = [];	gfx/scene3d.amni	448	
+s3d::ml_tab	2	var ml_tab f32[>..] = [];	gfx/scene3d.amni	449	
+s3d::ml_rng	2	var ml_rng u32[>..] = [];	gfx/scene3d.amni	450	
+s3d::ml_idx	2	var ml_idx u32[>..] = [];	gfx/scene3d.amni	451	
+s3d::ml_draws	2	var ml_draws f32[>..] = [];	gfx/scene3d.amni	452	
+s3d::ml_bases	2	var ml_bases int[>..] = [];	gfx/scene3d.amni	453	
+s3d::ml_sel	2	var ml_sel u32[>..] = [];	gfx/scene3d.amni	454	
+s3d::ml_tab_buf	2	var ml_tab_buf gfx::Buffer;	gfx/scene3d.amni	455	
+s3d::ml_rng_buf	2	var ml_rng_buf gfx::Buffer;	gfx/scene3d.amni	456	
+s3d::ml_idx_buf	2	var ml_idx_buf gfx::Buffer;	gfx/scene3d.amni	457	
+s3d::ml_draw_buf	2	var ml_draw_buf gfx::Buffer;	gfx/scene3d.amni	458	
+s3d::ml_args_buf	2	var ml_args_buf gfx::Buffer;	gfx/scene3d.amni	459	
+s3d::ml_out_buf	2	var ml_out_buf gfx::Buffer;	gfx/scene3d.amni	460	
+s3d::ml_dirty	2	var ml_dirty = false;	gfx/scene3d.amni	461	
+s3d::ml_have	2	var ml_have = false;	gfx/scene3d.amni	462	
+s3d::ml_draw_cap	2	var ml_draw_cap = 0;	gfx/scene3d.amni	463	
+s3d::ml_out_cap	2	var ml_out_cap = 0;	gfx/scene3d.amni	464	
+s3d::pipe_ml_cull	2	var pipe_ml_cull gfx::ComputePipeline;	gfx/scene3d.amni	465	
+s3d::pipe_ml_fit	2	var pipe_ml_fit gfx::ComputePipeline;	gfx/scene3d.amni	466	
+s3d::MlU	1	struct MlU	gfx/scene3d.amni	467	
+s3d::MlFitU	1	struct MlFitU	gfx/scene3d.amni	468	
+s3d::instance_cull	2	var instance_cull = true;	gfx/scene3d.amni	469	
+s3d::xbuf	2	var xbuf gfx::Buffer;	gfx/scene3d.amni	470	
+s3d::xbuf_cap	2	var xbuf_cap int = 0;	gfx/scene3d.amni	471	
+s3d::idbuf	2	var idbuf gfx::Buffer;	gfx/scene3d.amni	472	
+s3d::idbuf_cap	2	var idbuf_cap int = 0;	gfx/scene3d.amni	473	
+s3d::fr	2	var fr float4[6] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 6];	gfx/scene3d.amni	474	
+s3d::caustics	2	var caustics Caustics = Caustics { .. };	gfx/scene3d.amni	475	
+s3d::wind	2	var wind Wind = Wind { dir: float3 { 1.0, 0.0, 0.0 }, strength: 0.0, speed: 1.0, time: 0.0 };	gfx/scene3d.amni	476	
+s3d::wind_prev	2	var wind_prev f32 = 0.0;	gfx/scene3d.amni	477	
+s3d::wind_fresh	2	var wind_fresh = true;	gfx/scene3d.amni	478	
+s3d::wind_u	2	var wind_u float4 = float4 { 0.0, 0.0, 0.0, 1.0 };	gfx/scene3d.amni	479	
+s3d::pushers	2	var pushers float4[>..] = [];	gfx/scene3d.amni	480	
+s3d::prev_pushers	2	var prev_pushers float4[>..] = [];	gfx/scene3d.amni	481	
+s3d::push_u	2	var push_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	482	
+s3d::ppush_u	2	var ppush_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	483	
+s3d::uploaded_verts	2	var uploaded_verts int = -1;	gfx/scene3d.amni	484	
+s3d::uploaded_indices	2	var uploaded_indices int = -1;	gfx/scene3d.amni	485	
+s3d::uploaded_morphs	2	var uploaded_morphs int = -1;	gfx/scene3d.amni	486	
+s3d::joints	2	var joints gfx::mat4[>..] = [];	gfx/scene3d.amni	487	
+s3d::frame_u	2	var frame_u FrameU;	gfx/scene3d.amni	488	
+s3d::view_mat	2	var view_mat gfx::mat4;	gfx/scene3d.amni	489	
+s3d::proj_mat	2	var proj_mat gfx::mat4;	gfx/scene3d.amni	490	
+s3d::view_proj	2	var view_proj gfx::mat4;           // jittered when temporal is on (rasterisation)	gfx/scene3d.amni	491	
+s3d::view_proj_nj	2	var view_proj_nj gfx::mat4;        // without jitter	gfx/scene3d.amni	492	
+s3d::prev_view_proj	2	var prev_view_proj gfx::mat4;      // last frame, without jitter	gfx/scene3d.amni	493	
+s3d::prev_keys	2	var prev_keys int[>..] = [];	gfx/scene3d.amni	495	last frame's model matrix and joint base per (item, node), for motion vectors
+s3d::prev_models	2	var prev_models gfx::mat4[>..] = [];	gfx/scene3d.amni	496	
+s3d::prev_bases	2	var prev_bases int[>..] = [];	gfx/scene3d.amni	497	
+s3d::prev_joints	2	var prev_joints gfx::mat4[>..] = [];	gfx/scene3d.amni	498	
+s3d::cur_keys	2	var cur_keys int[>..] = [];	gfx/scene3d.amni	499	
+s3d::cur_models	2	var cur_models gfx::mat4[>..] = [];	gfx/scene3d.amni	500	
+s3d::cur_bases	2	var cur_bases int[>..] = [];	gfx/scene3d.amni	501	
+s3d::cur_wb	2	var cur_wb int[>..] = [];	gfx/scene3d.amni	502	
+s3d::prev_wb	2	var prev_wb int[>..] = [];	gfx/scene3d.amni	503	
+s3d::cur_w	2	var cur_w f32[>..] = [];	gfx/scene3d.amni	504	
+s3d::old_w	2	var old_w f32[>..] = [];	gfx/scene3d.amni	505	
+s3d::cascade_end	2	var cascade_end f32[>..] = [0.0, 0.0, 0.0];	gfx/scene3d.amni	506	
+s3d::cascade_vp	2	var cascade_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	507	
+s3d::cascade_live	2	var cascade_live = 3;	gfx/scene3d.amni	508	
+s3d::frames	2	var frames int = 0;	gfx/scene3d.amni	509	
+s3d::motion_fresh	2	var motion_fresh = true;            // no previous frame to measure motion against	gfx/scene3d.amni	510	
+s3d::f4	0	fn f4(x f32, y f32, z f32, w f32) float4	gfx/scene3d.amni	512	
+s3d::x4	0	fn x4(v float3, w f32) float4	gfx/scene3d.amni	513	
+s3d::none	0	fn none() gfx::Texture	gfx/scene3d.amni	514	
+s3d::add	0	fn add(asset int) int	gfx/scene3d.amni	518	
+s3d::place	0	fn place(item int, m gfx::mat4)	gfx/scene3d.amni	522	
+s3d::cloth_of	0	fn cloth_of(pi int) int	gfx/scene3d.amni	523	
+s3d::add_cloth	0	fn add_cloth(asset int) int	gfx/scene3d.amni	524	
+s3d::step_cloth	0	fn step_cloth(k int, dt real, w float3)	gfx/scene3d.amni	538	
+s3d::corner	0	fn corner(lo float3, hi float3, k int) float3	gfx/scene3d.amni	551	
+s3d::asset_box	0	fn asset_box(asset int) float3, float3	gfx/scene3d.amni	552	
+s3d::sway	0	fn sway(item int, amount f32)	gfx/scene3d.amni	573	
+s3d::inst_bound	0	fn inst_bound(set int, k int)	gfx/scene3d.amni	578	
+s3d::add_instances	0	fn add_instances(asset int, mats gfx::mat4[:]) int	gfx/scene3d.amni	585	
+s3d::set_instance	0	fn set_instance(set int, k int, m gfx::mat4)	gfx/scene3d.amni	594	
+s3d::clear_instances	0	fn clear_instances()	gfx/scene3d.amni	595	
+s3d::instance_drawn	0	fn instance_drawn(set int, lod int) int	gfx/scene3d.amni	596	
+s3d::instance_list	0	fn instance_list(set int, lod int) int[>..]	gfx/scene3d.amni	597	
+s3d::instance_triangles	0	fn instance_triangles(set int) int	gfx/scene3d.amni	602	
+s3d::animate	0	fn animate(item int, anim int, time f32)	gfx/scene3d.amni	608	
+s3d::crossfade	0	fn crossfade(item int, from int, from_time f32, to int, to_time f32, w f32)	gfx/scene3d.amni	609	
+s3d::bend	0	fn bend(item int, node int, q linalg::Quat)	gfx/scene3d.amni	610	
+s3d::track	0	fn track(item int, slot int, node int)	gfx/scene3d.amni	611	
+s3d::tracked	0	fn tracked(item int, slot int) gfx::mat4	gfx/scene3d.amni	612	
+s3d::pose	0	fn pose(ii int)	gfx/scene3d.amni	613	
+s3d::node_ov	2	var node_ov NodeOv[>..] = [];	gfx/scene3d.amni	624	
+s3d::weight_ov	2	var weight_ov WeightOv[>..] = [];	gfx/scene3d.amni	625	
+s3d::set_node	0	fn set_node(item int, node int, t float3, r linalg::Quat, sc float3)	gfx/scene3d.amni	626	
+s3d::set_weight	0	fn set_weight(item int, node int, k int, w f32)	gfx/scene3d.amni	630	
+s3d::clear_pose	0	fn clear_pose(item int)	gfx/scene3d.amni	635	
+s3d::add_probe	0	fn add_probe(pos float3, lo float3, hi float3, fade f32)	gfx/scene3d.amni	643	
+s3d::clear_probes	0	fn clear_probes()	gfx/scene3d.amni	648	
+s3d::add_decal	0	fn add_decal(d Decal) int	gfx/scene3d.amni	649	
+s3d::clear_decals	0	fn clear_decals()	gfx/scene3d.amni	650	
+s3d::recapture	0	fn recapture()	gfx/scene3d.amni	651	
+s3d::probe_vol	0	fn probe_vol(p Probe) f32	gfx/scene3d.amni	652	
+s3d::add_light	0	fn add_light(pos float3, rgb float3, range f32)	gfx/scene3d.amni	653	
+s3d::studio_soft	0	fn studio_soft(bg float3, key f32)	gfx/scene3d.amni	654	
+s3d::add_rect	0	fn add_rect(pos float3, target float3, axis float3, width f32, height f32, rgb float3, range f32, shadows bool)	gfx/scene3d.amni	661	
+s3d::rect_axis	0	fn rect_axis(l Light) float3	gfx/scene3d.amni	662	
+s3d::add_spot	0	fn add_spot(pos float3, target float3, rgb float3, range f32, cone f32, shadows bool)	gfx/scene3d.amni	667	
+s3d::quad	0	fn quad(a float3, b float3, c float3, d float3, ca float4, cb float4, cc float4, cd float4, shape int)	gfx/scene3d.amni	668	
+s3d::glow_line	0	fn glow_line(a float3, b float3, w f32, rgb float3)	gfx/scene3d.amni	669	
+s3d::ground_mark	0	fn ground_mark(p float3, r f32, rgb float3, a f32, shape int)	gfx/scene3d.amni	681	
+s3d::quad_nadd	2	var quad_nadd = 0;	gfx/scene3d.amni	685	
+s3d::quad_upload	0	fn quad_upload()	gfx/scene3d.amni	686	
+s3d::quad_draw	0	fn quad_draw(mul bool)	gfx/scene3d.amni	699	
+s3d::hdr_target	0	fn hdr_target() gfx::Texture	gfx/scene3d.amni	711	
+s3d::motion_target	0	fn motion_target() gfx::Texture	gfx/scene3d.amni	713	Valid after a frame that wrote motion (motion_wanted()); a null handle before any.
+s3d::ao_target	0	fn ao_target() gfx::Texture	gfx/scene3d.amni	714	
+s3d::bent_target	0	fn bent_target() gfx::Texture	gfx/scene3d.amni	715	
+s3d::nd_target	0	fn nd_target() gfx::Texture	gfx/scene3d.amni	716	
+s3d::motion_wanted	0	fn motion_wanted() bool	gfx/scene3d.amni	717	
+s3d::resolved	0	fn resolved() gfx::Texture	gfx/scene3d.amni	719	The image bloom and grading read: the temporal result when it ran, else `hdr`.
+s3d::temporal_on	0	fn temporal_on() bool	gfx/scene3d.amni	720	
+s3d::surface_desc	0	fn surface_desc(cull i32, blend i32, depth_write bool) gfx::PipelineDesc	gfx/scene3d.amni	724	
+s3d::drop_targets	0	fn drop_targets()	gfx/scene3d.amni	728	
+s3d::make_targets	0	fn make_targets(w int, h int)	gfx/scene3d.amni	736	
+s3d::make_targets	0	fn make_targets(w int, h int, ow int, oh int)	gfx/scene3d.amni	740	w x h is the render size; ow x oh the size of the temporal result, bloom and the caller's target.
+s3d::make_motion	0	fn make_motion()	gfx/scene3d.amni	776	The motion target (one sample per pixel, 8 bytes a pixel) is made on the first frame that wants it.
+s3d::drop_motion	0	fn drop_motion()	gfx/scene3d.amni	781	
+s3d::make_ssr	0	fn make_ssr()	gfx/scene3d.amni	787	
+s3d::make_ssgi	0	fn make_ssgi()	gfx/scene3d.amni	801	
+s3d::drop_ssr	0	fn drop_ssr()	gfx/scene3d.amni	813	
+s3d::make_shadow_map	0	fn make_shadow_map(size int)	gfx/scene3d.amni	831	
+s3d::pixel_texture	0	fn pixel_texture(rgba byte[4], format i32) gfx::Texture	gfx/scene3d.amni	836	
+s3d::init	0	fn init(w int, h int) bool	gfx/scene3d.amni	843	Creates targets and pipelines; gfx must be open. Safe to call again after a resize.
+s3d::init	0	fn init(w int, h int, ow int, oh int) bool	gfx/scene3d.amni	847	Renders at w x h and writes ow x oh: with a larger output the temporal pass upscales (TSR). The caller's target must be ow x oh.
+s3d::forget	0	fn forget()	gfx/scene3d.amni	934	Call after gltf::reset(): drops GPU copies of geometry and images so the next frame uploads the new pools.
+s3d::upload_geometry	0	fn upload_geometry()	gfx/scene3d.amni	970	
+s3d::mip_count	0	fn mip_count(w int, h int) int	gfx/scene3d.amni	994	
+s3d::chain_bytes	0	fn chain_bytes(kind int, w int, h int, levels int) int	gfx/scene3d.amni	1001	
+s3d::tex_path	0	fn tex_path(image int, srgb bool, out byte[>..]&)	gfx/scene3d.amni	1006	
+s3d::tex_bake	0	fn tex_bake(image int, srgb bool, path const byte[:], file byte[>..]&, mode int) bool	gfx/scene3d.amni	1020	
+s3d::tex_format	0	fn tex_format(kind int, srgb bool) i32	gfx/scene3d.amni	1050	
+s3d::ktx_texture	0	fn ktx_texture(file const byte[:], srgb bool) gfx::Texture	gfx/scene3d.amni	1053	
+s3d::stream_chain	0	fn stream_chain(s TexStream, n int) int	gfx/scene3d.amni	1073	
+s3d::stream_tail	0	fn stream_tail(w int, h int, levels int, blocks bool) int	gfx/scene3d.amni	1074	
+s3d::stream_fetch	0	fn stream_fetch(si int, a int, b int, out byte[>..]&) bool	gfx/scene3d.amni	1079	
+s3d::stream_build	0	fn stream_build(si int, top int)	gfx/scene3d.amni	1098	
+s3d::stream_open	0	fn stream_open(image int, srgb bool) bool	gfx/scene3d.amni	1146	
+s3d::stream_at	0	fn stream_at(image int, srgb bool) int	gfx/scene3d.amni	1181	
+s3d::image_texture	0	fn image_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1185	
+s3d::full_texture	0	fn full_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1211	
+s3d::uv_density	0	fn uv_density(prim int, set int) f32	gfx/scene3d.amni	1222	
+s3d::stream_reach	0	fn stream_reach(b Batch, pr gltf::Primitive) f32	gfx/scene3d.amni	1251	
+s3d::stream_wants	0	fn stream_wants()	gfx/scene3d.amni	1273	
+s3d::stream_update	0	fn stream_update()	gfx/scene3d.amni	1303	
+s3d::warm	0	fn warm(r gltf::TexRef, srgb bool)	gfx/scene3d.amni	1352	
+s3d::ext_fill	0	fn ext_fill(s int, layer int, src gfx::Texture)	gfx/scene3d.amni	1356	
+s3d::ext_make	0	fn ext_make(s int, cap int)	gfx/scene3d.amni	1364	
+s3d::ext_need	0	fn ext_need(r gltf::TexRef, s int)	gfx/scene3d.amni	1374	
+s3d::ext_finish	0	fn ext_finish()	gfx/scene3d.amni	1386	
+s3d::ext_layer	0	fn ext_layer(r gltf::TexRef, s int, none_is int) f32	gfx/scene3d.amni	1392	
+s3d::ext_set	0	fn ext_set(u ExtU&, i int, r gltf::TexRef, s int)	gfx/scene3d.amni	1396	
+s3d::ext_of	0	fn ext_of(m gltf::Material) ExtU	gfx/scene3d.amni	1400	
+s3d::warm_textures	0	fn warm_textures()	gfx/scene3d.amni	1415	Textures are created on first use; uploads must happen outside render passes, so every texture the batch will sample is created before the first pass.
+s3d::wrap_mode	0	fn wrap_mode(gl int) i32	gfx/scene3d.amni	1438	
+s3d::texture_sampler	0	fn texture_sampler(t gltf::Texture) gfx::Sampler	gfx/scene3d.amni	1440	
+s3d::bind_slot	0	fn bind_slot(slot int, r gltf::TexRef, srgb bool, fallback gfx::Texture)	gfx/scene3d.amni	1454	
+s3d::material_of	0	fn material_of(prim int) gltf::Material	gfx/scene3d.amni	1463	
+s3d::cut_of	0	fn cut_of(m gltf::Material) CutU	gfx/scene3d.amni	1468	
+s3d::find_prev	0	fn find_prev(key int) int	gfx/scene3d.amni	1474	
+s3d::in_view	0	fn in_view(m gfx::mat4, lo float3, hi float3) bool	gfx/scene3d.amni	1480	false when the box lies wholly outside one clip plane (camera passes only; shadows keep it)
+s3d::atmosphere	0	fn atmosphere(to_sun float3, power f32, haze f32, clouds f32)	gfx/scene3d.amni	1498	
+s3d::item_lights	0	fn item_lights(ii int)	gfx/scene3d.amni	1504	
+s3d::frustum	0	fn frustum(m gfx::mat4)	gfx/scene3d.amni	1526	
+s3d::gather_instances	0	fn gather_instances()	gfx/scene3d.amni	1534	
+s3d::gather	0	fn gather()	gfx/scene3d.amni	1617	
+s3d::meshlet_prepare	0	fn meshlet_prepare()	gfx/scene3d.amni	1692	
+s3d::meshlet_slot	0	fn meshlet_slot(pi int, m gfx::mat4, two bool) int	gfx/scene3d.amni	1718	
+s3d::ml_at	0	fn ml_at(d int, c int, r int) float3	gfx/scene3d.amni	1729	
+s3d::ml_far	0	fn ml_far(p float3, e float4) f32	gfx/scene3d.amni	1735	
+s3d::ml_keep	0	fn ml_keep(d int, c int, cam bool, u MlU) bool	gfx/scene3d.amni	1736	
+s3d::ml_plane	0	fn ml_plane(a float4, b float4, k f32) float4	gfx/scene3d.amni	1753	
+s3d::meshlet_select	0	fn meshlet_select()	gfx/scene3d.amni	1758	
+s3d::meshlet_stats	0	fn meshlet_stats() int, int, int	gfx/scene3d.amni	1826	
+s3d::forward	0	fn forward() float3	gfx/scene3d.amni	1838	
+s3d::mw	0	fn mw(pool f32[:], base int, j int, n int) f32	gfx/scene3d.amni	1840	
+s3d::draw_uniforms	0	fn draw_uniforms(b Batch, vp gfx::mat4) DrawU	gfx/scene3d.amni	1841	
+s3d::bind_geometry	0	fn bind_geometry()	gfx/scene3d.amni	1864	
+s3d::draw_prim	0	fn draw_prim(b Batch)	gfx/scene3d.amni	1873	
+s3d::halton	0	fn halton(i int, base int) f32	gfx/scene3d.amni	1887	Radical inverse of i in the given base: the Halton low-discrepancy sequence.
+s3d::setup_view	0	fn setup_view()	gfx/scene3d.amni	1899	
+s3d::setup_cascades	0	fn setup_cascades()	gfx/scene3d.amni	1936	Splits [near, shadow_far] between a logarithmic and a uniform spacing, fits a bounding sphere to each slice and aims a texel-snapped orthographic camera at it.
+s3d::fill_frame	0	fn fill_frame()	gfx/scene3d.amni	2003	
+s3d::image_avg	0	fn image_avg(image int) float3	gfx/scene3d.amni	2096	mean linear colour of an image, sampled on a sparse grid; the bounce albedo
+s3d::gi_scene	0	fn gi_scene()	gfx/scene3d.amni	2118	
+s3d::gi_rot	0	fn gi_rot(k int) GiU	gfx/scene3d.amni	2166	
+s3d::gi_pass	0	fn gi_pass()	gfx/scene3d.amni	2180	
+s3d::signed_range	0	fn signed_range(l Light) f32	gfx/scene3d.amni	2214	
+s3d::light_upload	0	fn light_upload()	gfx/scene3d.amni	2215	
+s3d::gi_bind	0	fn gi_bind()	gfx/scene3d.amni	2264	
+s3d::shadow_pass	0	fn shadow_pass()	gfx/scene3d.amni	2277	
+s3d::shelter_pass	0	fn shelter_pass()	gfx/scene3d.amni	2309	
+s3d::local_shadow_pass	0	fn local_shadow_pass()	gfx/scene3d.amni	2334	
+s3d::fullscreen	0	fn fullscreen(p gfx::Pipeline)	gfx/scene3d.amni	2361	
+s3d::sky_u	0	fn sky_u() SkyU	gfx/scene3d.amni	2363	
+s3d::ao_pass	0	fn ao_pass()	gfx/scene3d.amni	2371	Prepass: normal + depth (nd) for SSAO, and the motion target when it is wanted. Both are single-sample, so every pixel's motion and depth belong to the one surface under its (jittered) sample point.
+s3d::contact_on	0	fn contact_on() bool	gfx/scene3d.amni	2454	
+s3d::contact_pass	0	fn contact_pass()	gfx/scene3d.amni	2455	
+s3d::ssr_pass	0	fn ssr_pass()	gfx/scene3d.amni	2470	
+s3d::ssgi_live	0	fn ssgi_live() bool	gfx/scene3d.amni	2501	
+s3d::ssgi_pass	0	fn ssgi_pass()	gfx/scene3d.amni	2502	
+s3d::ssr_capture	0	fn ssr_capture()	gfx/scene3d.amni	2543	
+s3d::cut_cover	0	fn cut_cover(m gltf::Material) bool	gfx/scene3d.amni	2553	
+s3d::lit_pipe	0	fn lit_pipe(m gltf::Material) gfx::Pipeline	gfx/scene3d.amni	2554	
+s3d::mip_scale	0	fn mip_scale() f32	gfx/scene3d.amni	2555	
+s3d::surface_of	0	fn surface_of(m gltf::Material) SurfaceU	gfx/scene3d.amni	2556	
+s3d::draw_lit	0	fn draw_lit(b Batch)	gfx/scene3d.amni	2575	
+s3d::sss_skin	0	fn sss_skin(m gltf::Material) bool	gfx/scene3d.amni	2604	
+s3d::sss_draws	0	fn sss_draws(b Batch) bool	gfx/scene3d.amni	2605	
+s3d::sss_dist	0	fn sss_dist(m gltf::Material) float4	gfx/scene3d.amni	2606	
+s3d::sss_find	0	fn sss_find(d float4) int	gfx/scene3d.amni	2607	
+s3d::sss_target	0	fn sss_target() gfx::Texture	gfx/scene3d.amni	2608	
+s3d::sss_plain	0	fn sss_plain() gfx::Texture	gfx/scene3d.amni	2609	
+s3d::sss_pass	0	fn sss_pass()	gfx/scene3d.amni	2610	
+s3d::trans_capture	0	fn trans_capture()	gfx/scene3d.amni	2672	
+s3d::color_pass	0	fn color_pass()	gfx/scene3d.amni	2687	
+s3d::lens_tiles	0	fn lens_tiles(src gfx::Texture, mode f32)	gfx/scene3d.amni	2755	
+s3d::lens_swap	0	fn lens_swap()	gfx/scene3d.amni	2772	
+s3d::fog_pass	0	fn fog_pass()	gfx/scene3d.amni	2773	
+s3d::lens_pass	0	fn lens_pass()	gfx/scene3d.amni	2798	
+s3d::temporal_draw	0	fn temporal_draw()	gfx/scene3d.amni	2832	
+s3d::temporal_pass	0	fn temporal_pass()	gfx/scene3d.amni	2854	
+s3d::temporal_repeat	0	fn temporal_repeat(n int)	gfx/scene3d.amni	2863	Runs only the temporal pass n more times on the last frame's inputs (for timing).
+s3d::glow_pass	0	fn glow_pass()	gfx/scene3d.amni	2865	
+s3d::set_lut	0	fn set_lut(rgba const byte[:], n int) bool	gfx/scene3d.amni	2896	
+s3d::identity_lut	0	fn identity_lut(n int)	gfx/scene3d.amni	2904	
+s3d::lut_strip	0	fn lut_strip(rgba const byte[:], w int, h int) bool	gfx/scene3d.amni	2909	
+s3d::lut_cube	0	fn lut_cube(text const byte[:]) bool	gfx/scene3d.amni	2916	
+s3d::exposure_pass	0	fn exposure_pass()	gfx/scene3d.amni	2930	
+s3d::exposure_now	0	fn exposure_now() f32	gfx/scene3d.amni	2947	
+s3d::grade_pass	0	fn grade_pass(target gfx::Texture)	gfx/scene3d.amni	2952	
+s3d::probe_capture	0	fn probe_capture()	gfx/scene3d.amni	2965	Renders the scene into target (RGBA8, COLOR_TARGET, the output size given to init).
+s3d::render	0	fn render(target gfx::Texture)	gfx/scene3d.amni	3058	
+s3d::render_begin	0	fn render_begin() bool	gfx/scene3d.amni	3061	
+s3d::render_end	0	fn render_end(target gfx::Texture)	gfx/scene3d.amni	3087	
 TextVtx	1	struct TextVtx	gfx/sdf_font.amni	20	
 SdfStroke	1	struct SdfStroke	gfx/sdf_font.amni	22	
 SDF_ATLAS_W	2	let SDF_ATLAS_W = 1024;	gfx/sdf_font.amni	28	
@@ -2224,9 +2305,10 @@ shapes::vertex	0	fn vertex(p float3, n float3, u f32, v f32, t float4)	gfx/shape
 shapes::finish	0	fn finish(vfirst int, ifirst int, lo float3, hi float3, m gltf::Material) int	gfx/shapes.amni	29	Wraps vertices [vfirst, end) and indices [ifirst, end) into an asset.
 shapes::sphere	0	fn sphere(radius f32, around int, down int, m gltf::Material) int	gfx/shapes.amni	50	UV sphere: `around` segments in longitude, `down` in latitude.
 shapes::plane	0	fn plane(half f32, m gltf::Material) int	gfx/shapes.amni	74	Square in the xz plane facing +y.
-shapes::water	0	fn water(half f32) int	gfx/shapes.amni	88	Axis-aligned box centred on the origin.
-shapes::blade	0	fn blade(height f32, width f32, tip f32, segments int, m gltf::Material) int	gfx/shapes.amni	94	
-shapes::cube	0	fn cube(half float3, m gltf::Material) int	gfx/shapes.amni	111	
+shapes::sheet	0	fn sheet(n int, o float3, u float3, v float3, m gltf::Material) int	gfx/shapes.amni	86	
+shapes::water	0	fn water(half f32) int	gfx/shapes.amni	97	Axis-aligned box centred on the origin.
+shapes::blade	0	fn blade(height f32, width f32, tip f32, segments int, m gltf::Material) int	gfx/shapes.amni	103	
+shapes::cube	0	fn cube(half float3, m gltf::Material) int	gfx/shapes.amni	120	
 sparks::Spark	1	struct Spark	gfx/sparks.amni	8	
 sparks::StepU	1	struct StepU	gfx/sparks.amni	9	
 sparks::ViewU	1	struct ViewU	gfx/sparks.amni	10	
@@ -3915,333 +3997,337 @@ std_zdec	0	extern std_zdec(b uint, e int&) uint	std.he	33
 std_vk_span	0	extern std_vk_span(p uint, n int) int	std.he	34	
 std_vk_hexenc	0	extern std_vk_hexenc(d uint, s uint, n int)	std.he	35	
 std_vk_hexdec	0	extern std_vk_hexdec(d uint, s uint, n int) int	std.he	36	
-min	0	min<T>(a T, b T) T	std.he	38	
-max	0	max<T>(a T, b T) T	std.he	39	
-min	0	min<T>(a T, b T, c T) T	std.he	40	
-max	0	max<T>(a T, b T, c T) T	std.he	41	
-min	0	min<T>(a T, b T, c T, d T) T	std.he	42	
-max	0	max<T>(a T, b T, c T, d T) T	std.he	43	
-clamp	0	clamp<T>(x T, lo T, hi T) T	std.he	44	
-abs	0	abs<T>(x T) T	std.he	49	(for floats this keeps the sign of -0.0, which is not below zero)
-sign	0	sign<T>(x T) T	std.he	50	
-sign	0	sign(x real) real	std.he	54	
-sign	0	sign(x f32) f32	std.he	58	
-lerp	0	lerp(a real, b real, t real) real	std.he	62	
-lerp	0	lerp(a f32, b f32, t f32) f32	std.he	63	
-swap	0	swap<T>(a T&, b T&)	std.he	65	(a typed local owns a copy; an untyped one would alias)
-rem	0	rem<T>(a T, b T) T	std.he	70	remainder that takes the sign of a (Helium's % is Euclidean)
-div_euclid	0	div_euclid<T>(a T, b T) T	std.he	72	quotient rounded so that the remainder is never negative
-next_pow2	0	next_pow2(x int) int	std.he	77	smallest power of two that is at least x (1 for x <= 1)
-pow	0	pow(b int, e int) int	std.he	81	
-pow	0	pow(b int, e int, m int) int	std.he	88	
-isqrt	0	isqrt(n int) int	std.he	96	floor of the square root, for n >= 0
-gcd	0	gcd(a int, b int) int	std.he	103	
-lcm	0	lcm(a int, b int) int	std.he	110	
-factorial	0	factorial(n int) int	std.he	111	
-perm	0	perm(n int, k int) int	std.he	115	
-comb	0	comb(n int, k int) int	std.he	120	
-ifloor	0	ifloor(x real) int	std.he	126	
-iceil	0	iceil(x real) int	std.he	127	
-hash_mix	0	hash_mix(x uint) uint	std.he	132	a 64-bit finalizer: every input bit reaches every output bit
-hash_combine	0	hash_combine(seed uint, h uint) uint	std.he	138	
-hash	0	hash(x int) uint	std.he	139	
-hash	0	hash(x uint) uint	std.he	140	
-hash	0	hash(x i32) uint	std.he	141	
-hash	0	hash(x u32) uint	std.he	142	
-hash	0	hash(x i16) uint	std.he	143	
-hash	0	hash(x u16) uint	std.he	144	
-hash	0	hash(x i8) uint	std.he	145	
-hash	0	hash(x byte) uint	std.he	146	
-hash	0	hash(x bool) uint	std.he	147	
-hash	0	hash(x real) uint	std.he	148	
-hash	0	hash(x f32) uint	std.he	149	
-hash	0	hash(s byte[:]) uint	std.he	151	strings: eight bytes per round, then the tail, then the length
-hash	0	hash<A, B>(t tuple2<A, B>) uint	std.he	162	
-hash	0	hash<A, B, C>(t tuple3<A, B, C>) uint	std.he	163	
-hash	0	hash<A, B, C, D>(t tuple4<A, B, C, D>) uint	std.he	164	
-contains	0	contains<T>(xs T[:], v T) bool	std.he	168	
-contains	0	contains(s byte[:], sub byte[:]) bool	std.he	171	
-find	0	find<T>(xs T[:], v T) int	std.he	173	position of the first element equal to v, or -1
-find	0	find<T>(xs T[:], sub T[:]) int	std.he	177	position of the first run equal to sub, or -1
-find	0	find(s byte[:], t byte[:], start int) int	std.he	184	
-find	0	find<T, F>(xs T[:]) T?	std.he	189	the first element the block accepts
-rfind	0	rfind<T>(xs T[:], sub T[:]) int	std.he	192	
-index	0	index<T>(xs T[:], v T) int	std.he	198	
-index	0	index<T>(xs T[:], sub T[:]) int	std.he	199	
-position	0	position<T>(xs T[:], v T) int	std.he	200	
-find_index	0	find_index<T, F>(xs T[:]) int	std.he	201	
-any	0	any<T, F>(xs T[:]) bool	std.he	204	
-all	0	all<T, F>(xs T[:]) bool	std.he	207	
-any	0	any(xs bool[:]) bool	std.he	210	
-all	0	all(xs bool[:]) bool	std.he	213	
-count	0	count<T>(xs T[:], v T) int	std.he	216	
-count	0	count<T, F>(xs T[:]) int	std.he	220	
-count	0	count(s byte[:], sub byte[:]) int	std.he	225	non-overlapping occurrences of sub
-min	0	min<T>(xs T[:]) T	std.he	231	
-max	0	max<T>(xs T[:]) T	std.he	235	
-min	0	min<T, F>(xs T[:]) T	std.he	240	with a block a, b => true when a orders before b
-max	0	max<T, F>(xs T[:]) T	std.he	244	
-min_by	0	min_by<T, F>(xs T[:]) int	std.he	249	index of the element with the smallest (largest) key; the block gives the key
-max_by	0	max_by<T, F>(xs T[:]) int	std.he	254	
-last	0	last<T>(xs T[:]) T&	std.he	259	
-elem	0	elem<T>(xs T[:], i int) T	std.he	260	
-lower_bound	0	lower_bound<T, F>(xs T[:]) int	std.he	262	first index where the block turns false, for a block true on a prefix
-binary_search	0	binary_search<T>(xs T[:], v T) int, bool	std.he	269	in a sorted slice: where v is or would go, and whether it is there
-starts_with	0	starts_with<T>(xs T[:], p T[:]) bool	std.he	275	
-ends_with	0	ends_with<T>(xs T[:], p T[:]) bool	std.he	276	
-startswith	0	startswith(s byte[:], p byte[:]) bool	std.he	277	
-endswith	0	endswith(s byte[:], p byte[:]) bool	std.he	278	
-each_rev	0	each_rev<T, F>(xs T[:])	std.he	279	
-each_chunk	0	each_chunk<T, F>(xs T[:], n int)	std.he	285	calls the block with consecutive pieces of n elements (the last may be shorter)
-map	0	map<T, F>(xs T[:])	std.he	291	
-filter	0	filter<T, F>(xs T[:]) T[>..]	std.he	295	
-fold	0	fold<T, A, F>(xs T[:], acc A) A	std.he	299	
-sum	0	sum<T>(xs T[:]) T	std.he	303	
-prod	0	prod<T>(xs T[:]) T	std.he	307	
-mean	0	mean<T>(xs T[:]) real	std.he	311	
-median	0	median<T>(xs T[:]) real	std.he	315	
-concat	0	concat<T>(a T[:], b T[:]) T[>..]	std.he	319	
-fill	0	fill<T>(xs T[:], v T)	std.he	324	
-copy_into	0	copy_into<T>(dst T[:], src T[:])	std.he	325	
-reverse	0	reverse<T>(xs T[:])	std.he	326	
-reversed	0	reversed<T>(xs T[:]) T[>..]	std.he	332	
-swap_at	0	swap_at<T>(xs T[:], i int, j int)	std.he	337	elements move with .= (rebinding), so owned elements are not copied twice
-taken	0	taken<T>(xs T[:], i int) T	std.he	342	an owned copy of xs[i]
-list	0	list<T>(xs T[:]) T[>..]	std.he	345	
-list	0	list(xs const byte[:][:]) byte[>..][>..]	std.he	350	a list of string slices becomes a list of owned strings
-zip	0	zip<A, B>(a A[:], b B[:]) tuple2<A, B>[>..]	std.he	354	
-push_n	0	push_n<A, T>(xs A&, v T, n int)	std.he	361	
-extend	0	extend<T>(xs T[>..]&, ys T[:])	std.he	362	
-extend	0	extend(s byte[>..]&, c int)	std.he	363	
-insert_at	0	insert_at<A, T>(xs A&, i int, v T)	std.he	364	
-remove_at	0	remove_at<A>(xs A&, i int)	std.he	373	removes element i, closing the gap, and returns it
-swap_remove	0	swap_remove<A>(xs A&, i int)	std.he	379	removes element i by moving the last element into its place; returns it
-pop_at	0	pop_at<T>(xs T[>..]&, i int) T	std.he	384	
-pop_at	0	pop_at<T>(xs T[>..]&) T	std.he	385	
-pop_front	0	pop_front<T>(xs T[>..]&) T	std.he	386	
-push_front	0	push_front<T>(xs T[>..]&, v T)	std.he	387	
-remove_value	0	remove_value<T>(xs T[>..]&, v T)	std.he	388	
-retain	0	retain<A, F>(xs A&)	std.he	392	keeps the elements the block accepts, in order
-dedup	0	dedup<A>(xs A&)	std.he	400	drops elements equal to the one before them
-sort	0	sort<T, F>(xs T[:])	std.he	414	
-sort	0	sort<T>(xs T[:])	std.he	453	
-radix_key	0	radix_key(k u64, d int, top int) int	std.he	459	Fixed-width integer keys sort by value, not by comparison: an LSD radix sort on bytes. One read counts every byte position, a position whose bytes are all the same is skipped, and each other one is a single stable pass through a scratch copy. Signed keys flip their top bit so negatives come first. Short ranges use the comparison sort above.
-radix_sort	0	radix_sort<T>(xs T[:], nb int, sgn bool)	std.he	462	
-sort	0	sort(xs u8[:])	std.he	484	
-sort	0	sort(xs i8[:])	std.he	485	
-sort	0	sort(xs u16[:])	std.he	486	
-sort	0	sort(xs i16[:])	std.he	487	
-sort	0	sort(xs u32[:])	std.he	488	
-sort	0	sort(xs i32[:])	std.he	489	
-sort	0	sort(xs u64[:])	std.he	490	
-sort	0	sort(xs i64[:])	std.he	491	
-stable_sort	0	stable_sort<T, F>(xs T[:])	std.he	493	stable_sort: merges runs of doubling width through one scratch copy
-stable_sort	0	stable_sort<T>(xs T[:])	std.he	512	
-sorted	0	sorted<T>(xs T[:]) T[>..]	std.he	513	
-sorted	0	sorted<T, F>(xs T[:]) T[>..]	std.he	518	
-seq	0	seq<T, F>(n int, a0 T, a1 T) T	std.he	528	---- recurrences and tables: each value is computed once seq: x0 = a0, x1 = a1, x(k) = F(x(k - 2), x(k - 1)); returns x(n) after n - 1 steps (seq(n, 0, 1) { a, b => a + b } is fib(n)). The one-start form steps x(k) = F(x(k - 1)).
-seq	0	seq<T, F>(n int, a0 T) T	std.he	534	
-tab	0	tab<F>(n int)	std.he	540	tab: fills a table once from a pure index function: out[i] = F(i), or out[i * m + j] = F(i, j) for the two-index form, row by row.
-tab	0	tab<F>(n int, m int)	std.he	544	
-each_sum	0	each_sum<T, F>(out T[:], m int)	std.he	553	each_sum: out[i] = F(i, 0) + F(i, 1) + ... + F(i, m - 1), added from zero in j order, so it is bit-identical to the nested loop even for reals. The rows run eight at a time, each with its own sum, so the eight additions in flight are independent.
-counter	0	counter() int	std.he	570	counter: the start of a count; hc lowers a local collection that is only pushed and measured to one (x.push(v) becomes x++, x.len becomes x).
-heap_up	0	heap_up<T, F>(xs T[:], at int)	std.he	575	
-heap_down	0	heap_down<T, F>(xs T[:], at int)	std.he	582	
-heap_push	0	heap_push<A, T, F>(xs A&, v T)	std.he	592	
-heap_push	0	heap_push<A, T>(xs A&, v T)	std.he	595	
-heap_pop	0	heap_pop<A, F>(xs A&)	std.he	597	removes and returns xs[0]
-heap_pop	0	heap_pop<A>(xs A&)	std.he	603	
-make_heap	0	make_heap<A, F>(xs A&)	std.he	604	
-make_heap	0	make_heap<A>(xs A&)	std.he	609	
-is_space	0	is_space(c byte) bool	std.he	613	
-isspace	0	isspace(c byte) bool	std.he	614	
-isdigit	0	isdigit(c byte) bool	std.he	615	
-islower	0	islower(c byte) bool	std.he	616	
-isupper	0	isupper(c byte) bool	std.he	617	
-isalpha	0	isalpha(c byte) bool	std.he	618	
-isalnum	0	isalnum(c byte) bool	std.he	619	
-isdigit	0	isdigit(s byte[:]) bool	std.he	620	
-isalpha	0	isalpha(s byte[:]) bool	std.he	623	
-islower	0	islower(s byte[:]) bool	std.he	627	true when s has a cased letter and none of the opposite case
-isupper	0	isupper(s byte[:]) bool	std.he	633	
-lower	0	lower(c byte) byte	std.he	639	
-upper	0	upper(c byte) byte	std.he	640	
-ord	0	ord(c byte) int	std.he	641	
-ord	0	ord(c int) int	std.he	642	
-ord	0	ord(s byte[:]) int	std.he	643	
-chr	0	chr(n int) byte[>..]	std.he	644	
-to_int	0	to_int(c byte) int	std.he	648	
-trim_start	0	trim_start(s byte[:]) byte[:]	std.he	652	
-trim_end	0	trim_end(s byte[:]) byte[:]	std.he	656	
-trim	0	trim(s byte[:]) byte[:]	std.he	660	
-strip	0	strip(s byte[:]) byte[:]	std.he	661	
-lstrip	0	lstrip(s byte[:]) byte[:]	std.he	662	
-rstrip	0	rstrip(s byte[:]) byte[:]	std.he	663	
-lstrip	0	lstrip(s byte[:], cs byte[:]) byte[:]	std.he	664	
-rstrip	0	rstrip(s byte[:], cs byte[:]) byte[:]	std.he	668	
-strip	0	strip(s byte[:], cs byte[:]) byte[:]	std.he	672	
-each_split	0	each_split<F>(s byte[:], sep byte)	std.he	673	
-HXK	2	HXK ~= -1	std.he	680	
-hxk	0	inline hxk() bool	std.he	681	
-each_split	0	each_split<F>(s byte[:], sep byte[:])	std.he	684	
-each_word	0	each_word<F>(s byte[:])	std.he	689	
-split	0	split(s byte[:], sep byte) const byte[:][>..]	std.he	705	
-split	0	split(s byte[:], sep byte[:]) const byte[:][>..]	std.he	709	
-words	0	words(s byte[:]) const byte[:][>..]	std.he	713	
-split	0	split(s byte[:]) const byte[:][>..]	std.he	717	
-join	0	join<T>(out byte[>..]&, parts T[:], sep byte[:])	std.he	718	
-join	0	join<T>(sep byte[:], parts T[:]) byte[>..]	std.he	722	
-join	0	join<T>(sep int, parts T[:]) byte[>..]	std.he	726	
-join	0	join(sep byte[:], parts byte[:]) byte[>..]	std.he	729	
-join	0	join(sep int, parts byte[:]) byte[>..]	std.he	735	
-compare	0	compare(a byte[:], b byte[:]) int	std.he	739	negative, zero or positive as a sorts before, with, or after b
-to_lower	0	to_lower(s byte[:])	std.he	743	
-to_upper	0	to_upper(s byte[:])	std.he	744	
-lower	0	lower(s byte[:]) byte[>..]	std.he	745	
-upper	0	upper(s byte[:]) byte[>..]	std.he	749	
-capitalize	0	capitalize(s byte[:]) byte[>..]	std.he	753	
-title	0	title(s byte[:]) byte[>..]	std.he	757	
-format_replaced	0	format_replaced(out byte[>..]&, s byte[:], old byte[:], with byte[:])	std.he	764	
-replace	0	replace(s byte[:], old byte[:], with byte[:]) byte[>..]	std.he	768	
-replace	0	replace(s byte[:], old int, with int) byte[>..]	std.he	772	
-repeat	0	repeat(s byte[:], n int) byte[>..]	std.he	776	
-concat	0	concat(a byte[:], b byte[:]) byte[>..]	std.he	780	
-concat	0	concat(a byte, b byte[:]) byte[>..]	std.he	784	
-concat	0	concat(a byte[:], b byte) byte[>..]	std.he	788	
-concat	0	concat(a byte, b byte) byte[>..]	std.he	792	
-ljust	0	ljust(s byte[:], w int, f byte = ' ') byte[>..]	std.he	795	
-rjust	0	rjust(s byte[:], w int, f byte = ' ') byte[>..]	std.he	800	
-center	0	center(s byte[:], w int, f byte = ' ') byte[>..]	std.he	805	
-zfill	0	zfill(s byte[:], w int) byte[>..]	std.he	814	zero padding that keeps a leading sign in front
-push_utf8	0	push_utf8(out byte[>..]&, cp int)	std.he	824	
-utf8_cont	0	utf8_cont(s byte[:], i int) int	std.he	834	how many bytes the sequence starting at s[i] takes (1 for a stray byte)
-each_utf8	0	each_utf8<F>(s byte[:])	std.he	841	calls the block with each code point
-digit_value	0	digit_value(c byte) int	std.he	853	
-parse_int	0	parse_int(s byte[:], base int = 10) int, bool	std.he	860	the whole of s as an integer in base 2..36, with an optional sign; false (and 0) when anything else is there or the value does not fit
-to_int	0	to_int(s byte[:]) int	std.he	877	
-to_int	0	to_int(s byte[:], base int) int	std.he	880	
-to_int	0	to_int(s const byte[>..]&) int	std.he	883	
-to_int	0	to_int<T>(x T) int	std.he	884	
-to_int	0	to_int(x real) int	std.he	885	
-flt_digit	0	flt_digit(c byte) bool	std.he	886	
-big_mul_add	0	big_mul_add(a uint[>..]&, m uint, add uint)	std.he	892	Decimal to binary for the cases the fast path cannot do exactly: the digits become a big integer (base 2^32 limbs, low first), the power of ten lands on the numerator or the denominator, and a bitwise long division yields 64 quotient bits plus a sticky bit, rounded to nearest even.
-big_bits	0	big_bits(a uint[>..]&) int	std.he	899	
-big_shl	0	big_shl(a uint[>..]&, n int)	std.he	904	
-big_less	0	big_less(a uint[>..]&, b uint[>..]&) bool	std.he	916	
-big_sub	0	big_sub(a uint[>..]&, b uint[>..]&)	std.he	925	
-big_zero	0	big_zero(a uint[>..]&) bool	std.he	932	
-round_bits	0	round_bits(q uint, e2 int, sticky bool) real	std.he	936	2^e2 * q, with sticky set when bits below q were not zero, as the nearest double
-slow_decimal	0	slow_decimal(digits byte[:], e10 int) real	std.he	954	
-big_shr1	0	big_shr1(a uint[>..]&)	std.he	981	
-POW10	2	POW10 := [1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22]	std.he	985	
-parse_flt	0	parse_flt(s byte[:]) real, bool	std.he	987	a decimal or "inf"/"nan" with optional sign and exponent; the whole of s
-to_real	0	to_real(s byte[:]) real	std.he	1035	
-to_real	0	to_real(s const byte[>..]&) real	std.he	1038	
-to_real	0	to_real<T>(x T) real	std.he	1039	
-parse_uleb	0	parse_uleb(s byte[:]) int, int	std.he	1041	unsigned LEB128 at the start of s: the value and how many bytes it took
-DIGITS	2	DIGITS := "0123456789abcdefghijklmnopqrstuvwxyz"	std.he	1053	
-format_uint	0	format_uint<B>(out B&, v uint, base int = 10, width int = 0, padc byte = ' ')	std.he	1054	
-format_int	0	format_int<B>(out B&, v int, base int = 10, width int = 0, padc byte = ' ')	std.he	1067	
-format_uleb	0	format_uleb(out byte[>..]&, v int)	std.he	1078	
-to_base	0	to_base(n int, b int) byte[>..]	std.he	1084	
-pyb	0	pyb(n int, b int, p const byte[:]) byte[>..]	std.he	1088	
-hexw	0	hexw(t uint) uint	std.he	1095	b as lowercase hex, two digits a byte
-hex_encode	0	hex_encode(out byte[>..]&, b const byte[:])	std.he	1099	
-hex_decode	0	hex_decode(s const byte[:], out byte[>..]&) bool	std.he	1120	hex digits (either case) to bytes; false, with out unchanged, on an odd length or a non-hex character
-hexd	0	hexd(c byte) int	std.he	1158	
-hex	0	hex(n int) byte[>..]	std.he	1159	
-oct	0	oct(n int) byte[>..]	std.he	1160	
-bin	0	bin(n int) byte[>..]	std.he	1161	
-big_div_small	0	big_div_small(a uint[>..]&, k uint) uint	std.he	1163	divides a by k in place and returns the remainder
-fixed_parts	0	fixed_parts(v real, decimals int, away bool = false) uint, uint, bool	std.he	1176	the size of v rounded to `decimals` digits after the point, as its whole part and its decimals as an integer below 10^decimals. Exact: a tie goes to even, or away from zero with away. False for a size of 2^53 or more, inf, nan, or a count outside 0 to 18
-format_flt	0	format_flt(out byte[>..]&, v real, decimals int, away bool = false)	std.he	1200	v with exactly `decimals` digits after the point. Exact: the double is m * 2^e2, so v * 10^d is computed as a big integer and rounded half to even once (away from zero with away, as JavaScript's toFixed does); a negative count prints the shortest form instead
-fmt	0	fmt(x real, d int, away bool = false) byte[>..]	std.he	1243	
-fstr_w	0	fstr_w(x byte[:], t byte[:], w int) byte[>..]	std.he	1249	an f-string field of width w with no alignment given: x is the value and t its text; strings go left, everything else right, as in Python
-fstr_w	0	fstr_w<T>(x T, t byte[:], w int) byte[>..]	std.he	1250	
-rng	1	struct rng { s uint }	std.he	1254	
-rand_u64	0	rand_u64(r rng&) uint	std.he	1255	
-rand_int	0	rand_int(r rng&, n int) int	std.he	1262	uniform in 0..n, n > 0
-rand_flt	0	rand_flt(r rng&) real	std.he	1270	uniform in [0, 1)
-shuffle	0	shuffle<T>(xs T[:], r rng&)	std.he	1271	
-simd256	0	extern simd256() bool	std.he	1278	
-ByteSet	1	struct ByteSet { members bool[256] }	std.he	1282	
-byte_set	0	byte_set(bytes byte[:]) ByteSet	std.he	1283	
-byte_set	0	byte_set(members bool[256]) ByteSet	std.he	1287	
-find_any	0	find_any(s byte[:], set const ByteSet&) int	std.he	1289	first position in s holding a member, or -1
-byte_set_pair	0	byte_set_pair(s byte[:], a const ByteSet&, d int, b const ByteSet&) int	std.he	1293	first i with s[i] in a and s[i + d] in b, or -1
-find_pair	0	find_pair(s byte[:], a const ByteSet&, d int, b const ByteSet&) int	std.he	1299	
-match16	0	match16(s byte[:], i int, w int) int	std.he	1302	bit k set when s[i + k] equals one of the bytes packed in w: the low byte, then the next two unless bit 24 (one byte) or bit 25 (two bytes) is set
-match32	0	match32(s byte[:], i int, w int) int	std.he	1311	
-match_set32	0	match_set32(s byte[:], i int, set const ByteSet&) int	std.he	1312	
-tuple2	1	struct tuple2<A, B> { f0 A, f1 B }	std.he	1319	
-tuple3	1	struct tuple3<A, B, C> { f0 A, f1 B, f2 C }	std.he	1320	
-tuple4	1	struct tuple4<A, B, C, D> { f0 A, f1 B, f2 C, f3 D }	std.he	1321	
-tuple_lt	0	tuple_lt<A, B>(a tuple2<A, B>, b tuple2<A, B>) bool	std.he	1322	
-tuple_lt	0	tuple_lt<A, B, C>(a tuple3<A, B, C>, b tuple3<A, B, C>) bool	std.he	1324	
-tuple_lt	0	tuple_lt<A, B, C, D>(a tuple4<A, B, C, D>, b tuple4<A, B, C, D>) bool	std.he	1328	
-range	0	range(n int) int[>..]	std.he	1336	
-range	0	range(a int, b int) int[>..]	std.he	1337	
-pyrcount	0	inline pyrcount(a int, b int, s int) int	std.he	1338	
-pyc1	0	pyc1(s byte[:]) byte	std.he	1339	
-pydigit	0	pydigit(c byte) int	std.he	1340	
-pyown	0	pyown(xs const byte[:][:]) byte[>..][>..]	std.he	1341	
-pydel	0	pydel<T>(xs T[>..]&, i int)	std.he	1345	
-pybi	0	pybi(b bool) int	std.he	1346	
-pyf0	0	pyf0<T>(xs T[:]) T	std.he	1347	
-pyf1	0	pyf1<T>(xs T[:]) T	std.he	1348	
-pyf2	0	pyf2<T>(xs T[:]) T	std.he	1349	
-pyf3	0	pyf3<T>(xs T[:]) T	std.he	1350	
-pystar	0	pystar<T>(xs T[:], sep byte[:]) byte[>..]	std.he	1351	
-pyformat	0	pyformat(n int, spec byte[:]) byte[>..]	std.he	1355	
-pych	0	pych(c byte) byte[>..]	std.he	1370	
-repeat	0	repeat<T>(xs T[:], n int) T[>..]	std.he	1373	
-split	0	split(s byte[:], sep byte[:], n int) const byte[:][>..]	std.he	1377	
-partition	0	partition(s byte[:], sep byte[:]) tuple3<const byte[:], const byte[:], const byte[:]>	std.he	1386	
-pyg	0	pyg(x real, p int) byte[>..]	std.he	1389	
-range	0	range(a int, b int, s int) int[>..]	std.he	1397	
-truediv	0	truediv(a int, b int) real	std.he	1404	
-truediv	0	truediv(a int, b real) real	std.he	1405	
-truediv	0	truediv(a real, b int) real	std.he	1406	
-truediv	0	truediv(a real, b real) real	std.he	1407	
-floor_div	0	floor_div(a real, b real) real	std.he	1408	
-truthy	0	truthy(b bool) bool	std.he	1409	
-truthy	0	truthy(x int) bool	std.he	1410	
-truthy	0	truthy(x real) bool	std.he	1411	
-truthy	0	truthy<T>(xs T[:]) bool	std.he	1412	
-floor_div	0	floor_div(a int, b int) int	std.he	1414	Python's // and divmod round the quotient down (Helium's / truncates)
-pydivmod	0	pydivmod(a int, b int) tuple2<int, int>	std.he	1417	
-pyround	0	pyround(x int) int	std.he	1421	round half to even, as Python's round does
-pyround	0	pyround(x real) int	std.he	1422	
-pyround	0	pyround(x real, nd int) real	std.he	1427	
-pyfmt	0	pyfmt(x int) byte[>..]	std.he	1436	str() of a value, the way Python prints it
-pyfmt	0	pyfmt(b bool) byte[>..]	std.he	1437	
-pyfmt	0	pyfmt(c byte) byte[>..]	std.he	1438	
-pyfmt	0	pyfmt(s byte[:]) byte[>..]	std.he	1439	
-pyfmt	0	pyfmt(x real) byte[>..]	std.he	1440	
-pyfmt	0	pyfmt<T>(xs T[:]) byte[>..]	std.he	1447	
-pyfmt	0	pyfmt<A, B>(t tuple2<A, B>) byte[>..]	std.he	1454	
-pyfmt	0	pyfmt<A, B, C>(t tuple3<A, B, C>) byte[>..]	std.he	1455	
-pyrepr	0	pyrepr(s byte[:]) byte[>..]	std.he	1457	repr(): strings get quotes, everything else prints as str() would
-pyrepr	0	pyrepr(s byte[>..]) byte[>..]	std.he	1468	
-pyrepr	0	pyrepr<T>(x T) byte[>..]	std.he	1469	
-pyrepr	0	pyrepr(c byte) byte[>..]	std.he	1470	
-pynone	0	pynone() int	std.he	1471	
-pylv	0	pylv(x int) int	std.he	1472	
-pylv	0	pylv(x real) real	std.he	1473	
-pylv	0	pylv(x bool) bool	std.he	1474	
-pylv	0	pylv(c byte) byte[>..]	std.he	1475	
-pylv	0	pylv(s byte[:]) byte[>..]	std.he	1476	
-pylv	0	pylv(s byte[>..]) byte[>..]	std.he	1477	
-pylv	0	pylv<T>(xs T[:]) T[>..]	std.he	1478	
-pylv	0	pylv<T>(xs T[>..]) T[>..]	std.he	1479	
-pystep	0	pystep<T>(xs T[:], lo int, hi int, k int) T[>..]	std.he	1480	
-STR_ascii_lowercase	2	STR_ascii_lowercase := "abcdefghijklmnopqrstuvwxyz"	std.he	1492	the string module's constants
-STR_ascii_uppercase	2	STR_ascii_uppercase := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"	std.he	1493	
-STR_ascii_letters	2	STR_ascii_letters := str(STR_ascii_lowercase, STR_ascii_uppercase)	std.he	1494	
-STR_digits	2	STR_digits := "0123456789"	std.he	1495	
-bisect_left	0	bisect_left<T>(xs T[:], v T) int	std.he	1497	bisect: insertion points in a sorted slice, before or after equal values
-bisect_right	0	bisect_right<T>(xs T[:], v T) int	std.he	1503	
-bisect	0	bisect<T>(xs T[:], v T) int	std.he	1509	
+std_vk_ord16	0	extern std_vk_ord16(d uint, s uint)	std.he	37	
+std_vk_xor	0	extern std_vk_xor(d uint, s uint, n int)	std.he	38	
+min	0	min<T>(a T, b T) T	std.he	40	
+max	0	max<T>(a T, b T) T	std.he	41	
+min	0	min<T>(a T, b T, c T) T	std.he	42	
+max	0	max<T>(a T, b T, c T) T	std.he	43	
+min	0	min<T>(a T, b T, c T, d T) T	std.he	44	
+max	0	max<T>(a T, b T, c T, d T) T	std.he	45	
+clamp	0	clamp<T>(x T, lo T, hi T) T	std.he	46	
+abs	0	abs<T>(x T) T	std.he	51	(for floats this keeps the sign of -0.0, which is not below zero)
+sign	0	sign<T>(x T) T	std.he	52	
+sign	0	sign(x real) real	std.he	56	
+sign	0	sign(x f32) f32	std.he	60	
+lerp	0	lerp(a real, b real, t real) real	std.he	64	
+lerp	0	lerp(a f32, b f32, t f32) f32	std.he	65	
+swap	0	swap<T>(a T&, b T&)	std.he	67	(a typed local owns a copy; an untyped one would alias)
+rem	0	rem<T>(a T, b T) T	std.he	72	remainder that takes the sign of a (Helium's % is Euclidean)
+div_euclid	0	div_euclid<T>(a T, b T) T	std.he	74	quotient rounded so that the remainder is never negative
+next_pow2	0	next_pow2(x int) int	std.he	79	smallest power of two that is at least x (1 for x <= 1)
+pow	0	pow(b int, e int) int	std.he	83	
+pow	0	pow(b int, e int, m int) int	std.he	90	
+isqrt	0	isqrt(n int) int	std.he	98	floor of the square root, for n >= 0
+gcd	0	gcd(a int, b int) int	std.he	105	
+lcm	0	lcm(a int, b int) int	std.he	112	
+factorial	0	factorial(n int) int	std.he	113	
+perm	0	perm(n int, k int) int	std.he	117	
+comb	0	comb(n int, k int) int	std.he	122	
+ifloor	0	ifloor(x real) int	std.he	128	
+iceil	0	iceil(x real) int	std.he	129	
+hash_mix	0	hash_mix(x uint) uint	std.he	134	a 64-bit finalizer: every input bit reaches every output bit
+hash_combine	0	hash_combine(seed uint, h uint) uint	std.he	140	
+hash	0	hash(x int) uint	std.he	141	
+hash	0	hash(x uint) uint	std.he	142	
+hash	0	hash(x i32) uint	std.he	143	
+hash	0	hash(x u32) uint	std.he	144	
+hash	0	hash(x i16) uint	std.he	145	
+hash	0	hash(x u16) uint	std.he	146	
+hash	0	hash(x i8) uint	std.he	147	
+hash	0	hash(x byte) uint	std.he	148	
+hash	0	hash(x bool) uint	std.he	149	
+hash	0	hash(x real) uint	std.he	150	
+hash	0	hash(x f32) uint	std.he	151	
+hash	0	hash(s byte[:]) uint	std.he	153	strings: eight bytes per round, then the tail, then the length
+hash	0	hash<A, B>(t tuple2<A, B>) uint	std.he	164	
+hash	0	hash<A, B, C>(t tuple3<A, B, C>) uint	std.he	165	
+hash	0	hash<A, B, C, D>(t tuple4<A, B, C, D>) uint	std.he	166	
+contains	0	contains<T>(xs T[:], v T) bool	std.he	170	
+contains	0	contains(s byte[:], sub byte[:]) bool	std.he	173	
+find	0	find<T>(xs T[:], v T) int	std.he	175	position of the first element equal to v, or -1
+find	0	find<T>(xs T[:], sub T[:]) int	std.he	179	position of the first run equal to sub, or -1
+find	0	find(s byte[:], t byte[:], start int) int	std.he	186	
+find	0	find<T, F>(xs T[:]) T?	std.he	191	the first element the block accepts
+rfind	0	rfind<T>(xs T[:], sub T[:]) int	std.he	194	
+index	0	index<T>(xs T[:], v T) int	std.he	200	
+index	0	index<T>(xs T[:], sub T[:]) int	std.he	201	
+position	0	position<T>(xs T[:], v T) int	std.he	202	
+find_index	0	find_index<T, F>(xs T[:]) int	std.he	203	
+any	0	any<T, F>(xs T[:]) bool	std.he	206	
+all	0	all<T, F>(xs T[:]) bool	std.he	209	
+any	0	any(xs bool[:]) bool	std.he	212	
+all	0	all(xs bool[:]) bool	std.he	215	
+count	0	count<T>(xs T[:], v T) int	std.he	218	
+count	0	count<T, F>(xs T[:]) int	std.he	222	
+count	0	count(s byte[:], sub byte[:]) int	std.he	227	non-overlapping occurrences of sub
+min	0	min<T>(xs T[:]) T	std.he	233	
+max	0	max<T>(xs T[:]) T	std.he	237	
+min	0	min<T, F>(xs T[:]) T	std.he	242	with a block a, b => true when a orders before b
+max	0	max<T, F>(xs T[:]) T	std.he	246	
+min_by	0	min_by<T, F>(xs T[:]) int	std.he	251	index of the element with the smallest (largest) key; the block gives the key
+max_by	0	max_by<T, F>(xs T[:]) int	std.he	256	
+last	0	last<T>(xs T[:]) T&	std.he	261	
+elem	0	elem<T>(xs T[:], i int) T	std.he	262	
+lower_bound	0	lower_bound<T, F>(xs T[:]) int	std.he	264	first index where the block turns false, for a block true on a prefix
+binary_search	0	binary_search<T>(xs T[:], v T) int, bool	std.he	271	in a sorted slice: where v is or would go, and whether it is there
+starts_with	0	starts_with<T>(xs T[:], p T[:]) bool	std.he	277	
+ends_with	0	ends_with<T>(xs T[:], p T[:]) bool	std.he	278	
+startswith	0	startswith(s byte[:], p byte[:]) bool	std.he	279	
+endswith	0	endswith(s byte[:], p byte[:]) bool	std.he	280	
+each_rev	0	each_rev<T, F>(xs T[:])	std.he	281	
+each_chunk	0	each_chunk<T, F>(xs T[:], n int)	std.he	287	calls the block with consecutive pieces of n elements (the last may be shorter)
+map	0	map<T, F>(xs T[:])	std.he	293	
+filter	0	filter<T, F>(xs T[:]) T[>..]	std.he	297	
+fold	0	fold<T, A, F>(xs T[:], acc A) A	std.he	301	
+sum	0	sum<T>(xs T[:]) T	std.he	305	
+prod	0	prod<T>(xs T[:]) T	std.he	309	
+mean	0	mean<T>(xs T[:]) real	std.he	313	
+median	0	median<T>(xs T[:]) real	std.he	317	
+concat	0	concat<T>(a T[:], b T[:]) T[>..]	std.he	321	
+fill	0	fill<T>(xs T[:], v T)	std.he	326	
+copy_into	0	copy_into<T>(dst T[:], src T[:])	std.he	327	
+reverse	0	reverse<T>(xs T[:])	std.he	328	
+reversed	0	reversed<T>(xs T[:]) T[>..]	std.he	334	
+swap_at	0	swap_at<T>(xs T[:], i int, j int)	std.he	339	elements move with .= (rebinding), so owned elements are not copied twice
+taken	0	taken<T>(xs T[:], i int) T	std.he	344	an owned copy of xs[i]
+list	0	list<T>(xs T[:]) T[>..]	std.he	347	
+list	0	list(xs const byte[:][:]) byte[>..][>..]	std.he	352	a list of string slices becomes a list of owned strings
+zip	0	zip<A, B>(a A[:], b B[:]) tuple2<A, B>[>..]	std.he	356	
+push_n	0	push_n<A, T>(xs A&, v T, n int)	std.he	363	
+extend	0	extend<T>(xs T[>..]&, ys T[:])	std.he	364	
+extend	0	extend(s byte[>..]&, c int)	std.he	365	
+insert_at	0	insert_at<A, T>(xs A&, i int, v T)	std.he	366	
+remove_at	0	remove_at<A>(xs A&, i int)	std.he	375	removes element i, closing the gap, and returns it
+swap_remove	0	swap_remove<A>(xs A&, i int)	std.he	381	removes element i by moving the last element into its place; returns it
+pop_at	0	pop_at<T>(xs T[>..]&, i int) T	std.he	386	
+pop_at	0	pop_at<T>(xs T[>..]&) T	std.he	387	
+pop_front	0	pop_front<T>(xs T[>..]&) T	std.he	388	
+push_front	0	push_front<T>(xs T[>..]&, v T)	std.he	389	
+remove_value	0	remove_value<T>(xs T[>..]&, v T)	std.he	390	
+retain	0	retain<A, F>(xs A&)	std.he	394	keeps the elements the block accepts, in order
+dedup	0	dedup<A>(xs A&)	std.he	402	drops elements equal to the one before them
+sort	0	sort<T, F>(xs T[:])	std.he	416	
+sort	0	sort<T>(xs T[:])	std.he	455	
+radix_key	0	radix_key(k u64, d int, top int) int	std.he	461	Fixed-width integer keys sort by value, not by comparison: an LSD radix sort on bytes. One read counts every byte position, a position whose bytes are all the same is skipped, and each other one is a single stable pass through a scratch copy. Signed keys flip their top bit so negatives come first. Short ranges use the comparison sort above.
+radix_sort	0	radix_sort<T>(xs T[:], nb int, sgn bool)	std.he	464	
+sort	0	sort(xs u8[:])	std.he	486	
+sort	0	sort(xs i8[:])	std.he	487	
+sort	0	sort(xs u16[:])	std.he	488	
+sort	0	sort(xs i16[:])	std.he	489	
+sort	0	sort(xs u32[:])	std.he	490	
+sort	0	sort(xs i32[:])	std.he	491	
+sort	0	sort(xs u64[:])	std.he	492	
+sort	0	sort(xs i64[:])	std.he	493	
+stable_sort	0	stable_sort<T, F>(xs T[:])	std.he	495	stable_sort: merges runs of doubling width through one scratch copy
+stable_sort	0	stable_sort<T>(xs T[:])	std.he	514	
+sorted	0	sorted<T>(xs T[:]) T[>..]	std.he	515	
+sorted	0	sorted<T, F>(xs T[:]) T[>..]	std.he	520	
+seq	0	seq<T, F>(n int, a0 T, a1 T) T	std.he	530	---- recurrences and tables: each value is computed once seq: x0 = a0, x1 = a1, x(k) = F(x(k - 2), x(k - 1)); returns x(n) after n - 1 steps (seq(n, 0, 1) { a, b => a + b } is fib(n)). The one-start form steps x(k) = F(x(k - 1)).
+seq	0	seq<T, F>(n int, a0 T) T	std.he	536	
+tab	0	tab<F>(n int)	std.he	542	tab: fills a table once from a pure index function: out[i] = F(i), or out[i * m + j] = F(i, j) for the two-index form, row by row.
+tab	0	tab<F>(n int, m int)	std.he	546	
+each_sum	0	each_sum<T, F>(out T[:], m int)	std.he	555	each_sum: out[i] = F(i, 0) + F(i, 1) + ... + F(i, m - 1), added from zero in j order, so it is bit-identical to the nested loop even for reals. The rows run eight at a time, each with its own sum, so the eight additions in flight are independent.
+counter	0	counter() int	std.he	572	counter: the start of a count; hc lowers a local collection that is only pushed and measured to one (x.push(v) becomes x++, x.len becomes x).
+heap_up	0	heap_up<T, F>(xs T[:], at int)	std.he	577	
+heap_down	0	heap_down<T, F>(xs T[:], at int)	std.he	584	
+heap_push	0	heap_push<A, T, F>(xs A&, v T)	std.he	594	
+heap_push	0	heap_push<A, T>(xs A&, v T)	std.he	597	
+heap_pop	0	heap_pop<A, F>(xs A&)	std.he	599	removes and returns xs[0]
+heap_pop	0	heap_pop<A>(xs A&)	std.he	605	
+make_heap	0	make_heap<A, F>(xs A&)	std.he	606	
+make_heap	0	make_heap<A>(xs A&)	std.he	611	
+is_space	0	is_space(c byte) bool	std.he	615	
+isspace	0	isspace(c byte) bool	std.he	616	
+isdigit	0	isdigit(c byte) bool	std.he	617	
+islower	0	islower(c byte) bool	std.he	618	
+isupper	0	isupper(c byte) bool	std.he	619	
+isalpha	0	isalpha(c byte) bool	std.he	620	
+isalnum	0	isalnum(c byte) bool	std.he	621	
+isdigit	0	isdigit(s byte[:]) bool	std.he	622	
+isalpha	0	isalpha(s byte[:]) bool	std.he	625	
+islower	0	islower(s byte[:]) bool	std.he	629	true when s has a cased letter and none of the opposite case
+isupper	0	isupper(s byte[:]) bool	std.he	635	
+lower	0	lower(c byte) byte	std.he	641	
+upper	0	upper(c byte) byte	std.he	642	
+ord	0	ord(c byte) int	std.he	643	
+ord	0	ord(c int) int	std.he	644	
+ord	0	ord(s byte[:]) int	std.he	645	
+chr	0	chr(n int) byte[>..]	std.he	646	
+to_int	0	to_int(c byte) int	std.he	650	
+trim_start	0	trim_start(s byte[:]) byte[:]	std.he	654	
+trim_end	0	trim_end(s byte[:]) byte[:]	std.he	658	
+trim	0	trim(s byte[:]) byte[:]	std.he	662	
+strip	0	strip(s byte[:]) byte[:]	std.he	663	
+lstrip	0	lstrip(s byte[:]) byte[:]	std.he	664	
+rstrip	0	rstrip(s byte[:]) byte[:]	std.he	665	
+lstrip	0	lstrip(s byte[:], cs byte[:]) byte[:]	std.he	666	
+rstrip	0	rstrip(s byte[:], cs byte[:]) byte[:]	std.he	670	
+strip	0	strip(s byte[:], cs byte[:]) byte[:]	std.he	674	
+each_split	0	each_split<F>(s byte[:], sep byte)	std.he	675	
+HXK	2	HXK ~= -1	std.he	682	
+hxk	0	inline hxk() bool	std.he	683	
+order16	0	inline order16(out byte[:], keys const byte[:])	std.he	689	order16: sorts sixteen keys without moving them. keys holds the sixteen as little-endian 16-bit numbers; out[i] becomes the index (0 to 15) of the i-th smallest, and equal keys keep their index order
+xor_bytes	0	inline xor_bytes(dst byte[:], src const byte[:])	std.he	704	xor_bytes: dst[i] ^= src[i] for every byte of dst; src must be at least as long as dst and must not partly overlap it
+each_split	0	each_split<F>(s byte[:], sep byte[:])	std.he	710	
+each_word	0	each_word<F>(s byte[:])	std.he	715	
+split	0	split(s byte[:], sep byte) const byte[:][>..]	std.he	731	
+split	0	split(s byte[:], sep byte[:]) const byte[:][>..]	std.he	735	
+words	0	words(s byte[:]) const byte[:][>..]	std.he	739	
+split	0	split(s byte[:]) const byte[:][>..]	std.he	743	
+join	0	join<T>(out byte[>..]&, parts T[:], sep byte[:])	std.he	744	
+join	0	join<T>(sep byte[:], parts T[:]) byte[>..]	std.he	748	
+join	0	join<T>(sep int, parts T[:]) byte[>..]	std.he	752	
+join	0	join(sep byte[:], parts byte[:]) byte[>..]	std.he	755	
+join	0	join(sep int, parts byte[:]) byte[>..]	std.he	761	
+compare	0	compare(a byte[:], b byte[:]) int	std.he	765	negative, zero or positive as a sorts before, with, or after b
+to_lower	0	to_lower(s byte[:])	std.he	769	
+to_upper	0	to_upper(s byte[:])	std.he	770	
+lower	0	lower(s byte[:]) byte[>..]	std.he	771	
+upper	0	upper(s byte[:]) byte[>..]	std.he	775	
+capitalize	0	capitalize(s byte[:]) byte[>..]	std.he	779	
+title	0	title(s byte[:]) byte[>..]	std.he	783	
+format_replaced	0	format_replaced(out byte[>..]&, s byte[:], old byte[:], with byte[:])	std.he	790	
+replace	0	replace(s byte[:], old byte[:], with byte[:]) byte[>..]	std.he	794	
+replace	0	replace(s byte[:], old int, with int) byte[>..]	std.he	798	
+repeat	0	repeat(s byte[:], n int) byte[>..]	std.he	802	
+concat	0	concat(a byte[:], b byte[:]) byte[>..]	std.he	806	
+concat	0	concat(a byte, b byte[:]) byte[>..]	std.he	810	
+concat	0	concat(a byte[:], b byte) byte[>..]	std.he	814	
+concat	0	concat(a byte, b byte) byte[>..]	std.he	818	
+ljust	0	ljust(s byte[:], w int, f byte = ' ') byte[>..]	std.he	821	
+rjust	0	rjust(s byte[:], w int, f byte = ' ') byte[>..]	std.he	826	
+center	0	center(s byte[:], w int, f byte = ' ') byte[>..]	std.he	831	
+zfill	0	zfill(s byte[:], w int) byte[>..]	std.he	840	zero padding that keeps a leading sign in front
+push_utf8	0	push_utf8(out byte[>..]&, cp int)	std.he	850	
+utf8_cont	0	utf8_cont(s byte[:], i int) int	std.he	860	how many bytes the sequence starting at s[i] takes (1 for a stray byte)
+each_utf8	0	each_utf8<F>(s byte[:])	std.he	867	calls the block with each code point
+digit_value	0	digit_value(c byte) int	std.he	879	
+parse_int	0	parse_int(s byte[:], base int = 10) int, bool	std.he	886	the whole of s as an integer in base 2..36, with an optional sign; false (and 0) when anything else is there or the value does not fit
+to_int	0	to_int(s byte[:]) int	std.he	903	
+to_int	0	to_int(s byte[:], base int) int	std.he	906	
+to_int	0	to_int(s const byte[>..]&) int	std.he	909	
+to_int	0	to_int<T>(x T) int	std.he	910	
+to_int	0	to_int(x real) int	std.he	911	
+flt_digit	0	flt_digit(c byte) bool	std.he	912	
+big_mul_add	0	big_mul_add(a uint[>..]&, m uint, add uint)	std.he	918	Decimal to binary for the cases the fast path cannot do exactly: the digits become a big integer (base 2^32 limbs, low first), the power of ten lands on the numerator or the denominator, and a bitwise long division yields 64 quotient bits plus a sticky bit, rounded to nearest even.
+big_bits	0	big_bits(a uint[>..]&) int	std.he	925	
+big_shl	0	big_shl(a uint[>..]&, n int)	std.he	930	
+big_less	0	big_less(a uint[>..]&, b uint[>..]&) bool	std.he	942	
+big_sub	0	big_sub(a uint[>..]&, b uint[>..]&)	std.he	951	
+big_zero	0	big_zero(a uint[>..]&) bool	std.he	958	
+round_bits	0	round_bits(q uint, e2 int, sticky bool) real	std.he	962	2^e2 * q, with sticky set when bits below q were not zero, as the nearest double
+slow_decimal	0	slow_decimal(digits byte[:], e10 int) real	std.he	980	
+big_shr1	0	big_shr1(a uint[>..]&)	std.he	1007	
+POW10	2	POW10 := [1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22]	std.he	1011	
+parse_flt	0	parse_flt(s byte[:]) real, bool	std.he	1013	a decimal or "inf"/"nan" with optional sign and exponent; the whole of s
+to_real	0	to_real(s byte[:]) real	std.he	1061	
+to_real	0	to_real(s const byte[>..]&) real	std.he	1064	
+to_real	0	to_real<T>(x T) real	std.he	1065	
+parse_uleb	0	parse_uleb(s byte[:]) int, int	std.he	1067	unsigned LEB128 at the start of s: the value and how many bytes it took
+DIGITS	2	DIGITS := "0123456789abcdefghijklmnopqrstuvwxyz"	std.he	1079	
+format_uint	0	format_uint<B>(out B&, v uint, base int = 10, width int = 0, padc byte = ' ')	std.he	1080	
+format_int	0	format_int<B>(out B&, v int, base int = 10, width int = 0, padc byte = ' ')	std.he	1093	
+format_uleb	0	format_uleb(out byte[>..]&, v int)	std.he	1104	
+to_base	0	to_base(n int, b int) byte[>..]	std.he	1110	
+pyb	0	pyb(n int, b int, p const byte[:]) byte[>..]	std.he	1114	
+hexw	0	hexw(t uint) uint	std.he	1121	b as lowercase hex, two digits a byte
+hex_encode	0	hex_encode(out byte[>..]&, b const byte[:])	std.he	1125	
+hex_decode	0	hex_decode(s const byte[:], out byte[>..]&) bool	std.he	1146	hex digits (either case) to bytes; false, with out unchanged, on an odd length or a non-hex character
+hexd	0	hexd(c byte) int	std.he	1184	
+hex	0	hex(n int) byte[>..]	std.he	1185	
+oct	0	oct(n int) byte[>..]	std.he	1186	
+bin	0	bin(n int) byte[>..]	std.he	1187	
+big_div_small	0	big_div_small(a uint[>..]&, k uint) uint	std.he	1189	divides a by k in place and returns the remainder
+fixed_parts	0	fixed_parts(v real, decimals int, away bool = false) uint, uint, bool	std.he	1202	the size of v rounded to `decimals` digits after the point, as its whole part and its decimals as an integer below 10^decimals. Exact: a tie goes to even, or away from zero with away. False for a size of 2^53 or more, inf, nan, or a count outside 0 to 18
+format_flt	0	format_flt(out byte[>..]&, v real, decimals int, away bool = false)	std.he	1226	v with exactly `decimals` digits after the point. Exact: the double is m * 2^e2, so v * 10^d is computed as a big integer and rounded half to even once (away from zero with away, as JavaScript's toFixed does); a negative count prints the shortest form instead
+fmt	0	fmt(x real, d int, away bool = false) byte[>..]	std.he	1269	
+fstr_w	0	fstr_w(x byte[:], t byte[:], w int) byte[>..]	std.he	1275	an f-string field of width w with no alignment given: x is the value and t its text; strings go left, everything else right, as in Python
+fstr_w	0	fstr_w<T>(x T, t byte[:], w int) byte[>..]	std.he	1276	
+rng	1	struct rng { s uint }	std.he	1280	
+rand_u64	0	rand_u64(r rng&) uint	std.he	1281	
+rand_int	0	rand_int(r rng&, n int) int	std.he	1288	uniform in 0..n, n > 0
+rand_flt	0	rand_flt(r rng&) real	std.he	1296	uniform in [0, 1)
+shuffle	0	shuffle<T>(xs T[:], r rng&)	std.he	1297	
+simd256	0	extern simd256() bool	std.he	1304	
+ByteSet	1	struct ByteSet { members bool[256] }	std.he	1308	
+byte_set	0	byte_set(bytes byte[:]) ByteSet	std.he	1309	
+byte_set	0	byte_set(members bool[256]) ByteSet	std.he	1313	
+find_any	0	find_any(s byte[:], set const ByteSet&) int	std.he	1315	first position in s holding a member, or -1
+byte_set_pair	0	byte_set_pair(s byte[:], a const ByteSet&, d int, b const ByteSet&) int	std.he	1319	first i with s[i] in a and s[i + d] in b, or -1
+find_pair	0	find_pair(s byte[:], a const ByteSet&, d int, b const ByteSet&) int	std.he	1325	
+match16	0	match16(s byte[:], i int, w int) int	std.he	1328	bit k set when s[i + k] equals one of the bytes packed in w: the low byte, then the next two unless bit 24 (one byte) or bit 25 (two bytes) is set
+match32	0	match32(s byte[:], i int, w int) int	std.he	1337	
+match_set32	0	match_set32(s byte[:], i int, set const ByteSet&) int	std.he	1338	
+tuple2	1	struct tuple2<A, B> { f0 A, f1 B }	std.he	1345	
+tuple3	1	struct tuple3<A, B, C> { f0 A, f1 B, f2 C }	std.he	1346	
+tuple4	1	struct tuple4<A, B, C, D> { f0 A, f1 B, f2 C, f3 D }	std.he	1347	
+tuple_lt	0	tuple_lt<A, B>(a tuple2<A, B>, b tuple2<A, B>) bool	std.he	1348	
+tuple_lt	0	tuple_lt<A, B, C>(a tuple3<A, B, C>, b tuple3<A, B, C>) bool	std.he	1350	
+tuple_lt	0	tuple_lt<A, B, C, D>(a tuple4<A, B, C, D>, b tuple4<A, B, C, D>) bool	std.he	1354	
+range	0	range(n int) int[>..]	std.he	1362	
+range	0	range(a int, b int) int[>..]	std.he	1363	
+pyrcount	0	inline pyrcount(a int, b int, s int) int	std.he	1364	
+pyc1	0	pyc1(s byte[:]) byte	std.he	1365	
+pydigit	0	pydigit(c byte) int	std.he	1366	
+pyown	0	pyown(xs const byte[:][:]) byte[>..][>..]	std.he	1367	
+pydel	0	pydel<T>(xs T[>..]&, i int)	std.he	1371	
+pybi	0	pybi(b bool) int	std.he	1372	
+pyf0	0	pyf0<T>(xs T[:]) T	std.he	1373	
+pyf1	0	pyf1<T>(xs T[:]) T	std.he	1374	
+pyf2	0	pyf2<T>(xs T[:]) T	std.he	1375	
+pyf3	0	pyf3<T>(xs T[:]) T	std.he	1376	
+pystar	0	pystar<T>(xs T[:], sep byte[:]) byte[>..]	std.he	1377	
+pyformat	0	pyformat(n int, spec byte[:]) byte[>..]	std.he	1381	
+pych	0	pych(c byte) byte[>..]	std.he	1396	
+repeat	0	repeat<T>(xs T[:], n int) T[>..]	std.he	1399	
+split	0	split(s byte[:], sep byte[:], n int) const byte[:][>..]	std.he	1403	
+partition	0	partition(s byte[:], sep byte[:]) tuple3<const byte[:], const byte[:], const byte[:]>	std.he	1412	
+pyg	0	pyg(x real, p int) byte[>..]	std.he	1415	
+range	0	range(a int, b int, s int) int[>..]	std.he	1423	
+truediv	0	truediv(a int, b int) real	std.he	1430	
+truediv	0	truediv(a int, b real) real	std.he	1431	
+truediv	0	truediv(a real, b int) real	std.he	1432	
+truediv	0	truediv(a real, b real) real	std.he	1433	
+floor_div	0	floor_div(a real, b real) real	std.he	1434	
+truthy	0	truthy(b bool) bool	std.he	1435	
+truthy	0	truthy(x int) bool	std.he	1436	
+truthy	0	truthy(x real) bool	std.he	1437	
+truthy	0	truthy<T>(xs T[:]) bool	std.he	1438	
+floor_div	0	floor_div(a int, b int) int	std.he	1440	Python's // and divmod round the quotient down (Helium's / truncates)
+pydivmod	0	pydivmod(a int, b int) tuple2<int, int>	std.he	1443	
+pyround	0	pyround(x int) int	std.he	1447	round half to even, as Python's round does
+pyround	0	pyround(x real) int	std.he	1448	
+pyround	0	pyround(x real, nd int) real	std.he	1453	
+pyfmt	0	pyfmt(x int) byte[>..]	std.he	1462	str() of a value, the way Python prints it
+pyfmt	0	pyfmt(b bool) byte[>..]	std.he	1463	
+pyfmt	0	pyfmt(c byte) byte[>..]	std.he	1464	
+pyfmt	0	pyfmt(s byte[:]) byte[>..]	std.he	1465	
+pyfmt	0	pyfmt(x real) byte[>..]	std.he	1466	
+pyfmt	0	pyfmt<T>(xs T[:]) byte[>..]	std.he	1473	
+pyfmt	0	pyfmt<A, B>(t tuple2<A, B>) byte[>..]	std.he	1480	
+pyfmt	0	pyfmt<A, B, C>(t tuple3<A, B, C>) byte[>..]	std.he	1481	
+pyrepr	0	pyrepr(s byte[:]) byte[>..]	std.he	1483	repr(): strings get quotes, everything else prints as str() would
+pyrepr	0	pyrepr(s byte[>..]) byte[>..]	std.he	1494	
+pyrepr	0	pyrepr<T>(x T) byte[>..]	std.he	1495	
+pyrepr	0	pyrepr(c byte) byte[>..]	std.he	1496	
+pynone	0	pynone() int	std.he	1497	
+pylv	0	pylv(x int) int	std.he	1498	
+pylv	0	pylv(x real) real	std.he	1499	
+pylv	0	pylv(x bool) bool	std.he	1500	
+pylv	0	pylv(c byte) byte[>..]	std.he	1501	
+pylv	0	pylv(s byte[:]) byte[>..]	std.he	1502	
+pylv	0	pylv(s byte[>..]) byte[>..]	std.he	1503	
+pylv	0	pylv<T>(xs T[:]) T[>..]	std.he	1504	
+pylv	0	pylv<T>(xs T[>..]) T[>..]	std.he	1505	
+pystep	0	pystep<T>(xs T[:], lo int, hi int, k int) T[>..]	std.he	1506	
+STR_ascii_lowercase	2	STR_ascii_lowercase := "abcdefghijklmnopqrstuvwxyz"	std.he	1518	the string module's constants
+STR_ascii_uppercase	2	STR_ascii_uppercase := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"	std.he	1519	
+STR_ascii_letters	2	STR_ascii_letters := str(STR_ascii_lowercase, STR_ascii_uppercase)	std.he	1520	
+STR_digits	2	STR_digits := "0123456789"	std.he	1521	
+bisect_left	0	bisect_left<T>(xs T[:], v T) int	std.he	1523	bisect: insertion points in a sorted slice, before or after equal values
+bisect_right	0	bisect_right<T>(xs T[:], v T) int	std.he	1529	
+bisect	0	bisect<T>(xs T[:], v T) int	std.he	1535	
 stream::Req	1	struct Req	stream/world.amni	4	
 stream::Chunk	1	struct Chunk	stream/world.amni	5	
 stream::cell_m	2	var cell_m f32 = 25.0;	stream/world.amni	6	

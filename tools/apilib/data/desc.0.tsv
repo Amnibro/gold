@@ -777,3 +777,89 @@ gfx/scene3d.amni	fn ml_keep(d int, c int, cam bool, u MlU) bool	Meshlet Culling	
 gfx/scene3d.amni	fn ml_plane(a float4, b float4, k f32) float4	Meshlet Culling	int	Returns a normalized frustum plane built by combining two plane vectors with a scale factor.
 gfx/scene3d.amni	fn meshlet_select()	Meshlet Culling	int	Selects visible meshlets for all draws each frame, on the CPU or via GPU compute, and fills indirect draw arguments.
 gfx/scene3d.amni	fn meshlet_stats() int, int, int	Meshlet Culling	pub	Returns counts of camera-visible triangles, total selected triangles, and draws whose output overflowed the buffer budget.
+std.he	extern std_vk_ord16(d uint, s uint)	Byte Sets	int	Raw C binding that sorts sixteen 16-bit keys at pointer addresses, wrapped by order16.
+std.he	extern std_vk_xor(d uint, s uint, n int)	Byte Sets	int	Raw C binding that XORs n bytes from a source address into a destination address, wrapped by xor_bytes.
+std.he	inline order16(out byte[:], keys const byte[:])	Byte Sets	pub	Writes into out the indices of sixteen little-endian 16-bit keys in ascending order, keeping index order for equal keys.
+std.he	inline xor_bytes(dst byte[:], src const byte[:])	Byte Sets	pub	XORs each byte of src into the matching byte of dst, requiring src to be at least as long as dst.
+gfx/cloth.amni	struct Cloth	Cloth Setup	pub	Per-cloth record holding a simulated mesh's particle, edge, bend, triangle ranges and tunable physics settings such as gravity, damping, and substeps.
+gfx/cloth.amni	var cloths Cloth[>..];	Cloth Setup	int	Global storage of all cloth instances created in the simulation.
+gfx/cloth.amni	var pos real[>..];	Cloth Setup	int	Flat array of particle positions as x, y, z triples.
+gfx/cloth.amni	var old real[>..];	Cloth Setup	int	Flat array of particle positions from the start of the current substep, used for velocity and friction.
+gfx/cloth.amni	var vel real[>..];	Cloth Setup	int	Flat array of particle velocities as x, y, z triples.
+gfx/cloth.amni	var nrm real[>..];	Cloth Setup	int	Flat array of per-particle surface normals as x, y, z triples.
+gfx/cloth.amni	var last real[>..];	Cloth Setup	int	Flat array of particle positions captured before the latest step, written out as previous-frame positions.
+gfx/cloth.amni	var rest real[>..];	Cloth Setup	int	Flat array of particle rest positions, used to measure reach distances to pinned particles.
+gfx/cloth.amni	var goal real[>..];	Cloth Setup	int	Flat array of target positions that pinned particles move toward during a step.
+gfx/cloth.amni	var push real[>..];	Cloth Setup	int	Flat array of per-particle aerodynamic push accumulated from wind and drag each step.
+gfx/cloth.amni	var inv real[>..];	Cloth Setup	int	Per-particle inverse mass array, set to zero while a particle is pinned.
+gfx/cloth.amni	var inv0 real[>..];	Cloth Setup	int	Per-particle original inverse mass array, restored when a particle is unpinned.
+gfx/cloth.amni	var held bool[>..];	Cloth Setup	int	Per-particle flags marking which particles are currently pinned.
+gfx/cloth.amni	var reach_to int[>..];	Cloth Setup	int	Per-particle index of the nearest pinned particle, or -1 when none exists.
+gfx/cloth.amni	var reach real[>..];	Cloth Setup	int	Per-particle maximum rest distance allowed from its nearest pinned particle.
+gfx/cloth.amni	var edges int[>..];	Cloth Setup	int	Flat array of particle index pairs, one pair per stretch constraint edge.
+gfx/cloth.amni	var edge_len real[>..];	Cloth Setup	int	Rest lengths of the stretch constraint edges.
+gfx/cloth.amni	var bends int[>..];	Cloth Setup	int	Flat array of particle index pairs across shared edges, used as bend constraints.
+gfx/cloth.amni	var bend_len real[>..];	Cloth Setup	int	Rest lengths of the bend constraints.
+gfx/cloth.amni	var tris int[>..];	Cloth Setup	int	Flat array of particle index triples, one triple per triangle.
+gfx/cloth.amni	var vmap int[>..];	Cloth Setup	int	Mapping from each source mesh vertex to its merged particle index.
+gfx/cloth.amni	var balls real[>..];	Colliders	int	Flat array of sphere colliders stored as x, y, z, radius quadruples.
+gfx/cloth.amni	var pills real[>..];	Colliders	int	Flat array of capsule colliders stored as two endpoints and a radius, seven values each.
+gfx/cloth.amni	var floor_on bool = false;	Colliders	int	Flag indicating whether the ground plane collider is enabled.
+gfx/cloth.amni	var floor_y real = 0.0;	Colliders	int	Height of the ground plane collider along the y axis.
+gfx/cloth.amni	fn key_bits(x f32, y f32, z f32) uint	Cloth Setup	int	Hashes a vertex position into an unsigned key for merging duplicate vertices.
+gfx/cloth.amni	fn add3(a real[>..]&, x real, y real, z real)	Cloth Setup	int	Appends an x, y, z triple to a flat array.
+gfx/cloth.amni	fn pdist(i int, j int) real	Cloth Setup	int	Returns the current distance between two particles by index.
+gfx/cloth.amni	fn make(p const f32[:], stride int, at int, nv int, indices const u32[:]) int	Cloth Setup	pub	Builds a cloth from mesh vertices and triangle indices, merging duplicate positions, and returns its cloth index.
+gfx/cloth.amni	fn pin(c int, vertex int, x real, y real, z real)	Cloth Setup	pub	Pins a cloth vertex so it moves to the given world position during steps instead of simulating.
+gfx/cloth.amni	fn unpin(c int, vertex int)	Cloth Setup	pub	Releases a pinned cloth vertex so it simulates freely again.
+gfx/cloth.amni	fn reset()	Cloth Setup	pub	Clears all cloths, particle data, and colliders.
+gfx/cloth.amni	fn clear_colliders()	Colliders	pub	Removes all sphere and capsule colliders and disables the ground plane.
+gfx/cloth.amni	fn ball(x real, y real, z real, r real)	Colliders	pub	Adds a sphere collider with the given center and radius.
+gfx/cloth.amni	fn pill(ax real, ay real, az real, bx real, by real, bz real, r real)	Colliders	pub	Adds a capsule collider between two endpoints with the given radius.
+gfx/cloth.amni	fn ground(y real)	Colliders	pub	Enables a horizontal ground plane at the given height.
+gfx/cloth.amni	fn normals(c int)	Cloth Setup	int	Recomputes smoothed per-particle normals for a cloth from its triangles.
+gfx/cloth.amni	fn limits(c int)	Cloth Setup	int	Computes each unpinned particle's nearest pinned particle and its rest distance for reach limiting.
+gfx/cloth.amni	fn contact(i int, cx real, cy real, cz real, r real, friction real)	Colliders	int	Pushes a particle out of a sphere and applies friction against its sliding motion.
+gfx/cloth.amni	fn solve(a int, b int, rest_len real, soft real, h real)	Cloth Setup	int	Applies a position-based distance constraint between two particles with the given rest length and softness.
+gfx/cloth.amni	fn step(c int, dt real, wx real, wy real, wz real)	Cloth Setup	pub	Advances a cloth simulation by dt seconds under wind, applying gravity, constraints, collisions, and normals.
+gfx/cloth.amni	fn write(c int, p const f32[:], stride int, at int, at_n int, out f32[:])	Cloth Setup	pub	Writes simulated position and normal offsets and previous-frame offsets for each vertex into an output buffer.
+gfx/cloth.amni	fn count(c int) int	Cloth Setup	pub	Returns the number of simulated particles in a cloth.
+gfx/cloth.amni	fn particle(c int, vertex int) int	Cloth Setup	pub	Returns the particle index that a cloth's source vertex maps to.
+gfx/cloth.amni	fn stretch_now(c int) real	Cloth Setup	pub	Returns the largest edge stretch ratio of a cloth, at least 1.
+gfx/cloth.amni	fn speed(c int) real	Cloth Setup	pub	Returns the average particle speed of a cloth, or 0 when it has no particles.
+gfx/cloth.amni	fn bounds(c int) real, real, real, real, real, real	Cloth Setup	pub	Returns the axis-aligned bounding box of a cloth as min x, y, z then max x, y, z.
+gfx/scene3d.amni	struct SssU	Subsurface Scattering	int	Uniform block layout for the subsurface scattering pass, holding lens and tuning vectors, a center, eight profile entries and 64 sample taps.
+gfx/scene3d.amni	struct ClothIt	Cloth Simulation	int	Per-cloth bookkeeping record linking a simulation handle to its primitive, with flags for stepped, shown and dirty state.
+gfx/scene3d.amni	var cloths ClothIt[>..] = [];	Cloth Simulation	int	List of active cloth records, one per primitive converted by add_cloth.
+gfx/scene3d.amni	var sss_on = false;	Subsurface Scattering	pub	Flag that turns the subsurface scattering effect on when true; off by default.
+gfx/scene3d.amni	var sss_taps = 64;	Subsurface Scattering	pub	Number of sample taps used by the subsurface scattering blur, 64 by default.
+gfx/scene3d.amni	var sss_lod f32 = 5.0;	Subsurface Scattering	pub	Level of detail setting for subsurface scattering, 5.0 by default.
+gfx/scene3d.amni	var sss_depth = true;	Subsurface Scattering	pub	Flag that enables depth awareness in the subsurface scattering pass, true by default.
+gfx/scene3d.amni	var sss_ran = false;	Subsurface Scattering	int	Internal flag recording whether the subsurface scattering pass has run.
+gfx/scene3d.amni	var sss_live = false;	Subsurface Scattering	int	Internal flag recording whether subsurface scattering is currently active.
+gfx/scene3d.amni	var sss_mode = 0;	Subsurface Scattering	pub	Mode selector for the subsurface scattering technique, 0 by default.
+gfx/scene3d.amni	var sss_np = 0;	Subsurface Scattering	int	Internal count of primitives used by the subsurface scattering pass.
+gfx/scene3d.amni	var sss_built = 0;	Subsurface Scattering	int	Internal counter recording how many subsurface scattering resources have been built.
+gfx/scene3d.amni	var sss_w = 0;	Subsurface Scattering	int	Internal width in pixels of the subsurface scattering targets.
+gfx/scene3d.amni	var sss_h = 0;	Subsurface Scattering	int	Internal height in pixels of the subsurface scattering targets.
+gfx/scene3d.amni	var sss_levels = 1;	Subsurface Scattering	int	Internal count of mip levels in the subsurface scattering textures.
+gfx/scene3d.amni	var sss_ps f32 = 0.0;	Subsurface Scattering	int	Internal pixel scale value used by the subsurface scattering pass.
+gfx/scene3d.amni	var sss_u SssU;	Subsurface Scattering	int	Internal uniform data instance uploaded to the subsurface scattering shaders.
+gfx/scene3d.amni	var sss_irr gfx::Texture;	Subsurface Scattering	int	Internal texture holding irradiance for the subsurface scattering pass.
+gfx/scene3d.amni	var sss_set gfx::Texture;	Subsurface Scattering	int	Internal texture holding the subsurface scattering setup data.
+gfx/scene3d.amni	var sss_out gfx::Texture;	Subsurface Scattering	int	Internal texture receiving the subsurface scattering output.
+gfx/scene3d.amni	var pipe_sss gfx::Pipeline;	Subsurface Scattering	int	Internal pipeline for the subsurface scattering pass on single sided surfaces.
+gfx/scene3d.amni	var pipe_sss_two gfx::Pipeline;	Subsurface Scattering	int	Internal pipeline for the subsurface scattering pass on double sided surfaces.
+gfx/scene3d.amni	var pipe_sss_set gfx::Pipeline;	Subsurface Scattering	int	Internal pipeline for the subsurface scattering setup pass.
+gfx/scene3d.amni	var pipe_sss_blur gfx::Pipeline;	Subsurface Scattering	int	Internal pipeline for the subsurface scattering blur pass.
+gfx/scene3d.amni	fn cloth_of(pi int) int	Cloth Simulation	int	Returns the index of the cloth record for a primitive index, or -1 when none exists.
+gfx/scene3d.amni	fn add_cloth(asset int) int	Cloth Simulation	pub	Converts the first mesh primitive of an asset into a simulated cloth and returns its cloth index, or -1 if it is skinned or has morph targets.
+gfx/scene3d.amni	fn step_cloth(k int, dt real, w float3)	Cloth Simulation	pub	Advances a cloth simulation by dt seconds under wind vector w and writes the result into the mesh vertices and bounds.
+gfx/scene3d.amni	fn sss_skin(m gltf::Material) bool	Subsurface Scattering	int	Checks whether a material is an opaque skin-shaded surface that takes part in subsurface scattering.
+gfx/scene3d.amni	fn sss_draws(b Batch) bool	Subsurface Scattering	int	Checks whether a batch is a visible, non-transparent, non-blended draw using a subsurface skin material.
+gfx/scene3d.amni	fn sss_dist(m gltf::Material) float4	Subsurface Scattering	int	Returns a material's per-channel scattering distances, clamped above zero, with the largest in the fourth component.
+gfx/scene3d.amni	fn sss_find(d float4) int	Subsurface Scattering	int	Returns the index of a stored scattering profile matching the given distances, or the profile count if none matches.
+gfx/scene3d.amni	fn sss_target() gfx::Texture	Subsurface Scattering	int	Returns the texture holding the subsurface scattering output.
+gfx/scene3d.amni	fn sss_plain() gfx::Texture	Subsurface Scattering	int	Returns the texture holding the unblurred irradiance for subsurface scattering.
+gfx/scene3d.amni	fn sss_pass()	Subsurface Scattering	int	Runs the subsurface scattering pass, resizing targets, building sample taps and collecting skin profiles when enabled.
+gfx/shapes.amni	fn sheet(n int, o float3, u float3, v float3, m gltf::Material) int	Mesh Building	pub	Builds an n-by-n grid quad patch from origin o spanning edge vectors u and v, with material m, returning the new asset id.
