@@ -19,8 +19,43 @@
  "extra": [
   {
    "name": "c",
-   "cmd": "c/ref_c"
+   "cmd": "c/ref_c",
+   "label": "the app's hand-tuned C kernel, built as the app builds it (gcc -O3)"
+  },
+  {
+   "name": "c_native",
+   "cmd": "c/ref_c_native",
+   "label": "the same C kernel built for this CPU (gcc -O3 -march=native)"
+  },
+  {
+   "name": "c_clang",
+   "cmd": "c/ref_c_clang",
+   "label": "the same C kernel built for this CPU (clang -O3 -march=native)"
+  },
+  {
+   "name": "k_c",
+   "cmd": "KERNEL=1 c/ref_c",
+   "he": "KERNEL=1 he/drive",
+   "label": "cipher only, no text handling: the app's C kernel built as the app builds it (gcc -O3)"
+  },
+  {
+   "name": "k_c_native",
+   "cmd": "KERNEL=1 c/ref_c_native",
+   "he": "KERNEL=1 he/drive",
+   "label": "cipher only, no text handling: the same C kernel built for this CPU (gcc -O3 -march=native)"
+  },
+  {
+   "name": "k_c_clang",
+   "cmd": "KERNEL=1 c/ref_c_clang",
+   "he": "KERNEL=1 he/drive",
+   "label": "cipher only, no text handling: the same C kernel built for this CPU (clang -O3 -march=native)"
   }
  ],
- "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too."
+ "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too, built three ways, on the whole job and on the cipher alone (KERNEL=1: cases decoded first, only encrypt, decrypt and shadow walk timed).",
+ "build": [
+  "gcc -O3 -std=c11 -D_GNU_SOURCE -fno-strict-aliasing c/main.c c/reffelt_shadow.c -lpthread -o c/ref_c",
+  "gcc -O3 -march=native -std=c11 -D_GNU_SOURCE -fno-strict-aliasing c/main.c c/reffelt_shadow.c -lpthread -o c/ref_c_native",
+  "clang -O3 -march=native -std=c11 -D_GNU_SOURCE -fno-strict-aliasing c/main.c c/reffelt_shadow.c -lpthread -o c/ref_c_clang"
+ ],
+ "extra_reps": 300
 }

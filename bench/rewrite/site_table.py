@@ -13,7 +13,8 @@ for r in R:
     rows.append(f'<tr><td>Output matches the original</td><td class="n" colspan="3">{m}</td></tr>')
     rows.append(f'<tr><td>Claude tokens to read the code</td><td class="n">{f(t["orig"])}</td><td class="n">Gold {f(t["gold"])} &middot; Helium {f(t["helium"])}</td><td class="n">Gold: {pct(t["orig"],t["gold"])}</td></tr>')
     rows.append(f'<tr><td>Run time ({f(r["reps"])} passes over the cases)</td><td class="n">{ms(tm["orig"])}</td><td class="n">{ms(tm["helium"])}</td><td class="n">{sp(tm["orig"],tm["helium"])}</td></tr>')
-    for k,v in tm.items():
-        if k not in('orig','helium'):rows.append(f'<tr><td>Same work, the app\'s hand-tuned {k.upper()} kernel</td><td class="n">{ms(v)}</td><td class="n">{ms(tm["helium"])}</td><td class="n">{sp(v,tm["helium"])}</td></tr>')
+    x=r.get('extra',{'time':{}})
+    for k,v in x['time'].items():
+        if k in x.get('labels',{}):h=x['time'][x.get('he',{}).get(k,'helium')];rows.append(f'<tr><td>Same work, {x["labels"][k]} ({f(x["reps"])} passes)</td><td class="n">{ms(v)}</td><td class="n">{ms(h)}</td><td class="n">{sp(v,h)}</td></tr>')
 print('\n'.join(rows))
 print(f'TOTAL tokens orig={to} gold={tg} helium={th} gold_saving={round(100*(to-tg)/to)}%',file=sys.stderr)

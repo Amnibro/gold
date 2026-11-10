@@ -64,3 +64,12 @@ crypto/rand.he	security	Secure random bytes from the operating system.
 gf.he	security	Fast GF(2^8) arithmetic over byte buffers and the AES S-box and MixColumns steps, using CPU vector instructions when present.
 web.he	web	Talk to the browser from a Helium web build: page elements, events, timers, fetch, storage and other JavaScript libraries.
 webgl.he	web	WebGL2 graphics on a canvas: shaders, buffers, textures and draw calls.
+gfx/clusters.amni	graphics	Assigns scene lights to a 3D grid of view-frustum cells so renderers can efficiently shade many lights per pixel.
+gfx/codec_hdr.amni	graphics	Decodes Radiance HDR (RGBE) image files into floating-point pixel data, letting a program load high-dynamic-range images.
+gfx/codec_jpeg_enc.amni	graphics	Encodes RGBA pixel images into JPEG-compressed byte data, with adjustable quality, so programs can save or send photos.
+gfx/envmap.amni	graphics	Lets a program load environment maps and prefilter them into GGX-blurred cubemaps for image-based lighting, including sun and haze effects.
+tiles/js.he	data	Converts numbers to JavaScript-style strings, including formatting with fixed decimals and locale-aware digit grouping.
+tiles/py.he	data	Lets a program convert text and JSON values into integers and floats using Python-style parsing rules, including whitespace and underscores.
+gfx/bc.amni	graphics	Decodes BC1, BC3, BC4, BC5, and BC7 block-compressed texture data into raw RGBA pixels and computes compressed sizes.
+gfx/ktx2.amni	graphics	Parses KTX2 texture files, validating headers and reading dimensions, color space, and mip levels for block-compressed or raw images.
+gfx/meshlet.amni	graphics	Builds meshlets from triangle meshes by welding vertices and grouping triangles into clusters and hierarchy levels for efficient rendering.

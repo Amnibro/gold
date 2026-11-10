@@ -12,8 +12,9 @@ Run `gold` with no arguments to print this list in short form. Options use the f
 | `gold pack` | Index a product's Helium functions so Gold can call them. |
 | `gold packs` | List the indexed packs. |
 | `gold find` | Show which functions a sentence would retrieve. |
-| `gold compact` | Pack data tables without a model call. |
-| `gold squeeze` | Shorten the Gold and keep it only if it still passes. |
+| `gold compact` | Pack data tables into fewer tokens, or write them back out in full. No model call. |
+| `gold squeeze` | Rewrite the Gold as shorter plain English and keep it only if it still passes. |
+| `gold lint` | List lines that read as code instead of English. |
 
 ## Build and run
 
@@ -73,15 +74,24 @@ Reads code in any language, writes the Gold that describes it, and builds that G
 gold squeeze file.gold check='command' [rounds=4]
 ```
 
-Shortens the Gold as far as it will go. Each shorter version is rebuilt from scratch and kept only when your check command exits with 0. Use a check that also watches speed, so a shorter version can never make your program slower.
+Rewrites the Gold as shorter plain English. Each shorter version is rebuilt from scratch and kept only when it rebuilds and your check command exits with 0. Use a check that also watches speed, so a shorter version can never make your program slower.
+
+### gold lint
+
+```
+gold lint file.gold
+```
+
+Lists every line that reads as code: operators such as `==` or `&&`, function signatures and Helium types. `gold build` refuses these lines in paragraphs that changed. Set `GOLD_LINT=warn` to build anyway.
 
 ### gold compact
 
 ```
 gold compact file.gold
+gold compact file.gold wide
 ```
 
-Packs the data tables in a file, with no model call. It adds a first `@` row of column scales, and a blank cell repeats the cell above. See [data tables](/api-library/gold/format#data-tables).
+Packs the data tables in a file into fewer tokens, with no model call. It adds a first `@` row of column marks and leaves out cells that repeat the row above. With `wide`, it writes every table back out in full, ready to edit. See [packed tables](/api-library/gold/format#packed-tables).
 
 ## Work with packs
 
@@ -115,3 +125,41 @@ gold find pack,pack words to look up
 ```
 
 Shows which functions a sentence would retrieve. Use it to check that a paragraph points Gold at the code you meant.
+
+## Environment variables
+
+Environment variables change which models Gold uses and where it finds its tools.
+
+### Models
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `GOLD_MODEL` | `sonnet` | The model that translates and repairs. `granite` or `local:<name>` uses the local llama-server. |
+| `GOLD_MODEL_HARD` | `opus` | The model used for the last repair. |
+| `GOLD_MODEL_PORT` | `opus` | The model used by `gold port`. |
+| `GOLD_MODEL_FALLBACK` | `sonnet` | The model that takes over after the local model's repair rounds. |
+| `GOLD_TRIES` | `4` | How many repair rounds to try. The limit extends up to 10 while each round changes the errors. |
+| `GOLD_K` | `70` | An integer setting read at startup. |
+
+### Local model
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `GOLD_LOCAL_URL` | `http://127.0.0.1:18790` | The address of the local llama-server. |
+| `GOLD_LOCAL_UNIT` | `amni-bonsai.service` | The unit used to start the local server. |
+| `GOLD_LOCAL_WAIT` | `120` | Seconds to wait for the GPU. |
+| `GOLD_LOCAL_ROUNDS` | `2` | How many repair rounds the local model gets before `GOLD_MODEL_FALLBACK` takes over. |
+
+If the local model is unavailable, the whole build falls back to `GOLD_MODEL_FALLBACK`.
+
+### Paths and tools
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `GOLD_CACHE` | `~/.cache/gold` | The cache folder. |
+| `GOLD_ROOT` | The installed resource folder if it contains `packs`, otherwise `~/ai/amni-lang/gold` | The Gold root folder. |
+| `GOLD_HELIUM` | `~/ai/amni-lang/helium` | The Helium folder. |
+| `GOLD_HC` | `$GOLD_HELIUM/build/hc` | The Helium compiler. |
+| `GOLD_HC_LIB` | `$GOLD_HELIUM/hc/lib` | The compiler's library folder. |
+| `GOLD_VERBOSE` | unset | Set to any non-empty value for verbose output. |
+| `GOLD_LINT` | unset | Set to `warn` to build paragraphs that still read as code. |

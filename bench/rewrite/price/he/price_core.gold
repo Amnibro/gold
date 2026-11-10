@@ -3,40 +3,52 @@ namespace price
 lang he
 dialect kotlin
 
-Cents `int`; optional results = value + `bool` found. Patterns use `regex`, each compiled once on first use into a module `var` with one `regex::Machine` beside it, reused after; never compile per call or line. "ci" patterns run on a `to_lower` copy (positions unchanged). Lookbehind `(?<!X)`/lookahead `(?!X)` checked by hand on byte before start/after end; on failure search again from start+1 unless said otherwise. `¢` = bytes C2 A2, so `[¢c]` is `(¢|c)`. Word char `[A-Za-z0-9_]`.
+Cents are ints. An optional result is the value plus a found flag. Compile each pattern once, on first use, into a module var with one `regex::Machine` beside it, and reuse both on every call. "ci" patterns run on a `to_lower` copy, so positions are unchanged. Check lookbehind `(?<!X)` and lookahead `(?!X)` by hand on the byte before the start or after the end. If the check fails, search again from start+1 unless a pattern says otherwise. `¢` is the bytes C2 A2. A word char is `[A-Za-z0-9_]`.
 
-`OcrLine`: `text byte[..256]`; `left top right bottom int`. `height(l)` = bottom-top; `center_y(l)` = (top+bottom)/2 as `f32`.
+`OcrLine` has `text` (inline, up to 256 bytes) and int `left`, `top`, `right`, `bottom`. Its height is bottom minus top. Its center_y is (top+bottom)/2 as a 32-bit float.
 
-`money_format(cents) byte[>..]`: "$1,299.00", `,` every 3 dollar digits; negative gets leading `-` ("-$0.05").
+`money_format(cents)` gives "$1,299.00", with a "," every 3 dollar digits. A negative amount gets a leading "-", as in "-$0.05".
 
-`money_parse(text) int, bool`: keep only `0-9.,-`; none left → not found. Both `.` and `,` → drop `,`; only `,` → `,`→`.`. Must match optional `-`|`+`, digits, at most one `.`, ≥1 digit, else not found. ×100 rounded half away from zero on exact decimal digits, no floats.
+`money_parse(text)` keeps only the characters `0-9.,-`; if none are left, not found. If both "." and "," are present, drop the ","; if only "," is, turn it into ".". The rest must be an optional "-" or "+", then digits with at most one "." and at least one digit, else not found. Multiply by 100 using the exact decimal digits, without floats, rounding half away from zero.
 
-`money_plain(cents) byte[>..]`: 2 places: -5→"-0.05", 129900→"1299.00".
+`money_plain(cents)` writes 2 decimals: -5 gives "-0.05" and 129900 gives "1299.00".
 
-`enum BaseUnit { GRAM, MILLILITER, COUNT }`. `Quantity`: `amount real`, `base BaseUnit`, `source byte[..64]`.
+The enum `BaseUnit` is `GRAM`, `MILLILITER`, `COUNT`. `Quantity` has `amount` (real), `base` and `source` (inline, up to 64 bytes).
 
-`unit_factor(unit) real, BaseUnit, bool`: lowercase, remove every `.` and space, look up: floz 29.5735 MILLILITER; oz 28.3495 GRAM; lb|lbs 453.592 GRAM; kg 1000 GRAM; g|gr 1 GRAM; mg 0.001 GRAM; ml 1 MILLILITER; l|ltr|liter|liters|litre|litres 1000 MILLILITER; gal 3785.41 MILLILITER; qt 946.353 MILLILITER; pt 473.176 MILLILITER; ct|count|pk|pack|ea 1 COUNT; else not found.
+`unit_factor(unit)` returns a factor, a base and found. Lowercase the unit, remove every "." and space, then look it up; anything else is not found.
+unit | factor | base
+floz | 29.5735 | MILLILITER
+oz | 28.3495 | GRAM
+lb, lbs | 453.592 | GRAM
+kg | 1000 | GRAM
+g, gr | 1 | GRAM
+mg | 0.001 | GRAM
+ml | 1 | MILLILITER
+l, ltr, liter, liters, litre, litres | 1000 | MILLILITER
+gal | 3785.41 | MILLILITER
+qt | 946.353 | MILLILITER
+pt | 473.176 | MILLILITER
+ct, count, pk, pack, ea | 1 | COUNT
 
-`unit_parse(text) Quantity, bool`: blank → not found. Leftmost ci match of `(\d+([.,]\d+)?)\s*(fl\.?\s*oz|oz|lbs?|kg|g|gr|mg|ml|l|ltr|liters?|litres?|gal|qt|pt|ct|count|pk|pack|ea)\b`; alternatives tried in order, first followed by `\b` wins ("12 gr" → `gr`). Number: `,`→`.`, parse real, <=0 → not found. `unit_factor` fails (e.g. tab in "fl oz") → not found, no later match tried. Result `{amount*factor, base, trimmed match text}`.
+`unit_parse(text)`: blank text is not found. Take the leftmost ci match of `(\d+([.,]\d+)?)\s*(fl\.?\s*oz|oz|lbs?|kg|g|gr|mg|ml|l|ltr|liters?|litres?|gal|qt|pt|ct|count|pk|pack|ea)\b`. Alternatives are tried in order and the first one followed by `\b` wins, so "12 gr" matches `gr`. Turn "," into "." and parse the number as a real; zero or less is not found. If `unit_factor` fails (for example on the tab in "fl	oz"), the result is not found and no later match is tried. The result is the amount times the factor, the base, and the trimmed match text.
 
-`default_imperial() bool`: country = 2 letters after first `_` of env `LC_ALL`, else `LANG` ("en_US.UTF-8"→US). True if US|LR|MM or no country.
+`default_imperial()`: the country is the 2 letters after the first "_" of env `LC_ALL`, or of `LANG` when `LC_ALL` is unset ("en_US.UTF-8" gives US). It is true for US, LR or MM, or when there is no country.
 
-`unit_price_label(price int, q Quantity, imperial bool = default_imperial()) byte[>..]`: ladders (per, label):
-- GRAM: imperial (28.3495,"oz"),(453.592,"lb"); metric (100,"100 g"),(1000,"kg").
-- MILLILITER: imperial (29.5735,"fl oz"),(946.353,"qt"); metric (100,"100 ml"),(1000,"L").
-- COUNT: (1,"ea") both.
+`unit_price_label(price, q, imperial = default_imperial())` picks from a ladder of (per, label) rungs:
+- GRAM, imperial: (28.3495, "oz"), (453.592, "lb"). GRAM, metric: (100, "100 g"), (1000, "kg").
+- MILLILITER, imperial: (29.5735, "fl oz"), (946.353, "qt"). MILLILITER, metric: (100, "100 ml"), (1000, "L").
+- COUNT, either: (1, "ea").
+Take the first rung where price*per/q.amount is at least 10, else the last rung. Cents are floor(price*per/q.amount + 0.5). Return `money_format` of the cents, then " / ", then the label.
 
-First rung with `price*per/q.amount >= 10`, else last. cents = `floor(price*per/q.amount + 0.5)`. Return `money_format(cents) + " / " + label`.
+`price_per_base(price, q)` is price/q.amount.
 
-`price_per_base(price int, q Quantity) real`: price/q.amount.
+`PriceCandidate` has `cents`, `score` (32-bit float), `is_unit` and `line` (inline, up to 256 bytes).
 
-`PriceCandidate`: `cents int, score f32, is_unit bool, line byte[..256]`.
+`ShelfTagResult` has, in order: `price`, `has_price`, `name` (inline, up to 256 bytes), `has_name`, `size` (inline, up to 64 bytes), `has_size`, `on_sale`, and `candidates`, a growable list of `PriceCandidate`.
 
-`ShelfTagResult` in order: `price int, has_price bool, name byte[..256], has_name bool, size byte[..64], has_size bool, on_sale bool, candidates PriceCandidate[>..]`.
-
-Patterns; AMT = `\d{1,4}([.,]\d{2})?`.
-- `multi_for` (ci): `(?<!\d)(\d{1,2})\s*for\s*\$?\s*(AMT)(?!\d)`; if lookahead fails, first retry same start without AMT's cents part ("2 for 5.001"→"2 for 5").
-- `multi_slash`: `(?<!\d)(\d{1,2})\s*/\s*\$\s*(AMT)(?!\d)`, same retry.
+The patterns follow. AMT stands for `\d{1,4}([.,]\d{2})?`.
+- `multi_for` (ci): `(?<!\d)(\d{1,2})\s*for\s*\$?\s*(AMT)(?!\d)`. If the lookahead fails, first retry at the same start without AMT's cents part ("2 for 5.001" gives "2 for 5").
+- `multi_slash`: `(?<!\d)(\d{1,2})\s*/\s*\$\s*(AMT)(?!\d)`, with the same retry.
 - `decimal`: `(?<![\d.,])\$?\s*(\d{1,4})\s?[.,]\s?(\d{2})(?![\d%])`.
 - `dollar_space_cents`: `\$\s*(\d{1,3})\s+(\d{2})(?!\d)`.
 - `dollar_whole`: `\$\s*(\d{1,4})(?![\d.,])`.
@@ -49,32 +61,47 @@ Patterns; AMT = `\d{1,4}([.,]\d{2})?`.
 - `unit_hint` (ci): `(\bper\b|/\s*(oz|lb|kg|g|ml|l|ct|each|ea|100\s?g|100\s?ml|fl\s?oz|qt|gal)\b|unit\s*price)`.
 - `sale_hint` (ci): `\b(sale|save|savings|special|deal|clearance|rollback|bogo|promo|\d+%\s*off)\b`.
 - `noise_hint` (ci): `\b(sku|upc|plu|item\s*#|reg(ular)?\s*price|was)\b`.
-- `barcode` (case-sensitive, original text): `^[IlL1|!iNMHVWUJ\[\]]{6,}$`.
+- `barcode` (case-sensitive, on the original text): `^[IlL1|!iNMHVWUJ\[\]]{6,}$`.
 
-`candidates_in(text) (int, f32)[>..]`: list of consumed byte ranges; match is free if it overlaps none. Each step takes all non-overlapping matches left to right; each free match appends a pair and consumes its range.
-1. All `multi_for`, then all `multi_slash`: qty = g1, total = `money_parse(g2)`; counts only if qty>0, total found, free. Append `((total + qty/2)/qty, 0.4)`.
-2. `decimal`: `(g1*100+g2, 0.3)` if match text has `$`, else 0.1.
-3. `dollar_space_cents`: `(g1*100+g2, 0.25)`.
-4. `dollar_whole`: `(g1, 0.15)` if g1 has >=3 digits, else `(g1*100, 0.15)`.
-5. First `bare_spaced` match only: `(g1*100+g2, 0.2)`.
-6. First `bare_run` match only: `(g1, -0.05)`.
-7. `cents_re`: `(g1, 0.1)`.
+`candidates_in(text)` returns (cents, bonus) pairs. It keeps a list of consumed byte ranges, and a match is free if it overlaps none of them. Each step takes all non-overlapping matches from left to right. Each free match appends a pair and consumes its range.
+1. Take all `multi_for` matches, then all `multi_slash` matches. qty is g1 and total is `money_parse(g2)`. A match counts only if qty is above 0, total is found and the match is free. It appends ((total + qty/2)/qty, 0.4).
+2. `decimal` appends (g1*100+g2, 0.3) if the match text contains "$", else the bonus is 0.1.
+3. `dollar_space_cents` appends (g1*100+g2, 0.25).
+4. `dollar_whole` appends (g1, 0.15) if g1 has 3 or more digits, else (g1*100, 0.15).
+5. Only the first `bare_spaced` match is used: it appends (g1*100+g2, 0.2).
+6. Only the first `bare_run` match is used: it appends (g1, -0.05).
+7. `cents_re` appends (g1, 0.1).
 
-`join_superscript(lines OcrLine[:]) OcrLine[>..]`: set of used indices. Each line a in order: used → skip; `split_dollars` no match → emit a; else d = g1, find first other unused b with all of: a.height>0; `1 <= b.height < max(int(a.height*0.8), 2)` (truncating); `b.left >= a.right - a.height/3` (int div); `b.left - a.right <= a.height`; `a.top - a.height*0.3 <= b.center_y <= a.center_y + a.height*0.15`; `split_cents` matches b.text. Found: mark b used, emit `{"$"+d+"."+cents, a.left, a.top, b.right, a.bottom}`; else emit a. At end drop every emitted line that is an unchanged copy of a used line.
+`join_superscript(lines)` keeps a set of used indices and visits each line a in order:
+- If a is used, skip it. If `split_dollars` does not match a, emit a.
+- Otherwise let d be g1. Find the first other unused line b that meets all of these:
+  - a's height is above 0.
+  - b's height is at least 1 and below max(int(a.height*0.8), 2), truncating.
+  - b.left is at least a.right minus a.height/3, using integer division.
+  - b.left minus a.right is at most a.height.
+  - b.center_y is from a.top minus a.height*0.3 to a.center_y plus a.height*0.15.
+  - `split_cents` matches b.
+- If such a b is found, mark it used and emit text "$"+d+"."+cents with the box a.left, a.top, b.right, a.bottom. Otherwise emit a.
+At the end, drop every emitted line that is an unchanged copy of a used line.
 
-`guess_name(lines OcrLine[:], price_line, has_price_line bool) byte[>..], bool`: skip line if has_price_line and text == price_line; or `unit_hint`|`noise_hint`|`name_noise` found in text; or trimmed text fully matches `sale_hint` or `barcode`. Count code points: letters = ASCII letters + every non-ASCII code point; len = total. Keep if letters>=3 and letters/len>0.5. Pick first kept with max `max(height,1)*10 + letters`; return its trimmed text, else not found.
+`guess_name(lines, price_line, has_price_line)` skips a line in these cases:
+- has_price_line is set and the line's text equals price_line.
+- `unit_hint`, `noise_hint` or `name_noise` is found in it.
+- Its trimmed text fully matches `sale_hint` or `barcode`.
 
-`parse(raw OcrLine[:]) ShelfTagResult`:
-1. Empty → nothing found, no candidates.
-2. lines = `join_superscript(raw)`; max_h = `max(max height, 1)` as f32.
-3. Per line: rel = height/max_h if height>0 else 0.5; unit = `unit_hint` found; noise = `noise_hint` found.
-4. Per `(c, bonus)` in `candidates_in(text)`: score = `rel + bonus - (1 if unit) - (0.6 if noise)`, is_unit = unit, line = text; keep only if `1 <= c <= 999999`.
-5. best = first highest-score non-unit candidate.
-6. best exists: anchor = first line with text == best.line; pool = lines with anchor.height<=0 or `|center_y - anchor.center_y| <= anchor.height*3.5`. No anchor → pool = all lines.
-7. name = `guess_name(pool, best.line if any)`.
-8. size = `source` of first line where `unit_parse` succeeds.
-9. on_sale = any line has `sale_hint`.
-10. Result: best.cents, name, size, on_sale, candidates stably sorted by score descending.
+For the other lines, count code points: letters are ASCII letters plus every non-ASCII code point, and len is the total. Keep a line if letters is at least 3 and letters/len is above 0.5. Return the trimmed text of the first kept line with the highest max(height,1)*10 + letters, or not found.
 
-`parse_text(text) ShelfTagResult`: split at `\n`|`\r\n`|`\r`, drop empty/all-whitespace lines, each an `OcrLine` with zero box; return `parse`.
+`parse(raw)`:
+1. If raw is empty, nothing is found and there are no candidates.
+2. lines is `join_superscript(raw)`. max_h is the largest height, at least 1, as a 32-bit float.
+3. For each line, rel is height/max_h if height is above 0, else 0.5. unit is whether `unit_hint` is found in the line, and noise is whether `noise_hint` is.
+4. For each (c, bonus) from `candidates_in` of the line's text, the score is rel + bonus, minus 1 if unit, minus 0.6 if noise. is_unit is unit and line is the text. Keep the candidate only if c is from 1 to 999999.
+5. best is the first non-unit candidate with the highest score.
+6. If there is a best, the anchor is the first line whose text equals best's line. The pool is the lines where the anchor's height is 0 or less, or where center_y is within anchor.height*3.5 of the anchor's center_y. Otherwise the pool is all lines.
+7. The name is `guess_name(pool, best's line if any)`.
+8. The size is the `source` of the first line where `unit_parse` succeeds.
+9. on_sale is whether any line has `sale_hint`.
+10. Return best's cents, the name, the size, on_sale, and the candidates stably sorted by score, highest first.
+
+`parse_text(text)` splits at "\n", "\r\n" or "\r" and drops empty or all-whitespace lines. It makes each remaining line an `OcrLine` with a zero box and returns `parse` of them.
 

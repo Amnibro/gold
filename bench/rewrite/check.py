@@ -1,5 +1,5 @@
 import json,os,re,subprocess,sys
-R=os.path.dirname(os.path.abspath(__file__));H=os.environ.get('GOLD_HELIUM',os.path.expanduser('~/ai/amni-lang/helium-gold'))
+R=os.path.dirname(os.path.abspath(__file__));H=os.environ.get('GOLD_HELIUM',os.path.expanduser('~/ai/amni-lang/helium'))
 d=sys.argv[1];cwd=os.path.join(R,d);m=json.load(open(cwd+'/meta.json'))
 drv=[f for f in os.listdir(cwd+'/he') if f in('drive.he','drive.amni')][0]
 b=subprocess.run([H+'/build/hcn','build',drv,'-o','drive'],cwd=cwd+'/he',env={**os.environ,'HC_LIB':H+'/hc/lib'},capture_output=True,text=True)

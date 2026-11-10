@@ -1,14 +1,14 @@
-=== -4cd98615a6725bd4
+=== -7c470928d3f721ab
 import web;
-struct Row { at int[6], len int[6], pub_rank bool }
 var IDX byte[>..];
+struct Row { at int[6], len int[6], pub_rank bool }
 var ROWS Row[>..];
 fn col(r Row, i int) const byte[:] { IDX[r.at[i]..r.at[i] + r.len[i]] }
-=== -7f2a495cf263150e
+=== 2524b91930841dad
 var Q i32 = 0;
 var RES i32 = 0;
-var LOADED = false;
-var LOADING = false;
+var LOADED bool = false;
+var LOADING bool = false;
 var QUERY byte[>..];
 var SHOWN int[>..];
 var SEL int = -1;
@@ -50,15 +50,17 @@ fn parse_index() {
 		pos = e + 1;
 	}
 }
-=== -41e2e719f8c300c0
+=== -5ce8b84cfefd2886
 fn lc(c byte) byte { if c >= 'A' && c <= 'Z' { c + 32 } else { c } }
 fn lower_has(hay const byte[:], needle const byte[:]) int {
-	if needle.len == 0 { return 0; }
-	if needle.len > hay.len { return -1; }
-	for i in hay.len - needle.len + 1 {
+	let n = needle.len;
+	if n == 0 { return 0; }
+	var i = 0;
+	while i + n <= hay.len {
 		var j = 0;
-		while j < needle.len && lc(hay[i + j]) == lc(needle[j]) { j++; }
-		if j == needle.len { return i; }
+		while j < n && lc(hay[i + j]) == lc(needle[j]) { j++; }
+		if j == n { return i; }
+		i++;
 	}
 	return -1;
 }
@@ -69,48 +71,53 @@ fn lower_eq(a const byte[:], b const byte[:]) bool {
 	}
 	return true;
 }
-=== -58cdacaac4365a0e
+=== 4d3b3aa49504a040
 fn score(r Row, q const byte[:]) int {
 	let name = col(r, 0);
 	let module = col(r, 2);
 	let desc = col(r, 4);
-	var st = 0;
-	if name.len >= 2 {
-		var i = name.len - 2;
-		while i >= 0 {
-			if name[i] == ':' && name[i + 1] == ':' { st = i + 2; break; }
-			i--;
-		}
+	var ss = 0;
+	var k = 0;
+	while k + 1 < name.len {
+		if name[k] == ':' && name[k + 1] == ':' { ss = k + 2; k += 2; } else { k++; }
 	}
-	let short = name[st..];
+	let short = name[ss..name.len];
 	var s = 0;
 	if lower_eq(name, q) || lower_eq(short, q) {
 		s = 1000;
-	} else if short.len >= q.len && lower_eq(short[..q.len], q) {
+	} else if lower_has(short, q) == 0 {
 		s = 800;
-	} else if name.len >= q.len && lower_eq(name[..q.len], q) {
+	} else if lower_has(name, q) == 0 {
 		s = 750;
 	} else {
 		let p = lower_has(name, q);
-		if p >= 0 {
+		if p > 0 {
 			s = 600;
-			if p > 0 && name[p - 1] == '_' { s += 50; }
+			if name[p - 1] == '_' { s += 50; }
 		} else {
-			var all = true;
-			var cnt = 0;
-			var bonus = 0;
-			let ws = words(q);
-			for w in ws {
-				cnt++;
-				let inn = lower_has(name, w) >= 0;
-				let inm = lower_has(module, w) >= 0;
-				let ind = lower_has(desc, w) >= 0;
-				if !(inn || inm || ind) { all = false; }
-				if inn { bonus += 40; }
-				if inm { bonus += 20; }
+			var ok = true;
+			var seen = false;
+			var in_name = 0;
+			var in_mod = 0;
+			var i = 0;
+			while i < q.len {
+				while i < q.len && q[i] == ' ' { i++; }
+				if i >= q.len { break; }
+				var e = i;
+				while e < q.len && q[e] != ' ' { e++; }
+				let w = q[i..e];
+				seen = true;
+				let a = lower_has(name, w) >= 0;
+				let m = lower_has(module, w) >= 0;
+				let d = lower_has(desc, w) >= 0;
+				if !(a || m || d) { ok = false; break; }
+				if a { in_name++; }
+				if m { in_mod++; }
+				i = e;
 			}
-			if all && cnt > 0 {
-				s = 200 + bonus + max(0, 30 - name.len);
+			if ok && seen {
+				s = 200 + 40 * in_name + 20 * in_mod;
+				s += max(30 - name.len, 0);
 			}
 		}
 	}

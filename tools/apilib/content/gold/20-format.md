@@ -60,9 +60,38 @@ This makes a function `materials()` that returns the rows as `Material` values.
 |---|---|
 | Cells split on `|` | Cells follow the struct's field order. |
 | `"` or a blank cell | Repeats the cell above. |
+| A short row | Cells left off the end repeat the cells above. A row that repeats every cell is a lone `"`. |
 | `''` | An empty string. |
 | Single quotes | Keeps a cell that looks like a number, or starts with `#`, as text. |
-| First `@` row | Column scales added by `gold compact`: `e9` appends an exponent, and `.` marks a real column so `7870` means `7870.0`. |
+
+### Packed tables
+
+Write a table in full. `gold compact file.gold` then packs it into fewer tokens, and Gold reads both forms the same way. A packed table starts with an `@` row that holds one mark per column.
+
+````
+```table bolts Bolt
+@+|.2|.1|.|.1
+M8 coarse|125|70|15000|88
+10|150|85|24000
+12|175|102|35000
+14|200|120|48000
+18|250|155|79000|109
+20||175|101000
+```
+````
+
+The second row reads `M10 coarse | 1.5 | 8.5 | 24000.0 | 8.8`.
+
+| Mark | Meaning |
+|---|---|
+| `.` | A real column: `24000` means `24000.0`. |
+| `.2` | The decimal point moves two places left: `125` means `1.25`. |
+| `e9` | Every number gets the exponent: `200` means `200e9`. |
+| `.1e9` | Both, the point first: `205` means `20.5e9`. |
+| `+` | A text column whose rows differ in their first number. A cell that is only a number replaces that number in the cell above: `10` under `M8 coarse` means `M10 coarse`. |
+| No mark | The cells are read as written. |
+
+A number that carries its own exponent is read as written. `gold compact file.gold wide` writes every table back out in full, ready to edit. Packing it again gives the same packed table.
 
 ## Expected output
 

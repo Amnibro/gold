@@ -14,12 +14,18 @@ def run(d):
     ra,rb=ro.decode('utf8','replace').split('\n'),ho.decode('utf8','replace').split('\n');a,b=norm(m,ro),norm(m,ho);n=len(ra)-(1 if ra[-1]=='' else 0)
     exact=sum(1 for x,y in zip(ra[:n],rb[:n]) if x==y);same=sum(1 for x,y in zip(a[:n],b[:n]) if x==y)
     res={'id':d,**{k:m[k] for k in('product','module','orig_lang','note','norm_note') if k in m},'cases':n,'exact':exact,'match':same}
-    reps=str(m.get('reps',1));tm={}
-    for k,c in (('orig',m['run_orig']),('helium',m['run_he']))+tuple((x['name'],x['cmd']) for x in m.get('extra',[])):
-        ts=[];out=None
+    reps=str(m.get('reps',1));tm={};X=m.get('extra',[]);xr=str(m.get('extra_reps',reps));xt={}
+    for c in m.get('build',[]):
+        if sh(c,cwd)[2]: sys.exit('build failed: '+c)
+    def best(cs,n,to,sfx=''):
+        ts={k:[] for k,_ in cs}
         for _ in range(int(m.get('runs',5))):
-            t,o,rc=sh(c,cwd,cases,{'REPS':reps});ts.append(t);out=o.strip()
-        tm[k]=round(min(ts),4);res['check_'+k]=out.decode()[:40]
+            for k,c in cs:
+                t,o,rc=sh(c,cwd,cases,{'REPS':n});ts[k].append(t);res['check_'+k+sfx]=o.strip().decode()[:40]
+        for k,_ in cs: to[k]=round(min(ts[k]),4)
+    best([('orig',m['run_orig']),('helium',m['run_he'])],reps,tm)
+    H=sorted({x.get('he',m['run_he']) for x in X},key=lambda h:h!=m['run_he']);hn={h:'helium' if h==m['run_he'] else 'helium_'+str(i) for i,h in enumerate(H)}
+    if X: best([(hn[h],h) for h in H]+[(x['name'],x['cmd']) for x in X],xr,xt,'_x');res['extra']={'reps':int(xr),'labels':{x['name']:x['label'] for x in X},'he':{x['name']:hn[x.get('he',m['run_he'])] for x in X},'time':xt}
     res['time']=tm;res['speedup']=round(tm['orig']/tm['helium'],2);res['reps']=int(reps)
     G=m['gold'] if isinstance(m['gold'],list) else [m['gold']]
     res['tokens']={'orig':tok(cwd,m['orig_src']),'gold':tok(cwd,G),'helium':tok(cwd,m['helium'])}

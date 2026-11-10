@@ -1,532 +1,592 @@
 namespace price
 use regex
 use os
-isdig(c byte) bool: c >= '0' && c <= '9'
-struct OcrLine { text byte[..256], left int, top int, right int, bottom int }
-height(l OcrLine) int: l.bottom - l.top
-center_y(l OcrLine) f32: ((l.top + l.bottom) / 2) as f32
-money_format(cents int) byte[>..]:
-	out byte[>..] ~= []
-	a ~= cents
-	if cents < 0: a = -cents; out.push('-')
-	ds byte[>..] ~= []
-	format(ds, a / 100)
-	out.push('$')
-	for i ds.len:
-		if i > 0 && (ds.len - i) % 3 == 0: out.push(',')
-		out.push(ds[i])
-	c := a % 100
-	out.push('.')
-	out.push(('0' + c / 10) as byte)
-	out.push(('0' + c % 10) as byte)
-	out
-money_parse(text byte[:]) int, bool:
-	k byte[>..] ~= []
-	has_dot ~= false
-	for ch text:
-		if isdig(ch) || ch == '.' || ch == ',' || ch == '-': k.push(ch)
-		if ch == '.': has_dot = true
-	if k.len == 0: return 0, false
-	s byte[>..] ~= []
-	for ch k:
-		if ch == ',':
-			if !has_dot: s.push('.')
-		else:
-			s.push(ch)
-	i ~= 0
-	neg ~= false
-	if s[0] == '-': neg = true; i = 1
-	ip ~= 0
-	nd ~= 0
-	while i < s.len && isdig(s[i]):
-		ip = ip * 10 + ((s[i] as int) - '0')
-		nd += 1
-		i += 1
-	f ~= 0
-	fd ~= 0
-	if i < s.len && s[i] == '.':
-		i += 1
-		while i < s.len && isdig(s[i]):
-			if fd < 3: f = f * 10 + ((s[i] as int) - '0')
-			fd += 1
-			nd += 1
-			i += 1
-	if i != s.len || nd == 0: return 0, false
-	n3 ~= min(fd, 3)
-	while n3 < 3: f *= 10; n3 += 1
-	c := ip * 100 + f / 10 + (if f % 10 >= 5 { 1 } else { 0 })
-	if neg: return -c, true
-	return c, true
-money_plain(cents int) byte[>..]:
-	out byte[>..] ~= []
-	a ~= cents
-	if cents < 0: a = -cents; out.push('-')
-	format(out, a / 100)
-	c := a % 100
-	out.push('.')
-	out.push(('0' + c / 10) as byte)
-	out.push(('0' + c % 10) as byte)
-	out
-enum BaseUnit { GRAM, MILLILITER, COUNT }
-struct Quantity { amount real, base BaseUnit, source byte[..64] }
-base_kind(b BaseUnit) int:
-	match b:
-		GRAM => 0
-		MILLILITER => 1
-		COUNT => 2
-unit_factor(unit byte[:]) real, BaseUnit, bool:
-	k byte[>..] ~= []
-	for ch unit:
-		if ch == '.' || ch == ' ': continue
-		k.push(if ch >= 'A' && ch <= 'Z' { ch + 32 } else { ch })
-	if k == "floz": return 29.5735, BaseUnit.MILLILITER, true
-	if k == "oz": return 28.3495, BaseUnit.GRAM, true
-	if k == "lb" || k == "lbs": return 453.592, BaseUnit.GRAM, true
-	if k == "kg": return 1000.0, BaseUnit.GRAM, true
-	if k == "g" || k == "gr": return 1.0, BaseUnit.GRAM, true
-	if k == "mg": return 0.001, BaseUnit.GRAM, true
-	if k == "ml": return 1.0, BaseUnit.MILLILITER, true
-	if k == "l" || k == "ltr" || k == "liter" || k == "liters" || k == "litre" || k == "litres": return 1000.0, BaseUnit.MILLILITER, true
-	if k == "gal": return 3785.41, BaseUnit.MILLILITER, true
-	if k == "qt": return 946.353, BaseUnit.MILLILITER, true
-	if k == "pt": return 473.176, BaseUnit.MILLILITER, true
-	if k == "ct" || k == "count" || k == "pk" || k == "pack" || k == "ea": return 1.0, BaseUnit.COUNT, true
-	return 0.0, BaseUnit.COUNT, false
-lower_copy(s byte[:]) byte[>..]:
-	out byte[>..] ~= []
-	for ch s: out.push(if ch >= 'A' && ch <= 'Z' { ch + 32 } else { ch })
-	out
-var re_unit regex::Regex
-var mc_unit regex::Machine
-rd_unit ~= false
-unit_parse(text byte[:]) Quantity, bool:
-	if trim(text).len == 0: return default<Quantity>(), false
-	if !rd_unit: re_unit = regex::compile("(\\d+([.,]\\d+)?)\\s*(fl\\.?\\s*oz|oz|lbs?|kg|g|gr|mg|ml|l|ltr|liters?|litres?|gal|qt|pt|ct|count|pk|pack|ea)\\b"); rd_unit = true
-	lo := lower_copy(text)
-	if !regex::run(re_unit, mc_unit, lo, 0): return default<Quantity>(), false
-	s := mc_unit.best[0]
-	e := mc_unit.best[1]
-	num byte[>..] ~= []
-	for i mc_unit.best[2]..mc_unit.best[3]:
-		num.push(if lo[i] == ',' { '.' } else { lo[i] })
-	amt, aok := parse_flt(num)
-	if !aok || amt <= 0.0: return default<Quantity>(), false
-	f, bu, fok := unit_factor(lo[mc_unit.best[6]..mc_unit.best[7]])
-	if !fok: return default<Quantity>(), false
-	mt := trim(text[s..e])
-	q ~= Quantity{amount: amt * f, base: bu, ..}
-	q.source.append(mt[..min(mt.len, 64)])
-	return q, true
-default_imperial() bool:
-	v byte[>..] ~= []
-	if !env("LC_ALL", v) || v.len == 0:
-		v.clear()
-		if !env("LANG", v): return true
-	u ~= -1
-	for i v.len:
-		if v[i] == '_' && u < 0: u = i
-	if u < 0 || u + 2 >= v.len: return true
-	a := v[u + 1] | 32
-	b := v[u + 2] | 32
-	if a < 'a' || a > 'z' || b < 'a' || b > 'z': return true
-	(a == 'u' && b == 's') || (a == 'l' && b == 'r') || (a == 'm' && b == 'm')
-rung_of(base BaseUnit, imperial bool, i int) real, const byte[:]:
-	k := base_kind(base)
-	if k == 0:
-		if imperial:
-			if i == 0: return 28.3495, "oz"
-			return 453.592, "lb"
-		if i == 0: return 100.0, "100 g"
-		return 1000.0, "kg"
-	if k == 1:
-		if imperial:
-			if i == 0: return 29.5735, "fl oz"
-			return 946.353, "qt"
-		if i == 0: return 100.0, "100 ml"
-		return 1000.0, "L"
-	return 1.0, "ea"
-unit_price_label(price int, q Quantity, imperial bool = default_imperial()) byte[>..]:
-	p0, l0 := rung_of(q.base, imperial, 0)
-	p1, l1 := rung_of(q.base, imperial, 1)
-	use0 := price * p0 / q.amount >= 10.0
-	per := if use0 { p0 } else { p1 }
-	label := if use0 { l0 } else { l1 }
-	v := price * per / q.amount
-	x := v + 0.5
-	t ~= x as int
-	if (t as real) > x: t -= 1
-	out ~= money_format(t)
-	out.append(" / ")
-	out.append(label)
-	out
-price_per_base(price int, q Quantity) real: price / q.amount
-struct PriceCandidate { cents int, score f32, is_unit bool, line byte[..256] }
-struct ShelfTagResult { price int, has_price bool, name byte[..256], has_name bool, size byte[..64], has_size bool, on_sale bool, candidates PriceCandidate[>..] }
-var re_multi_for regex::Regex
-var mc_multi_for regex::Machine
-rd_multi_for ~= false
-init_multi_for(): if !rd_multi_for: re_multi_for = regex::compile("(\\d{1,2})\\s*for\\s*\\$?\\s*(\\d{1,4}([.,]\\d{2})?)"); rd_multi_for = true
-var re_multi_slash regex::Regex
-var mc_multi_slash regex::Machine
-rd_multi_slash ~= false
-init_multi_slash(): if !rd_multi_slash: re_multi_slash = regex::compile("(\\d{1,2})\\s*/\\s*\\$\\s*(\\d{1,4}([.,]\\d{2})?)"); rd_multi_slash = true
-var re_decimal regex::Regex
-var mc_decimal regex::Machine
-rd_decimal ~= false
-init_decimal(): if !rd_decimal: re_decimal = regex::compile("\\$?\\s*(\\d{1,4})\\s?[.,]\\s?(\\d{2})"); rd_decimal = true
-var re_dsc regex::Regex
-var mc_dsc regex::Machine
-rd_dsc ~= false
-init_dsc(): if !rd_dsc: re_dsc = regex::compile("\\$\\s*(\\d{1,3})\\s+(\\d{2})"); rd_dsc = true
-var re_dwhole regex::Regex
-var mc_dwhole regex::Machine
-rd_dwhole ~= false
-init_dwhole(): if !rd_dwhole: re_dwhole = regex::compile("\\$\\s*(\\d{1,4})"); rd_dwhole = true
-var re_bare_spaced regex::Regex
-var mc_bare_spaced regex::Machine
-rd_bare_spaced ~= false
-init_bare_spaced(): if !rd_bare_spaced: re_bare_spaced = regex::compile("^\\s*(\\d{1,2})\\s+(\\d{2})\\s*$"); rd_bare_spaced = true
-var re_bare_run regex::Regex
-var mc_bare_run regex::Machine
-rd_bare_run ~= false
-init_bare_run(): if !rd_bare_run: re_bare_run = regex::compile("^\\s*(\\d{3,4})\\s*$"); rd_bare_run = true
-var re_split_dollars regex::Regex
-var mc_split_dollars regex::Machine
-rd_split_dollars ~= false
-init_split_dollars(): if !rd_split_dollars: re_split_dollars = regex::compile("^\\s*\\$?\\s*(\\d{1,2})\\s*$"); rd_split_dollars = true
-var re_split_cents regex::Regex
-var mc_split_cents regex::Machine
-rd_split_cents ~= false
-init_split_cents(): if !rd_split_cents: re_split_cents = regex::compile("^\\s*(\\d{2})\\s*(¢|c)?\\s*$"); rd_split_cents = true
-var re_cents regex::Regex
-var mc_cents regex::Machine
-rd_cents ~= false
-init_cents(): if !rd_cents: re_cents = regex::compile("(\\d{1,2})\\s*(¢|c)"); rd_cents = true
-var re_name_noise regex::Regex
-var mc_name_noise regex::Machine
-rd_name_noise ~= false
-init_name_noise(): if !rd_name_noise: re_name_noise = regex::compile("\\b(price|everyday|rewards?|you pay|with card|limit|guiding stars?|each|ea|per|retail|aisle|shelf)\\b"); rd_name_noise = true
-var re_unit_hint regex::Regex
-var mc_unit_hint regex::Machine
-rd_unit_hint ~= false
-init_unit_hint(): if !rd_unit_hint: re_unit_hint = regex::compile("(\\bper\\b|/\\s*(oz|lb|kg|g|ml|l|ct|each|ea|100\\s?g|100\\s?ml|fl\\s?oz|qt|gal)\\b|unit\\s*price)"); rd_unit_hint = true
-var re_sale_hint regex::Regex
-var mc_sale_hint regex::Machine
-rd_sale_hint ~= false
-init_sale_hint(): if !rd_sale_hint: re_sale_hint = regex::compile("\\b(sale|save|savings|special|deal|clearance|rollback|bogo|promo|\\d+%\\s*off)\\b"); rd_sale_hint = true
-var re_noise_hint regex::Regex
-var mc_noise_hint regex::Machine
-rd_noise_hint ~= false
-init_noise_hint(): if !rd_noise_hint: re_noise_hint = regex::compile("\\b(sku|upc|plu|item\\s*#|reg(ular)?\\s*price|was)\\b"); rd_noise_hint = true
-var re_barcode regex::Regex
-var mc_barcode regex::Machine
-rd_barcode ~= false
-init_barcode(): if !rd_barcode: re_barcode = regex::compile("^[IlL1|!iNMHVWUJ\\[\\]]{6,}$"); rd_barcode = true
-has_unit_hint(text byte[:]) bool:
-	init_unit_hint()
-	lo := lower_copy(text)
-	regex::run(re_unit_hint, mc_unit_hint, lo, 0)
-has_noise_hint(text byte[:]) bool:
-	init_noise_hint()
-	lo := lower_copy(text)
-	regex::run(re_noise_hint, mc_noise_hint, lo, 0)
-has_name_noise(text byte[:]) bool:
-	init_name_noise()
-	lo := lower_copy(text)
-	regex::run(re_name_noise, mc_name_noise, lo, 0)
-has_sale_hint(text byte[:]) bool:
-	init_sale_hint()
-	lo := lower_copy(text)
-	regex::run(re_sale_hint, mc_sale_hint, lo, 0)
-fully(re regex::Regex&, m regex::Machine&, s byte[:]) bool:
-	if !regex::run(re, m, s, 0): return false
-	m.best[0] == 0 && m.best[1] == s.len
-bad_before(kind int, c byte) bool:
-	if kind == 1: return isdig(c)
-	if kind == 2: return isdig(c) || c == '.' || c == ','
-	if kind == 4: return isdig(c) || c == '.'
+use math
+var grp int[>..]
+in_set(c byte, cls const byte[:]) bool:
+	for x cls:
+		if x == c: return true
 	return false
-bad_after(kind int, c byte) bool:
-	if kind == 1: return isdig(c)
-	if kind == 2: return isdig(c) || c == '%'
-	if kind == 3: return isdig(c) || c == '.' || c == ','
-	if kind == 5: return c >= 'a' && c <= 'z'
-	return false
-find_chk(re regex::Regex&, m regex::Machine&, text byte[:], st int, bk int, ak int) bool:
-	at ~= st
+is_digit(c byte) bool: c >= '0' && c <= '9'
+is_ws(c byte) bool: c == 32 || (c >= 9 && c <= 13)
+lower(text const byte[:]) byte[>..]:
+	out byte[>..] ~= []
+	for c text:
+		if c >= 'A' && c <= 'Z': out.push(c + 32) else: out.push(c)
+	return out
+strip(s const byte[:]) byte[>..]:
+	a ~= 0
+	b ~= s.len
+	while a < b && is_ws(s[a]): a += 1
+	while b > a && is_ws(s[b - 1]): b -= 1
+	out byte[>..] ~= []
+	out.append(s[a..b])
+	return out
+is_blank(s const byte[:]) bool:
+	for c s:
+		if !is_ws(c): return false
+	return true
+digits_val(s byte[:]) int:
+	v ~= 0
+	for c s: v = v * 10 + (c - '0')
+	return v
+take(m regex::Machine&):
+	grp.clear()
+	for x m.best: grp.push(x)
+scan(re regex::Regex&, m regex::Machine&, text byte[:], start int, behind const byte[:], ahead const byte[:]) bool:
+	at ~= start
 	while at <= text.len:
 		if !regex::run(re, m, text, at): return false
 		s := m.best[0]
 		e := m.best[1]
-		if s > 0 && bad_before(bk, text[s - 1]): at = s + 1; continue
-		if e < text.len && bad_after(ak, text[e]): at = s + 1; continue
+		if s > 0 && in_set(text[s - 1], behind):
+			at = s + 1
+			continue
+		if e < text.len && in_set(text[e], ahead):
+			at = s + 1
+			continue
+		take(m)
 		return true
 	return false
-struct Cand { cents int, bonus f32 }
-dval(s byte[:]) int:
-	v ~= 0
-	for ch s: v = v * 10 + ((ch as int) - '0')
-	v
-is_free(used int[:], s int, e int) bool:
+grp_text(text byte[:], k int) byte[:]:
+	if grp[2 * k] < 0: return text[0..0]
+	return text[grp[2 * k]..grp[2 * k + 1]]
+ensure(done bool&, re regex::Regex&, pattern byte[:]):
+	if !done: re = regex::compile(pattern); done = true
+struct OcrLine { text byte[..256], left int, top int, right int, bottom int }
+height(l OcrLine) int: l.bottom - l.top
+center_y(l OcrLine) f32: ((l.top + l.bottom) as f32) / 2.0
+text_of(l OcrLine) byte[>..]:
+	out byte[>..] ~= []
+	out.append(l.text)
+	return out
+money_format(cents int) byte[>..]:
+	out byte[>..] ~= []
+	a := if cents < 0 { 0 - cents } else { cents }
+	if cents < 0: out.push('-')
+	out.push('$')
+	ds byte[>..] ~= []
+	format(ds, a / 100)
+	for i ds.len:
+		if i > 0 && (ds.len - i) % 3 == 0: out.push(',')
+		out.push(ds[i])
+	out.push('.')
+	c := a % 100
+	out.push(('0' + c / 10) as byte)
+	out.push(('0' + c % 10) as byte)
+	return out
+money_parse(text const byte[:]) int, bool:
+	kept byte[>..] ~= []
+	for c text:
+		if (c >= '0' && c <= '9') || c == '.' || c == ',' || c == '-': kept.push(c)
+	if kept.len == 0: return 0, false
+	dot ~= false
+	for c kept:
+		if c == '.': dot = true
+	s byte[>..] ~= []
+	for c kept:
+		if c == ',':
+			if dot: continue
+			s.push('.')
+		else: s.push(c)
+	if s.len == 0: return 0, false
 	i ~= 0
-	while i + 1 < used.len:
-		if s < used[i + 1] && used[i] < e: return false
-		i += 2
-	return true
-push_c(out Cand[>..]&, used int[>..]&, cents int, b f32, s int, e int):
-	out.push(Cand{cents: cents, bonus: b})
+	neg ~= false
+	if s[0] == '-':
+		neg = true
+		i = 1
+	whole ~= 0
+	fr ~= 0
+	fc ~= 0
+	rd ~= 0
+	nd ~= 0
+	seen ~= false
+	while i < s.len:
+		ch := s[i]
+		i += 1
+		if ch == '.':
+			if seen: return 0, false
+			seen = true
+			continue
+		if ch < '0' || ch > '9': return 0, false
+		d := (ch - '0') as int
+		nd += 1
+		if !seen: whole = whole * 10 + d
+		else if fc < 2:
+			fr = fr * 10 + d
+			fc += 1
+		else if fc == 2:
+			rd = d
+			fc += 1
+	if nd == 0: return 0, false
+	if fc == 1: fr *= 10
+	cents := whole * 100 + fr
+	if rd >= 5: cents += 1
+	if neg: return 0 - cents, true
+	return cents, true
+money_plain(cents int) byte[>..]:
+	out byte[>..] ~= []
+	a := if cents < 0 { 0 - cents } else { cents }
+	if cents < 0: out.push('-')
+	format(out, a / 100)
+	out.push('.')
+	c := a % 100
+	out.push(('0' + c / 10) as byte)
+	out.push(('0' + c % 10) as byte)
+	return out
+enum BaseUnit { GRAM, MILLILITER, COUNT }
+struct Quantity { amount real, base BaseUnit, source byte[..64] }
+unit_factor(unit const byte[:]) real, BaseUnit, bool:
+	u byte[>..] ~= []
+	for c unit:
+		if c == '.' || c == ' ': continue
+		if c >= 'A' && c <= 'Z': u.push(c + 32) else: u.push(c)
+	if u == "floz": return 29.5735, BaseUnit.MILLILITER, true
+	if u == "oz": return 28.3495, BaseUnit.GRAM, true
+	if u == "lb" || u == "lbs": return 453.592, BaseUnit.GRAM, true
+	if u == "kg": return 1000.0, BaseUnit.GRAM, true
+	if u == "g" || u == "gr": return 1.0, BaseUnit.GRAM, true
+	if u == "mg": return 0.001, BaseUnit.GRAM, true
+	if u == "ml": return 1.0, BaseUnit.MILLILITER, true
+	if u == "l" || u == "ltr" || u == "liter" || u == "liters" || u == "litre" || u == "litres": return 1000.0, BaseUnit.MILLILITER, true
+	if u == "gal": return 3785.41, BaseUnit.MILLILITER, true
+	if u == "qt": return 946.353, BaseUnit.MILLILITER, true
+	if u == "pt": return 473.176, BaseUnit.MILLILITER, true
+	if u == "ct" || u == "count" || u == "pk" || u == "pack" || u == "ea": return 1.0, BaseUnit.COUNT, true
+	return 0.0, BaseUnit.COUNT, false
+var re_unit regex::Regex
+var m_unit regex::Machine
+var ok_unit bool
+unit_parse(text const byte[:]) Quantity, bool:
+	if is_blank(text): return default<Quantity>(), false
+	ensure(ok_unit, re_unit, "(\\d+([.,]\\d+)?)\\s*(fl\\.?\\s*oz|oz|lbs?|kg|g|gr|mg|ml|l|ltr|liters?|litres?|gal|qt|pt|ct|count|pk|pack|ea)\\b")
+	low := lower(text)
+	if !scan(re_unit, m_unit, low, 0, "", ""): return default<Quantity>(), false
+	num byte[>..] ~= []
+	for c grp_text(low, 1):
+		if c == ',': num.push('.') else: num.push(c)
+	amt, ok := parse_flt(num)
+	if !ok || amt <= 0.0: return default<Quantity>(), false
+	f, base, fok := unit_factor(grp_text(low, 3))
+	if !fok: return default<Quantity>(), false
+	q ~= default<Quantity>()
+	q.amount = amt * f
+	q.base = base
+	t := strip(text[grp[0]..grp[1]])
+	q.source.append(t[..min(t.len, 64)])
+	return q, true
+default_imperial() bool:
+	v byte[>..] ~= []
+	if !env("LC_ALL", v):
+		v.clear()
+		if !env("LANG", v): return true
+	i ~= -1
+	for k v.len:
+		if v[k] == '_':
+			i = k
+			break
+	if i < 0: return true
+	e := min(i + 3, v.len)
+	c := v[i + 1..e]
+	if c.len == 0: return true
+	return c == "US" || c == "LR" || c == "MM"
+rung_per(base BaseUnit, imperial bool, i int) real:
+	match base:
+		GRAM => if imperial { if i == 0 { 28.3495 } else { 453.592 } } else { if i == 0 { 100.0 } else { 1000.0 } }
+		MILLILITER => if imperial { if i == 0 { 29.5735 } else { 946.353 } } else { if i == 0 { 100.0 } else { 1000.0 } }
+		COUNT => 1.0
+rung_label(base BaseUnit, imperial bool, i int) const byte[:]:
+	match base:
+		GRAM => if imperial { if i == 0 { "oz" } else { "lb" } } else { if i == 0 { "100 g" } else { "kg" } }
+		MILLILITER => if imperial { if i == 0 { "fl oz" } else { "qt" } } else { if i == 0 { "100 ml" } else { "L" } }
+		COUNT => "ea"
+unit_price_label(price int, q Quantity, imperial bool = default_imperial()) byte[>..]:
+	pick ~= 1
+	for i 2:
+		if (price as real) * rung_per(q.base, imperial, i) / q.amount >= 10.0:
+			pick = i
+			break
+	per := rung_per(q.base, imperial, pick)
+	cents := floor((price as real) * per / q.amount + 0.5) as int
+	out ~= money_format(cents)
+	out.append(" / ")
+	out.append(rung_label(q.base, imperial, pick))
+	return out
+price_per_base(price int, q Quantity) real: (price as real) / q.amount
+struct PriceCandidate { cents int, score f32, is_unit bool, line byte[..256] }
+struct ShelfTagResult { price int, has_price bool, name byte[..256], has_name bool, size byte[..64], has_size bool, on_sale bool, candidates PriceCandidate[>..] }
+scan_multi(re regex::Regex&, m regex::Machine&, re2 regex::Regex&, m2 regex::Machine&, text byte[:], start int) bool:
+	at ~= start
+	while at <= text.len:
+		if !regex::run(re, m, text, at): return false
+		s := m.best[0]
+		e := m.best[1]
+		if s > 0 && is_digit(text[s - 1]):
+			at = s + 1
+			continue
+		if e < text.len && is_digit(text[e]):
+			at = s + 1
+			if regex::run(re2, m2, text, s) && m2.best[0] == s:
+				e2 := m2.best[1]
+				if e2 >= text.len || !is_digit(text[e2]):
+					take(m2)
+					return true
+			continue
+		take(m)
+		return true
+	return false
+var re_mf regex::Regex
+var m_mf regex::Machine
+var ok_mf bool
+var re_mf2 regex::Regex
+var m_mf2 regex::Machine
+var ok_mf2 bool
+var re_ms regex::Regex
+var m_ms regex::Machine
+var ok_ms bool
+var re_ms2 regex::Regex
+var m_ms2 regex::Machine
+var ok_ms2 bool
+var re_dec regex::Regex
+var m_dec regex::Machine
+var ok_dec bool
+var re_dsc regex::Regex
+var m_dsc regex::Machine
+var ok_dsc bool
+var re_dw regex::Regex
+var m_dw regex::Machine
+var ok_dw bool
+var re_bs regex::Regex
+var m_bs regex::Machine
+var ok_bs bool
+var re_br regex::Regex
+var m_br regex::Machine
+var ok_br bool
+var re_sd regex::Regex
+var m_sd regex::Machine
+var ok_sd bool
+var re_sc regex::Regex
+var m_sc regex::Machine
+var ok_sc bool
+var re_ce regex::Regex
+var m_ce regex::Machine
+var ok_ce bool
+var re_nn regex::Regex
+var m_nn regex::Machine
+var ok_nn bool
+var re_uh regex::Regex
+var m_uh regex::Machine
+var ok_uh bool
+var re_sh regex::Regex
+var m_sh regex::Machine
+var ok_sh bool
+var re_nh regex::Regex
+var m_nh regex::Machine
+var ok_nh bool
+var re_bc regex::Regex
+var m_bc regex::Machine
+var ok_bc bool
+find_multi_for(text byte[:], start int) bool:
+	ensure(ok_mf, re_mf, "(\\d{1,2})\\s*for\\s*\\$?\\s*(\\d{1,4}([.,]\\d{2})?)")
+	ensure(ok_mf2, re_mf2, "(\\d{1,2})\\s*for\\s*\\$?\\s*(\\d{1,4})")
+	return scan_multi(re_mf, m_mf, re_mf2, m_mf2, text, start)
+find_multi_slash(text byte[:], start int) bool:
+	ensure(ok_ms, re_ms, "(\\d{1,2})\\s*/\\s*\\$\\s*(\\d{1,4}([.,]\\d{2})?)")
+	ensure(ok_ms2, re_ms2, "(\\d{1,2})\\s*/\\s*\\$\\s*(\\d{1,4})")
+	return scan_multi(re_ms, m_ms, re_ms2, m_ms2, text, start)
+find_decimal(text byte[:], start int) bool:
+	ensure(ok_dec, re_dec, "\\$?\\s*(\\d{1,4})\\s?[.,]\\s?(\\d{2})")
+	return scan(re_dec, m_dec, text, start, "0123456789.,", "0123456789%")
+find_dollar_space_cents(text byte[:], start int) bool:
+	ensure(ok_dsc, re_dsc, "\\$\\s*(\\d{1,3})\\s+(\\d{2})")
+	return scan(re_dsc, m_dsc, text, start, "", "0123456789")
+find_dollar_whole(text byte[:], start int) bool:
+	ensure(ok_dw, re_dw, "\\$\\s*(\\d{1,4})")
+	return scan(re_dw, m_dw, text, start, "", "0123456789.,")
+find_bare_spaced(text byte[:], start int) bool:
+	ensure(ok_bs, re_bs, "^\\s*(\\d{1,2})\\s+(\\d{2})\\s*$")
+	return scan(re_bs, m_bs, text, start, "", "")
+find_bare_run(text byte[:], start int) bool:
+	ensure(ok_br, re_br, "^\\s*(\\d{3,4})\\s*$")
+	return scan(re_br, m_br, text, start, "", "")
+find_split_dollars(text byte[:], start int) bool:
+	ensure(ok_sd, re_sd, "^\\s*\\$?\\s*(\\d{1,2})\\s*$")
+	return scan(re_sd, m_sd, text, start, "", "")
+find_split_cents(text byte[:], start int) bool:
+	ensure(ok_sc, re_sc, "^\\s*(\\d{2})\\s*(¢|c)?\\s*$")
+	return scan(re_sc, m_sc, text, start, "", "")
+find_cents_re(text byte[:], start int) bool:
+	ensure(ok_ce, re_ce, "(\\d{1,2})\\s*(¢|c)")
+	return scan(re_ce, m_ce, text, start, "0123456789.", "abcdefghijklmnopqrstuvwxyz")
+has_name_noise(text const byte[:]) bool:
+	ensure(ok_nn, re_nn, "\\b(price|everyday|rewards?|you pay|with card|limit|guiding stars?|each|ea|per|retail|aisle|shelf)\\b")
+	low := lower(text)
+	return scan(re_nn, m_nn, low, 0, "", "")
+has_unit_hint(text const byte[:]) bool:
+	ensure(ok_uh, re_uh, "(\\bper\\b|/\\s*(oz|lb|kg|g|ml|l|ct|each|ea|100\\s?g|100\\s?ml|fl\\s?oz|qt|gal)\\b|unit\\s*price)")
+	low := lower(text)
+	return scan(re_uh, m_uh, low, 0, "", "")
+has_sale_hint(text const byte[:]) bool:
+	ensure(ok_sh, re_sh, "\\b(sale|save|savings|special|deal|clearance|rollback|bogo|promo|\\d+%\\s*off)\\b")
+	low := lower(text)
+	return scan(re_sh, m_sh, low, 0, "", "")
+full_sale_hint(text const byte[:]) bool:
+	ensure(ok_sh, re_sh, "\\b(sale|save|savings|special|deal|clearance|rollback|bogo|promo|\\d+%\\s*off)\\b")
+	low := lower(text)
+	if !scan(re_sh, m_sh, low, 0, "", ""): return false
+	return grp[0] == 0 && grp[1] == low.len
+has_noise_hint(text const byte[:]) bool:
+	ensure(ok_nh, re_nh, "\\b(sku|upc|plu|item\\s*#|reg(ular)?\\s*price|was)\\b")
+	low := lower(text)
+	return scan(re_nh, m_nh, low, 0, "", "")
+is_barcode(text const byte[:]) bool:
+	ensure(ok_bc, re_bc, "^[IlL1|!iNMHVWUJ\\[\\]]{6,}$")
+	c byte[>..] ~= []
+	c.append(text)
+	return scan(re_bc, m_bc, c, 0, "", "")
+struct CentBonus { cents int, bonus f32 }
+add_free(pairs CentBonus[>..]&, used int[>..]&, s int, e int, cents int, bonus f32):
+	k ~= 0
+	while k < used.len:
+		if s < used[k + 1] && used[k] < e: return
+		k += 2
+	pairs.push(CentBonus{cents: cents, bonus: bonus})
 	used.push(s)
 	used.push(e);
-find_multi(re regex::Regex&, m regex::Machine&, text byte[:], st int) int, int, int, bool:
-	at ~= st
-	while at <= text.len:
-		if !regex::run(re, m, text, at): return 0, 0, 0, false
-		s := m.best[0]
-		e ~= m.best[1]
-		a1 ~= m.best[5]
-		if s > 0 && isdig(text[s - 1]): at = s + 1; continue
-		if e < text.len && isdig(text[e]):
-			cut ~= -1
-			for i m.best[4]..a1:
-				if text[i] == '.' || text[i] == ',': cut = i
-			if cut < 0: at = s + 1; continue
-			e = cut
-			a1 = cut
-		return s, e, a1, true
-	return 0, 0, 0, false
-add_multi(re regex::Regex&, m regex::Machine&, lo byte[:], out Cand[>..]&, used int[>..]&):
-	at ~= 0
-	while at <= lo.len:
-		s, e, a1, ok := find_multi(re, m, lo, at)
-		if !ok: break
-		q, qok := parse_int(lo[m.best[2]..m.best[3]])
-		t, tok := money_parse(lo[m.best[4]..a1])
-		if qok && tok && q > 0 && is_free(used, s, e): push_c(out, used, (t + q / 2) / q, 0.4 as f32, s, e)
-		at = max(e, s + 1)
-step_decimal(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_decimal()
-	at ~= 0
-	while at <= lo.len && find_chk(re_decimal, mc_decimal, lo, at, 2, 2):
-		s := mc_decimal.best[0]
-		e := mc_decimal.best[1]
-		g1 := dval(lo[mc_decimal.best[2]..mc_decimal.best[3]])
-		g2 := dval(lo[mc_decimal.best[4]..mc_decimal.best[5]])
-		if is_free(used, s, e):
-			dollar ~= false
-			for i s..e:
-				if lo[i] == '$': dollar = true
-			bonus := if dollar { 0.3 as f32 } else { 0.1 as f32 }
-			push_c(out, used, g1 * 100 + g2, bonus, s, e)
-		at = max(e, s + 1)
-step_dsc(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_dsc()
-	at ~= 0
-	while at <= lo.len && find_chk(re_dsc, mc_dsc, lo, at, 0, 1):
-		s := mc_dsc.best[0]
-		e := mc_dsc.best[1]
-		g1 := dval(lo[mc_dsc.best[2]..mc_dsc.best[3]])
-		g2 := dval(lo[mc_dsc.best[4]..mc_dsc.best[5]])
-		if is_free(used, s, e): push_c(out, used, g1 * 100 + g2, 0.25 as f32, s, e)
-		at = max(e, s + 1)
-step_dwhole(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_dwhole()
-	at ~= 0
-	while at <= lo.len && find_chk(re_dwhole, mc_dwhole, lo, at, 0, 3):
-		s := mc_dwhole.best[0]
-		e := mc_dwhole.best[1]
-		g1 := dval(lo[mc_dwhole.best[2]..mc_dwhole.best[3]])
-		nd := mc_dwhole.best[3] - mc_dwhole.best[2]
-		if is_free(used, s, e): push_c(out, used, if nd >= 3 { g1 } else { g1 * 100 }, 0.15 as f32, s, e)
-		at = max(e, s + 1)
-step_bare_spaced(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_bare_spaced()
-	if regex::run(re_bare_spaced, mc_bare_spaced, lo, 0):
-		s := mc_bare_spaced.best[0]
-		e := mc_bare_spaced.best[1]
-		g1 := dval(lo[mc_bare_spaced.best[2]..mc_bare_spaced.best[3]])
-		g2 := dval(lo[mc_bare_spaced.best[4]..mc_bare_spaced.best[5]])
-		if is_free(used, s, e): push_c(out, used, g1 * 100 + g2, 0.2 as f32, s, e);
-step_bare_run(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_bare_run()
-	if regex::run(re_bare_run, mc_bare_run, lo, 0):
-		s := mc_bare_run.best[0]
-		e := mc_bare_run.best[1]
-		g1 := dval(lo[mc_bare_run.best[2]..mc_bare_run.best[3]])
-		if is_free(used, s, e): push_c(out, used, g1, (-0.05) as f32, s, e);
-step_cents(lo byte[:], used int[>..]&, out Cand[>..]&):
-	init_cents()
-	at ~= 0
-	while at <= lo.len && find_chk(re_cents, mc_cents, lo, at, 4, 5):
-		s := mc_cents.best[0]
-		e := mc_cents.best[1]
-		g1 := dval(lo[mc_cents.best[2]..mc_cents.best[3]])
-		if is_free(used, s, e): push_c(out, used, g1, 0.1 as f32, s, e)
-		at = max(e, s + 1)
-candidates_in(text byte[:]) Cand[>..]:
-	out Cand[>..] ~= []
+candidates_in(text const byte[:]) CentBonus[>..]:
+	pairs CentBonus[>..] ~= []
 	used int[>..] ~= []
-	lo := lower_copy(text)
-	init_multi_for()
-	add_multi(re_multi_for, mc_multi_for, lo, out, used)
-	init_multi_slash()
-	add_multi(re_multi_slash, mc_multi_slash, lo, out, used)
-	step_decimal(lo, used, out)
-	step_dsc(lo, used, out)
-	step_dwhole(lo, used, out)
-	step_bare_spaced(lo, used, out)
-	step_bare_run(lo, used, out)
-	step_cents(lo, used, out)
-	out
-same_line(x OcrLine, y OcrLine) bool: x.text == y.text && x.left == y.left && x.top == y.top && x.right == y.right && x.bottom == y.bottom
+	orig byte[>..] ~= []
+	orig.append(text)
+	low := lower(text)
+	at ~= 0
+	while at <= low.len:
+		if !find_multi_for(low, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		qty := digits_val(grp_text(low, 1))
+		total, ok := money_parse(grp_text(low, 2))
+		if qty > 0 && ok: add_free(pairs, used, s, e, (total + qty / 2) / qty, 0.4)
+	at = 0
+	while at <= orig.len:
+		if !find_multi_slash(orig, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		qty := digits_val(grp_text(orig, 1))
+		total, ok := money_parse(grp_text(orig, 2))
+		if qty > 0 && ok: add_free(pairs, used, s, e, (total + qty / 2) / qty, 0.4)
+	at = 0
+	while at <= orig.len:
+		if !find_decimal(orig, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		bonus f32 ~= 0.1
+		for c orig[s..e]:
+			if c == '$': bonus = 0.3
+		add_free(pairs, used, s, e, digits_val(grp_text(orig, 1)) * 100 + digits_val(grp_text(orig, 2)), bonus)
+	at = 0
+	while at <= orig.len:
+		if !find_dollar_space_cents(orig, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		add_free(pairs, used, s, e, digits_val(grp_text(orig, 1)) * 100 + digits_val(grp_text(orig, 2)), 0.25)
+	at = 0
+	while at <= orig.len:
+		if !find_dollar_whole(orig, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		g := grp_text(orig, 1)
+		v := digits_val(g)
+		if g.len >= 3: add_free(pairs, used, s, e, v, 0.15) else: add_free(pairs, used, s, e, v * 100, 0.15)
+	if find_bare_spaced(orig, 0):
+		add_free(pairs, used, grp[0], grp[1], digits_val(grp_text(orig, 1)) * 100 + digits_val(grp_text(orig, 2)), 0.2)
+	if find_bare_run(orig, 0):
+		add_free(pairs, used, grp[0], grp[1], digits_val(grp_text(orig, 1)), -0.05)
+	at = 0
+	while at <= low.len:
+		if !find_cents_re(low, at): break
+		s := grp[0]
+		e := grp[1]
+		at = e
+		add_free(pairs, used, s, e, digits_val(grp_text(low, 1)), 0.1)
+	return pairs
 join_superscript(lines OcrLine[:]) OcrLine[>..]:
-	init_split_dollars()
-	init_split_cents()
+	n := lines.len
 	used bool[>..] ~= []
-	for i lines.len: used.push(false)
-	em OcrLine[>..] ~= []
-	cp bool[>..] ~= []
-	for ai lines.len:
-		if used[ai]: continue
-		let a .= lines[ai]
-		if !regex::run(re_split_dollars, mc_split_dollars, a.text, 0):
-			em.push(a)
-			cp.push(true)
+	used.resize(n, false)
+	out OcrLine[>..] ~= []
+	origin int[>..] ~= []
+	for ia n:
+		if used[ia]: continue
+		a := lines[ia]
+		ta := text_of(a)
+		if !find_split_dollars(ta, 0):
+			out.push(a)
+			origin.push(ia)
 			continue
 		d byte[>..] ~= []
-		d.append(a.text[mc_split_dollars.best[2]..mc_split_dollars.best[3]])
-		ah := height(a)
-		found ~= -1
+		d.append(grp_text(ta, 1))
 		cents byte[>..] ~= []
+		found ~= -1
+		ah := height(a)
 		if ah > 0:
-			lim := max((ah * 0.8) as int, 2)
-			acyr := center_y(a) as real
-			for bi lines.len:
-				if found >= 0: break
-				if bi == ai || used[bi]: continue
-				let b .= lines[bi]
+			maxv := max(((ah as real) * 0.8) as int, 2)
+			lo := (a.top as f32) - (ah as f32) * 0.3
+			hi := center_y(a) + (ah as f32) * 0.15
+			for ib n:
+				if ib == ia || used[ib]: continue
+				b := lines[ib]
 				bh := height(b)
-				if bh < 1 || bh >= lim: continue
+				if bh < 1 || bh >= maxv: continue
 				if b.left < a.right - ah / 3: continue
 				if b.left - a.right > ah: continue
-				cy := center_y(b) as real
-				if cy < a.top - ah * 0.3 || cy > acyr + ah * 0.15: continue
-				lo := lower_copy(b.text)
-				if !regex::run(re_split_cents, mc_split_cents, lo, 0): continue
-				cents.append(lo[mc_split_cents.best[2]..mc_split_cents.best[3]])
-				found = bi
-		if found >= 0:
-			used[found] = true
-			nl ~= OcrLine{left: a.left, top: a.top, right: lines[found].right, bottom: a.bottom, ..}
-			nl.text.append("$")
-			nl.text.append(d)
-			nl.text.append(".")
-			nl.text.append(cents)
-			em.push(nl)
-			cp.push(false)
+				cy := center_y(b)
+				if cy < lo || cy > hi: continue
+				tb := lower(text_of(b))
+				if !find_split_cents(tb, 0): continue
+				cents.append(grp_text(tb, 1))
+				found = ib
+				break
+		if found < 0:
+			out.push(a)
+			origin.push(ia)
 		else:
-			em.push(a)
-			cp.push(true)
+			used[found] = true
+			b := lines[found]
+			nt byte[>..] ~= []
+			nt.push('$')
+			nt.append(d)
+			nt.push('.')
+			nt.append(cents)
+			nl OcrLine ~= default<OcrLine>()
+			nl.text.append(nt[..min(nt.len, 256)])
+			nl.left = a.left
+			nl.top = a.top
+			nl.right = b.right
+			nl.bottom = a.bottom
+			out.push(nl)
+			origin.push(-1)
 	res OcrLine[>..] ~= []
-	for k em.len:
-		drop ~= false
-		if cp[k]:
-			for j lines.len:
-				if used[j] && same_line(lines[j], em[k]): drop = true
-		if !drop: res.push(em[k])
-	res
-guess_name(lines OcrLine[:], price_line byte[:], has_price_line bool) byte[>..], bool:
-	out byte[>..] ~= []
-	best_i ~= -1
-	best_s ~= -1
-	init_sale_hint()
-	init_barcode()
-	for i lines.len:
-		let l .= lines[i]
-		if has_price_line && l.text == price_line: continue
-		if has_unit_hint(l.text) || has_noise_hint(l.text) || has_name_noise(l.text): continue
-		t := trim(l.text)
-		tl := lower_copy(t)
-		if fully(re_sale_hint, mc_sale_hint, tl): continue
-		if fully(re_barcode, mc_barcode, t): continue
+	for i out.len:
+		if origin[i] >= 0 && used[origin[i]]: continue
+		res.push(out[i])
+	return res
+skip_line(l OcrLine, price_line const byte[:], has_price_line bool) bool:
+	t := text_of(l)
+	if has_price_line && t == price_line: return true
+	if has_unit_hint(t) || has_noise_hint(t) || has_name_noise(t): return true
+	s := strip(t)
+	if full_sale_hint(s) || is_barcode(s): return true
+	return false
+guess_name(lines OcrLine[:], price_line const byte[:], has_price_line bool) byte[>..], bool:
+	best byte[>..] ~= []
+	best_score ~= -1
+	found ~= false
+	for l lines:
+		if skip_line(l, price_line, has_price_line): continue
+		t := strip(text_of(l))
 		letters ~= 0
 		total ~= 0
-		for ch l.text:
-			if (ch & 0xC0) == 0x80: continue
+		for c t:
+			if c >= 128 && c < 192: continue
 			total += 1
-			if ch >= 0x80 || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'): letters += 1
-		if letters >= 3 && (letters as real) / (total as real) > 0.5:
-			sc := max(height(l), 1) * 10 + letters
-			if sc > best_s: best_s = sc; best_i = i
-	if best_i < 0: return out, false
-	out.append(trim(lines[best_i].text))
-	return out, true
+			if c >= 192 || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'): letters += 1
+		if letters < 3 || letters * 2 <= total: continue
+		score := max(height(l), 1) * 10 + letters
+		if !found || score > best_score:
+			best.clear()
+			best.append(t)
+			best_score = score
+			found = true
+	return best, found
 parse(raw OcrLine[:]) ShelfTagResult:
-	res ~= default<ShelfTagResult>()
+	res ShelfTagResult ~= default<ShelfTagResult>()
 	if raw.len == 0: return res
 	lines := join_superscript(raw)
 	mh ~= 1
-	for i lines.len: mh = max(mh, height(lines[i]))
+	for l lines:
+		if height(l) > mh: mh = height(l)
 	max_h := mh as f32
-	for i lines.len:
-		let l .= lines[i]
+	for l lines:
 		h := height(l)
-		rel := if h > 0 { (h as f32) / max_h } else { 0.5 as f32 }
-		unit := has_unit_hint(l.text)
-		noise := has_noise_hint(l.text)
-		cs := candidates_in(l.text)
-		for c cs:
-			sc ~= rel + c.bonus
-			if unit: sc -= 1.0 as f32
-			if noise: sc -= 0.6 as f32
-			if c.cents >= 1 && c.cents <= 999999:
-				pc ~= PriceCandidate{cents: c.cents, score: sc, is_unit: unit, ..}
-				pc.line.append(l.text)
-				res.candidates.push(pc)
+		rel f32 ~= 0.5
+		if h > 0: rel = (h as f32) / max_h
+		t := text_of(l)
+		unit := has_unit_hint(t)
+		noise := has_noise_hint(t)
+		ps := candidates_in(t)
+		for p ps:
+			score f32 ~= rel + p.bonus
+			if unit: score -= 1.0
+			if noise: score -= 0.6
+			if p.cents < 1 || p.cents > 999999: continue
+			pc PriceCandidate ~= default<PriceCandidate>()
+			pc.cents = p.cents
+			pc.score = score
+			pc.is_unit = unit
+			pc.line.append(t)
+			res.candidates.push(pc)
 	bi ~= -1
 	for i res.candidates.len:
-		let cd .= res.candidates[i]
-		if !cd.is_unit && (bi < 0 || cd.score > res.candidates[bi].score): bi = i
-	bline byte[>..] ~= []
-	if bi >= 0: bline.append(res.candidates[bi].line)
+		if res.candidates[i].is_unit: continue
+		if bi < 0 || res.candidates[i].score > res.candidates[bi].score: bi = i
+	has_best := bi >= 0
+	best_line byte[>..] ~= []
+	use_all ~= true
+	ah ~= 0
+	cy f32 ~= 0.0
+	lim f32 ~= 0.0
+	if has_best:
+		res.price = res.candidates[bi].cents
+		res.has_price = true
+		best_line.append(res.candidates[bi].line)
+		for i lines.len:
+			if text_of(lines[i]) == best_line:
+				anchor := lines[i]
+				ah = height(anchor)
+				cy = center_y(anchor)
+				lim = (ah as f32) * 3.5
+				use_all = false
+				break
 	pool OcrLine[>..] ~= []
-	anc ~= -1
-	if bi >= 0:
-		for i lines.len:
-			if anc < 0 && lines[i].text == bline: anc = i
-	if anc >= 0:
-		ah := height(lines[anc])
-		acy := center_y(lines[anc])
-		for i lines.len:
-			let l .= lines[i]
-			if ah <= 0 || (abs(center_y(l) - acy) as real) <= ah * 3.5: pool.push(l)
-	else:
-		for i lines.len: pool.push(lines[i])
-	nm, nok := guess_name(pool, bline, bi >= 0)
-	if nok: res.name.append(nm); res.has_name = true
-	for i lines.len:
-		let l .= lines[i]
-		if !res.has_size:
-			q, ok := unit_parse(l.text)
-			if ok: res.size.append(q.source); res.has_size = true
-		if has_sale_hint(l.text): res.on_sale = true
-	if bi >= 0: res.price = res.candidates[bi].cents; res.has_price = true
+	for l lines:
+		if use_all || ah <= 0 || abs(center_y(l) - cy) <= lim: pool.push(l)
+	nm, has_name := guess_name(pool, best_line, has_best)
+	res.has_name = has_name
+	res.name.append(nm)
+	for l lines:
+		q, ok := unit_parse(text_of(l))
+		if ok:
+			res.size.append(q.source)
+			res.has_size = true
+			break
+	for l lines:
+		if has_sale_hint(text_of(l)):
+			res.on_sale = true
+			break
 	stable_sort(res.candidates) { a, b => a.score > b.score }
-	res
-add_line(lines OcrLine[>..]&, s byte[:]):
-	if trim(s).len == 0: return
-	l ~= default<OcrLine>()
+	return res
+push_line(lines OcrLine[>..]&, s const byte[:]):
+	if is_blank(s): return
+	l OcrLine ~= default<OcrLine>()
 	l.text.append(s[..min(s.len, 256)])
 	lines.push(l);
-parse_text(text byte[:]) ShelfTagResult:
+parse_text(text const byte[:]) ShelfTagResult:
 	lines OcrLine[>..] ~= []
-	st ~= 0
+	cur byte[>..] ~= []
 	i ~= 0
 	while i < text.len:
 		c := text[i]
-		if c == '\n' || c == '\r':
-			add_line(lines, text[st..i])
-			if c == '\r' && i + 1 < text.len && text[i + 1] == '\n': i += 1
-			st = i + 1
+		if c == 10 || c == 13:
+			push_line(lines, cur)
+			cur.clear()
+			if c == 13 && i + 1 < text.len && text[i + 1] == 10: i += 1
+		else: cur.push(c)
 		i += 1
-	add_line(lines, text[st..])
-	parse(lines)
+	push_line(lines, cur)
+	return parse(lines)

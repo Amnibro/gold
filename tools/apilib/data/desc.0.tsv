@@ -55,3 +55,725 @@ ui.he	group_padding(c Context) float2	Layout	pub	Returns the padding inside grou
 ui.he	wrap_height(c Context, f Font, s const byte[:], width f32) f32	Text Labels	pub	Returns the height needed to draw text wrapped to a width with a font, or 0 if invalid.
 ui.he	kw(fid u32, t const byte[:], ps int, cs int, ce int) f32	Text Editing	int	Returns the pixel width of a glyph run in a text slice, kerning-adjusted against the previous character when one exists.
 ui.he	touch_cancel(c Context)	Input	pub	Cancels the in-progress left-button touch press on a context, releasing it and moving its pointer far offscreen.
+gfx/clusters.amni	let CX = 16;	Grid Dimensions	int	Number of cluster cells along the horizontal screen axis in the light-assignment grid.
+gfx/clusters.amni	let CY = 9;	Grid Dimensions	int	Number of cluster cells along the vertical screen axis in the light-assignment grid.
+gfx/clusters.amni	let CZ = 24;	Grid Dimensions	int	Number of logarithmically spaced depth slices in the light-assignment grid.
+gfx/clusters.amni	let MAX_PER = 255;	Grid Dimensions	int	Maximum number of lights stored for any single cluster cell; extra lights are dropped.
+gfx/clusters.amni	var counts int[>..];	Light Assignment	int	Scratch array holding per-cell light counts, reused as write offsets while building the grid.
+gfx/clusters.amni	var pair_c int[>..];	Light Assignment	int	Scratch array of cell indices, paired with the light indices in the matching light array.
+gfx/clusters.amni	var pair_l int[>..];	Light Assignment	int	Scratch array of light indices, paired with the cell indices in the matching cell array.
+gfx/clusters.amni	fn build(view gfx::mat4, tan_x f32, tan_y f32, near f32, far f32, lights const float4[:], out u32[>..]&)	Light Assignment	pub	Builds the cluster light grid from view-space lights, writing cell headers followed by light index lists into out.
+gfx/clusters.amni	fn slice_of(z f32, near f32, far f32) int	Grid Dimensions	int	Returns the depth slice index for a view-space depth, clamped to the valid slice range.
+gfx/clusters.amni	fn depth_at(k int, near f32, far f32) f32	Grid Dimensions	int	Returns the near-plane depth of a depth slice, using the same logarithmic spacing as the slices.
+gfx/clusters.amni	fn cell(v f32, n int) int	Grid Dimensions	int	Returns a cell index from a continuous grid coordinate, clamped to the valid range for that axis.
+gfx/clusters.amni	fn place(view gfx::mat4, tan_x f32, tan_y f32, near f32, far f32, l float4, li int)	Light Assignment	int	Adds one light's index to every cluster cell its bounding sphere overlaps, recording cell and light pairs.
+gfx/clusters.amni	fn finish(out u32[>..]&)	Light Assignment	int	Packs the recorded cell and light pairs into the output array as headers plus index lists, capping each cell.
+gfx/codec_hdr.amni	var scales f32[256];	HDR Decoding	int	Lookup table of 256 float multipliers, indexed by RGBE exponent byte, used to scale mantissas during decoding.
+gfx/codec_hdr.amni	var scales_ready bool = false;	HDR Decoding	int	Flag indicating whether the exponent scale table has been filled in yet.
+gfx/codec_hdr.amni	fn is_hdr(b const byte[:]) bool	HDR Decoding	pub	Returns whether the bytes begin with the "#?" signature of a Radiance HDR file.
+gfx/codec_hdr.amni	fn next_line(b const byte[:], at int&) const byte[:], bool	HDR Decoding	int	Reads the next newline-terminated line from the bytes starting at an offset, advancing it; returns false if no newline remains.
+gfx/codec_hdr.amni	fn decode(b const byte[:], out f32[>..]&) int, int, bool	HDR Decoding	pub	Decodes Radiance HDR bytes into RGBA float pixels, returning width, height and false on malformed or unsupported data.
+gfx/codec_hdr.amni	fn half_pixels(rgba const f32[:], out byte[>..]&)	Pixel Conversion	pub	Converts RGBA float values into packed 16-bit half-float bytes, clamping negatives and NaN to zero and large values to the half maximum.
+gfx/codec_jpeg.amni	var planes byte[>..];	JPEG Decoding	int	Global buffer holding decoded sample bytes for all channels, written by the inverse DCT during decoding.
+gfx/codec_jpeg.amni	var coefs i16[>..];	JPEG Decoding	int	Global buffer of quantized DCT coefficients stored as 16-bit integers, used internally while decoding scans.
+gfx/codec_jpeg.amni	fn idct(offset int, row_len int, bx int, by int, coef f32[64]&, tmp f32[64]&, B const f32[64]&)	JPEG Decoding	int	Performs an 8x8 inverse DCT on a coefficient block and writes clamped 0-255 samples into the plane buffer.
+gfx/codec_jpeg.amni	fn size(b const byte[:]) int, int, bool	JPEG Decoding	pub	Returns width, height and a success flag read from a JPEG's frame header, with false meaning invalid or unreadable data.
+gfx/codec_jpeg_enc.amni	let ZZ int[64] = [0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6, 7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 	JPEG Encoding	int	Zigzag scan order table mapping coefficient positions in an 8x8 block, used internally during quantization and header output.
+gfx/codec_jpeg_enc.amni	let LUM_Q byte[64] = [16, 11, 10, 16, 24, 40, 51, 61, 12, 12, 14, 19, 26, 58, 60, 55, 14, 13, 16, 24, 40, 57, 69, 56, 14, 17, 22, 29, 51, 87, 80, 62, 18, 22, 37, 56, 68, 109, 103, 77, 24, 35, 55, 64, 81, 104, 113, 92, 49	JPEG Encoding	int	Standard JPEG luminance quantization base table of 64 entries, scaled by quality before use.
+gfx/codec_jpeg_enc.amni	let CHR_Q byte[64] = [17, 18, 24, 47, 99, 99, 99, 99, 18, 21, 26, 66, 99, 99, 99, 99, 24, 26, 56, 99, 99, 99, 99, 99, 47, 66, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99	JPEG Encoding	int	Standard JPEG chrominance quantization base table of 64 entries, scaled by quality before use.
+gfx/codec_jpeg_enc.amni	let DC_LUM_BITS byte[16] = [0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0];	JPEG Encoding	int	Huffman code length counts for the standard luminance DC table.
+gfx/codec_jpeg_enc.amni	let DC_LUM_VALS byte[12] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];	JPEG Encoding	int	Symbol values for the standard luminance DC Huffman table.
+gfx/codec_jpeg_enc.amni	let DC_CHR_BITS byte[16] = [0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0];	JPEG Encoding	int	Huffman code length counts for the standard chrominance DC table.
+gfx/codec_jpeg_enc.amni	let DC_CHR_VALS byte[12] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];	JPEG Encoding	int	Symbol values for the standard chrominance DC Huffman table.
+gfx/codec_jpeg_enc.amni	let AC_LUM_BITS byte[16] = [0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7d];	JPEG Encoding	int	Huffman code length counts for the standard luminance AC table.
+gfx/codec_jpeg_enc.amni	let AC_LUM_VALS byte[162] = [0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xa1, 0x08, 0x23, 0x42, 0xb1, 0xc1, 0x15, 0x52, 0xd1, 0xf0,	JPEG Encoding	int	Symbol values for the standard luminance AC Huffman table.
+gfx/codec_jpeg_enc.amni	let AC_CHR_BITS byte[16] = [0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77];	JPEG Encoding	int	Huffman code length counts for the standard chrominance AC table.
+gfx/codec_jpeg_enc.amni	let AC_CHR_VALS byte[162] = [0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, 0xa1, 0xb1, 0xc1, 0x09, 0x23, 0x33, 0x52, 0xf0,	JPEG Encoding	int	Symbol values for the standard chrominance AC Huffman table.
+gfx/codec_jpeg_enc.amni	fn put8(out byte[>..]&, v int)	JPEG Encoding	int	Appends a single byte to the output buffer.
+gfx/codec_jpeg_enc.amni	fn put16(out byte[>..]&, v int)	JPEG Encoding	int	Appends a 16-bit value to the output buffer in big-endian byte order.
+gfx/codec_jpeg_enc.amni	fn put_list(out byte[>..]&, xs int[:])	JPEG Encoding	int	Appends each integer in a list to the output buffer as a byte.
+gfx/codec_jpeg_enc.amni	fn put_dht(out byte[>..]&, tc_th int, bits const byte[:], vals const byte[:])	JPEG Encoding	int	Appends a Huffman table definition, with its class and ID byte, to the output buffer.
+gfx/codec_jpeg_enc.amni	fn encode(rgba const byte[:], w int, h int, quality int, out byte[>..]&) bool	JPEG Encoding	pub	Encodes RGBA pixels into JPEG data in the output buffer, returning false if dimensions are invalid or pixels are too few.
+gfx/codec_jpeg_enc.amni	struct HT	JPEG Encoding	int	Huffman lookup table holding the code and bit length for each symbol.
+gfx/codec_jpeg_enc.amni	struct BitW	JPEG Encoding	int	Bit writer state holding pending accumulated bits and their count.
+gfx/codec_jpeg_enc.amni	fn build_table(bits const byte[:], vals const byte[:]) HT	JPEG Encoding	int	Builds a Huffman code lookup table from code length counts and symbol values.
+gfx/codec_jpeg_enc.amni	fn scaled_q(base const byte[:], quality int) int[64]	JPEG Encoding	int	Returns a quantization table scaled by quality, with quality clamped to 1 through 100.
+gfx/codec_jpeg_enc.amni	fn cos_table() real[64]	JPEG Encoding	int	Returns the precomputed cosine table used by the 8x8 discrete cosine transform.
+gfx/codec_jpeg_enc.amni	fn fdct(f real[64]&, cs real[:])	JPEG Encoding	int	Performs an in-place forward discrete cosine transform on an 8x8 block.
+gfx/codec_jpeg_enc.amni	fn transform(f real[64]&, cs real[:], q int[:], zz int[64]&)	JPEG Encoding	int	Applies the DCT and quantization to a block, storing rounded coefficients in zigzag order.
+gfx/codec_jpeg_enc.amni	fn load_y(f real[64]&, yp real[:], pw int, x0 int, y0 int)	JPEG Encoding	int	Loads an 8x8 block of luminance samples into the working block, shifted by 128.
+gfx/codec_jpeg_enc.amni	fn load_c(f real[64]&, p real[:], pw int, cx0 int, cy0 int)	JPEG Encoding	int	Loads an 8x8 chrominance block by averaging 2x2 pixel groups, shifted by 128.
+gfx/codec_jpeg_enc.amni	fn put_bits(out byte[>..]&, bw BitW&, code int, size int)	JPEG Encoding	int	Writes the low bits of a code to the bit stream, inserting a zero byte after any 0xFF.
+gfx/codec_jpeg_enc.amni	fn flush_bits(out byte[>..]&, bw BitW&)	JPEG Encoding	int	Pads any remaining partial byte with one bits and writes it to the output.
+gfx/codec_jpeg_enc.amni	fn bit_size(v int) int	JPEG Encoding	int	Returns the number of bits needed to represent the absolute value of an integer.
+gfx/codec_jpeg_enc.amni	fn code_block(zz int[:], pred int&, dc HT&, ac HT&, bw BitW&, out byte[>..]&)	JPEG Encoding	int	Huffman-encodes one quantized block, writing the DC difference and run-length coded AC coefficients.
+gfx/codec_png.amni	var idat byte[>..];	PNG Decoding	int	Module-level buffer holding concatenated IDAT chunk data during decoding, used only internally by the decoder.
+gfx/codec_png.amni	var raw byte[>..];	PNG Decoding	int	Module-level buffer holding decompressed scanline bytes during decoding, used only internally by the decoder.
+gfx/codec_png.amni	fn size(b const byte[:]) int, int, bool	PNG Decoding	pub	Returns the width and height of a PNG from its header, with false if the data is invalid or empty.
+gfx/envmap.amni	var on bool = false;	Environment Lighting	pub	Flag that enables image-based environment lighting, set true once an environment map or sky has been loaded.
+gfx/envmap.amni	var physical bool = false;	Sky Generation	pub	Flag that is true when the current environment comes from the physical sky model rather than an equirectangular image.
+gfx/envmap.amni	var intensity f32 = 1.0;	Environment Lighting	pub	Brightness multiplier applied to the environment lighting, defaulting to 1.0.
+gfx/envmap.amni	var rotation f32 = 0.0;	Environment Lighting	pub	Rotation of the environment map, defaulting to 0.0.
+gfx/envmap.amni	var blur f32 = 0.0;	Environment Lighting	pub	Blur amount for the environment, defaulting to 0.0.
+gfx/envmap.amni	var size int = 512;	Environment Lighting	pub	Face resolution in pixels of the prefiltered cubemap built from an equirectangular map, defaulting to 512.
+gfx/envmap.amni	var samples int = 512;	Environment Lighting	pub	Number of GGX samples used per texel when prefiltering the cubemap, defaulting to 512.
+gfx/envmap.amni	var cube gfx::Texture;	Environment Lighting	int	Prefiltered GGX cubemap holding the specular and irradiance mip levels.
+gfx/envmap.amni	var dummy gfx::Texture;	Environment Lighting	int	Placeholder 1x1 black cubemap returned when no environment is active.
+gfx/envmap.amni	var smp gfx::Sampler;	Environment Lighting	int	Clamp-addressed linear sampler used when reading cubemap sources.
+gfx/envmap.amni	var smp_wrap gfx::Sampler;	Environment Lighting	int	Linear sampler that repeats horizontally, used for reading equirectangular maps.
+gfx/envmap.amni	var pipe_equi gfx::Pipeline;	Environment Lighting	int	Pipeline that renders an equirectangular image into cubemap faces.
+gfx/envmap.amni	var pipe_ggx gfx::Pipeline;	Environment Lighting	int	Pipeline that renders GGX-prefiltered cubemap mip levels.
+gfx/envmap.amni	var ready bool = false;	Environment Lighting	int	Flag recording that the shared samplers, pipelines and dummy texture have been created.
+gfx/envmap.amni	var lv int = 0;	Environment Lighting	int	Number of mip levels in the current prefiltered cubemap.
+gfx/envmap.amni	struct EnvU	Environment Lighting	int	Uniform block passed to the environment fragment shaders, packing face index, roughness, sample count and source size.
+gfx/envmap.amni	fn setup()	Environment Lighting	int	Creates the shared pipelines, samplers and dummy cubemap once; later calls do nothing.
+gfx/envmap.amni	fn levels(s int) int	Environment Lighting	int	Returns the number of prefiltered mip levels for a cubemap of the given size, at least 2.
+gfx/envmap.amni	fn faces(t gfx::Texture, m int, p gfx::Pipeline, src gfx::Texture, s gfx::Sampler, rough f32, count f32, src_size f32)	Environment Lighting	int	Renders all six faces of one cubemap mip with the given pipeline, source texture and roughness.
+gfx/envmap.amni	fn filter(raw gfx::Texture, n int)	Environment Lighting	int	Prefilters a raw cubemap of the given size into the GGX-blurred cubemap, reallocating it if the level count changes.
+gfx/envmap.amni	fn sun_color(to_sun float3, power f32, haze f32) float3	Sky Generation	pub	Returns the sun's color for a given direction by integrating atmospheric scattering, with power and haze scaling; black if the sun is below the planet's horizon.
+gfx/envmap.amni	struct EnvSkyU	Sky Generation	int	Uniform block passed to the sky fragment shader, packing face, sun direction and power, and cloud settings.
+gfx/envmap.amni	var pipe_ms gfx::Pipeline;	Sky Generation	int	Pipeline that renders the multiple-scattering lookup texture for the sky.
+gfx/envmap.amni	var pipe_sky gfx::Pipeline;	Sky Generation	int	Pipeline that renders the procedural sky into cubemap faces.
+gfx/envmap.amni	var sky_ready bool = false;	Sky Generation	int	Flag recording that the sky pipelines have been created.
+gfx/envmap.amni	fn mip_count(n int) int	Sky Generation	int	Returns the number of mip levels in a full chain for a texture of the given size.
+gfx/envmap.amni	fn setup_sky()	Sky Generation	int	Creates the sky pipelines once; later calls do nothing.
+gfx/envmap.amni	fn set_sky(to_sun float3, power f32, haze f32, clouds f32, n int, wind_x f32, wind_z f32)	Sky Generation	pub	Generates a procedural sky cubemap from sun direction, power, haze and clouds, then prefilters it for lighting.
+gfx/envmap.amni	fn set_equirect(rgba const f32[:], w int, h int)	Environment Lighting	pub	Sets the environment from raw equirectangular float RGBA pixels of the given width and height, then prefilters it.
+gfx/envmap.amni	fn load(path const byte[:]) bool	Environment Lighting	pub	Loads an HDR image file as the environment map, returning false if reading or decoding fails.
+gfx/envmap.amni	fn texture() gfx::Texture	Environment Lighting	pub	Returns the prefiltered environment cubemap, or a black dummy cubemap when no environment is active.
+gfx/envmap.amni	fn spec_lod() f32	Environment Lighting	pub	Returns the mip level used for specular reflection sampling, the second-to-last level.
+gfx/envmap.amni	fn irr_lod() f32	Environment Lighting	pub	Returns the mip level holding the diffuse irradiance, the last level.
+gfx/gltf.amni	struct PLight	Lighting	pub	Describes one punctual light from the asset, with kind, color, range and inner and outer cone angles.
+gfx/gltf.amni	var lazy_pixels = false;	Loading	pub	Flag that, when true, keeps images compressed and defers pixel decoding until needed.
+gfx/gltf.amni	var bad_images = 0;	Loading	pub	Counts images that failed to decode and were replaced by placeholder pixels.
+gfx/gltf.amni	var coded byte[>..];	Asset Data	int	Pool of still-compressed PNG or JPEG image bytes kept for lazily decoded images.
+gfx/gltf.amni	var decoded byte[>..];	Asset Data	int	Scratch buffer holding RGBA pixels of the most recently decoded lazy image.
+gfx/gltf.amni	var decoded_of = -1;	Asset Data	int	Index of the image currently held in the decoded buffer, or -1 for none.
+gfx/gltf.amni	var plights PLight[>..];	Lighting	pub	Pool of all punctual lights read from loaded assets.
+gfx/gltf.amni	fn need_pixels(i int)	Loading	pub	Decodes the lazy image at the given index into the shared buffer, substituting white pixels on failure.
+gfx/gltf.amni	fn image_pixels(i int) const byte[:]	Loading	pub	Returns the RGBA pixels of an image, or an empty slice if a lazy image is not yet decoded.
+gfx/gltf.amni	fn presize(d json::Doc&, root int)	Loading	int	Reserves vertex and index pool capacity for large assets before parsing, based on accessor counts.
+gfx/gltf.amni	fn shade_preset(kind int, part int) float4	Materials	int	Returns a built-in float4 shading preset chosen by kind and part index, or all zeros when the pair has no preset.
+gfx/motion.amni	let MAX_WEIGHTS = 64;	Morph Weights	pub	Constant giving the maximum number of morph target weights stored per node in the pose weight array.
+gfx/scene3d.amni	let LOCAL_LAYERS = 12;	Lights	int	Number of depth layers in the local light shadow map array, matching the local matrix count in the frame uniforms.
+gfx/scene3d.amni	let HIZ_LEVELS = 7;	Screen Space Reflections	int	Number of reduced depth mip levels built for tracing screen space reflections.
+gfx/scene3d.amni	struct NodeOv	Scene Items	pub	Record of a per-item node override holding translation, rotation and scale applied when posing.
+gfx/scene3d.amni	struct WeightOv	Scene Items	pub	Record of a per-item morph weight override for one node and weight index.
+gfx/scene3d.amni	struct ExtU	Shading	int	Uniform block carrying extended material parameters and texture transforms such as specular, coat, transmission and iridescence.
+gfx/scene3d.amni	struct ContactU	Ambient Occlusion	int	Uniform block of lens, jitter, sun direction and tuning values for the contact shadow pass.
+gfx/scene3d.amni	struct HistU	Color Grading	int	Uniform block giving the size and range for the exposure histogram compute pass.
+gfx/scene3d.amni	struct AdaptU	Color Grading	int	Uniform block with range, percentile and rate values for the exposure adaptation compute pass.
+gfx/scene3d.amni	struct SsrU	Screen Space Reflections	int	Uniform block of lens, jitter, tuning, edge and matrix values for the screen space reflection trace.
+gfx/scene3d.amni	struct HizU	Screen Space Reflections	int	Uniform block holding the parameters for building one hierarchical depth level.
+gfx/scene3d.amni	var spec_occlusion = true;	Ambient Occlusion	pub	Switch enabling specular occlusion, on by default.
+gfx/scene3d.amni	var ssr_on = false;	Screen Space Reflections	pub	Switch enabling screen space reflections, off by default.
+gfx/scene3d.amni	var ssr_steps = 48;	Screen Space Reflections	pub	Number of steps taken when tracing each reflection ray, 48 by default.
+gfx/scene3d.amni	var ssr_thickness f32 = 0.05;	Screen Space Reflections	pub	Assumed depth thickness of surfaces when testing reflection ray hits, 0.05 by default.
+gfx/scene3d.amni	var ssr_max_dist f32 = 3.0;	Screen Space Reflections	pub	Maximum distance a reflection ray travels, 3.0 by default.
+gfx/scene3d.amni	var ssr_rough f32 = 0.5;	Screen Space Reflections	pub	Roughness setting for screen space reflections, 0.5 by default.
+gfx/scene3d.amni	var ssr_edge f32 = 0.07;	Screen Space Reflections	pub	Width of the fade applied near screen edges for reflections, 0.07 by default.
+gfx/scene3d.amni	var ssr_hit gfx::Texture;	Screen Space Reflections	int	Render target storing reflection ray hit results, created on demand.
+gfx/scene3d.amni	var ssr_prev gfx::Texture;	Screen Space Reflections	int	Copy of the previous frame's color used as the source for reflected color.
+gfx/scene3d.amni	var hiz gfx::Texture[>..] = [];	Screen Space Reflections	int	List of reduced-resolution depth textures used to accelerate reflection tracing.
+gfx/scene3d.amni	var ssr_have = false;	Screen Space Reflections	int	Flag recording whether a previous frame copy is available for reflections.
+gfx/scene3d.amni	var bent_ran = false;	Ambient Occlusion	int	Flag recording whether the bent normal pass ran this frame.
+gfx/scene3d.amni	var mt_ran = false;	Motion Blur	int	Flag recording whether the motion tile pass ran this frame.
+gfx/scene3d.amni	var pipe_hiz gfx::Pipeline;	Screen Space Reflections	int	Pipeline that builds the hierarchical depth levels.
+gfx/scene3d.amni	var pipe_ssr gfx::Pipeline;	Screen Space Reflections	int	Pipeline that traces screen space reflection rays.
+gfx/scene3d.amni	var pipe_ssr_copy gfx::Pipeline;	Screen Space Reflections	int	Pipeline that copies the frame for use as reflection color source.
+gfx/scene3d.amni	var pipe_blend_back gfx::Pipeline;	Rendering Setup	int	Pipeline drawing blended surface back faces.
+gfx/scene3d.amni	var pipe_trans_copy gfx::Pipeline;	Rendering Setup	int	Pipeline that copies the scene color for transmissive surfaces to sample.
+gfx/scene3d.amni	var pipe_contact gfx::Pipeline;	Shadows	int	Pipeline that renders screen space contact shadows.
+gfx/scene3d.amni	var contact_tex gfx::Texture;	Shadows	int	Render target holding contact shadow results.
+gfx/scene3d.amni	var contact_steps = 12;	Shadows	pub	Number of steps taken when marching contact shadows, 12 by default.
+gfx/scene3d.amni	var contact_thick f32 = 0.02;	Shadows	pub	Assumed depth thickness used for contact shadow hit tests, 0.02 by default.
+gfx/scene3d.amni	var pipe_dof_pack gfx::Pipeline;	Depth of Field	int	Pipeline that packs color and blur data for the depth of field pass.
+gfx/scene3d.amni	var pipe_hist gfx::ComputePipeline;	Color Grading	int	Compute pipeline that builds the luminance histogram for auto exposure.
+gfx/scene3d.amni	var pipe_adapt gfx::ComputePipeline;	Color Grading	int	Compute pipeline that adapts exposure toward the target using the histogram.
+gfx/scene3d.amni	var hist_buf gfx::Buffer;	Color Grading	int	Storage buffer holding the luminance histogram bins.
+gfx/scene3d.amni	var expo_buf gfx::Buffer;	Color Grading	int	Storage buffer holding the current adapted exposure value.
+gfx/scene3d.amni	var expo_fresh = true;	Color Grading	int	Flag marking that exposure has not yet adapted, so it can start fresh.
+gfx/scene3d.amni	var exposure_dt f32 = 0.0166667;	Color Grading	pub	Time step in seconds used when adapting auto exposure, defaulting to one sixtieth.
+gfx/scene3d.amni	var lut_tex gfx::Texture;	Color Grading	int	Texture holding the color grading lookup table.
+gfx/scene3d.amni	var lut_n = 0;	Color Grading	int	Edge size of the color grading lookup table, zero until one is created.
+gfx/scene3d.amni	var ae_log_min f32 = -10.0;	Color Grading	int	Lower bound of the log luminance range covered by the exposure histogram.
+gfx/scene3d.amni	var ae_log_max f32 = 10.0;	Color Grading	int	Upper bound of the log luminance range covered by the exposure histogram.
+gfx/scene3d.amni	var local_map gfx::Texture;	Shadows	int	Shadow map array for local lights.
+gfx/scene3d.amni	var local_size = 0;	Shadows	int	Current resolution of the local light shadow map.
+gfx/scene3d.amni	var local_shadow_size = 1024;	Shadows	pub	Resolution in texels of local light shadow maps, 1024 by default.
+gfx/scene3d.amni	var local_used = 0;	Shadows	int	Count of local shadow layers used this frame.
+gfx/scene3d.amni	var local_vp gfx::mat4[>..] = [];	Shadows	int	View-projection matrices for local light shadow layers.
+gfx/scene3d.amni	var spec_aa = true;	Shading	pub	Switch enabling specular antialiasing, on by default.
+gfx/scene3d.amni	var wet f32 = 0.0;	Shading	pub	Wetness amount applied to surfaces, 0 by default.
+gfx/scene3d.amni	var world_time f32 = 0.0;	Shading	pub	Time value in seconds passed to shaders, 0 by default.
+gfx/scene3d.amni	var snow f32 = 0.0;	Shading	pub	Snow coverage amount applied to surfaces, 0 by default.
+gfx/scene3d.amni	var light_data float4[>..] = [];	Lights	int	CPU list of packed per-light data uploaded for shading.
+gfx/scene3d.amni	var light_xr float4[>..] = [];	Lights	int	CPU list of extra packed per-light data uploaded alongside light data.
+gfx/scene3d.amni	var cluster_words u32[>..] = [];	Lights	int	CPU list of clustered light assignment words uploaded to the GPU.
+gfx/scene3d.amni	var light_buf gfx::Buffer;	Lights	int	Storage buffer holding packed light data.
+gfx/scene3d.amni	var cluster_buf gfx::Buffer;	Lights	int	Storage buffer holding clustered light assignment words.
+gfx/scene3d.amni	var light_cap = 0;	Lights	int	Current capacity of the light storage buffer.
+gfx/scene3d.amni	var cluster_cap = 0;	Lights	int	Current capacity of the cluster storage buffer.
+gfx/scene3d.amni	var ext_size = 1024;	Shading	int	Edge size in pixels of each layer in the extended material texture arrays.
+gfx/scene3d.amni	var ext_arr gfx::Texture[2] = [gfx::Texture { 0 }, gfx::Texture { 0 }];	Shading	int	Two texture arrays holding linear and sRGB layers for extended material maps.
+gfx/scene3d.amni	var ext_cap int[2] = [0, 0];	Shading	int	Layer capacity of each extended material texture array.
+gfx/scene3d.amni	var ext_cnt int[2] = [0, 0];	Shading	int	Count of layers allocated in each extended material texture array.
+gfx/scene3d.amni	var ext_dirty bool[2] = [false, false];	Shading	int	Flags marking arrays that need mips regenerated.
+gfx/scene3d.amni	var ext_map int[>..] = [];	Shading	int	Lookup from image and color space to its layer in the extended arrays.
+gfx/scene3d.amni	var ext_src int[>..] = [];	Shading	int	Flat list of triples recording array, source image and layer for rebuilding extended arrays.
+gfx/scene3d.amni	var ext_zero ExtU;	Shading	int	Default empty extended material uniform block.
+gfx/scene3d.amni	var ext_pushed = false;	Shading	int	Flag recording whether extended material uniforms have been pushed.
+gfx/scene3d.amni	var smp_ext gfx::Sampler;	Shading	int	Sampler with repeat wrapping and anisotropy for the extended material arrays.
+gfx/scene3d.amni	var pipe_ext_copy gfx::Pipeline;	Shading	int	Pipeline that copies a source image into a layer of an extended array.
+gfx/scene3d.amni	var trans_tex gfx::Texture;	Shading	int	Texture holding scene color that transmissive surfaces sample.
+gfx/scene3d.amni	var trans_w = 0;	Shading	int	Width in pixels of the transmission texture.
+gfx/scene3d.amni	var trans_h = 0;	Shading	int	Height in pixels of the transmission texture.
+gfx/scene3d.amni	var smp_trans gfx::Sampler;	Shading	int	Sampler used to read the transmission texture.
+gfx/scene3d.amni	var cascade_live = 3;	Shadows	int	Number of sun shadow cascades currently in use.
+gfx/scene3d.amni	var node_ov NodeOv[>..] = [];	Scene Items	int	List of node overrides applied when posing items.
+gfx/scene3d.amni	var weight_ov WeightOv[>..] = [];	Scene Items	int	List of morph weight overrides applied when posing items.
+gfx/scene3d.amni	fn set_node(item int, node int, t float3, r linalg::Quat, sc float3)	Scene Items	pub	Sets a translation, rotation and scale override for a node of an item, replacing any existing one.
+gfx/scene3d.amni	fn set_weight(item int, node int, k int, w f32)	Scene Items	pub	Sets a morph weight override for a node of an item, ignoring indices out of range.
+gfx/scene3d.amni	fn clear_pose(item int)	Scene Items	pub	Removes all node and morph weight overrides for an item.
+gfx/scene3d.amni	fn studio_soft(bg float3, key f32)	Lights	pub	Configures a soft studio setup with the given background color and key light strength, replacing the sun, lights and sky.
+gfx/scene3d.amni	fn add_spot(pos float3, target float3, rgb float3, range f32, cone f32, shadows bool)	Lights	pub	Adds a spot light at a position aimed at a target, optionally casting shadows.
+gfx/scene3d.amni	fn make_ssr()	Screen Space Reflections	int	Creates the reflection targets and depth levels if they do not exist yet.
+gfx/scene3d.amni	fn drop_ssr()	Screen Space Reflections	int	Releases the reflection targets and depth levels and clears the history flag.
+gfx/scene3d.amni	fn ext_fill(s int, layer int, src gfx::Texture)	Shading	int	Copies a source texture into one layer of an extended material array.
+gfx/scene3d.amni	fn ext_make(s int, cap int)	Shading	int	Allocates an extended material array with the given layer capacity and refills its layers.
+gfx/scene3d.amni	fn ext_need(r gltf::TexRef, s int)	Shading	int	Ensures a material texture has a layer in the extended array, growing it if needed.
+gfx/scene3d.amni	fn ext_finish()	Shading	int	Creates any missing extended arrays and regenerates mips for those that changed.
+gfx/scene3d.amni	fn ext_layer(r gltf::TexRef, s int, none_is int) f32	Shading	int	Returns the array layer of a texture as a float, or the given fallback when it has none.
+gfx/scene3d.amni	fn ext_set(u ExtU&, i int, r gltf::TexRef, s int)	Shading	int	Writes a texture's transform and layer into slot i of an extended material uniform block.
+gfx/scene3d.amni	fn ext_of(m gltf::Material) ExtU	Scene Items	int	Builds the extended-material uniform block from a glTF material's specular, coat, transmission, anisotropy and iridescence settings.
+gfx/scene3d.amni	fn atmosphere(to_sun float3, power f32, haze f32, clouds f32)	Sky	pub	Sets the sun direction, color and sky from a sun direction, power, haze and cloud amount.
+gfx/scene3d.amni	fn item_lights(ii int)	Lights	int	Registers or updates the lights defined by an item's glTF nodes, and applies any directional light to the sun.
+gfx/scene3d.amni	fn mw(node int, j int, n int) f32	Scene Items	int	Returns the morph target weight at index j for a node, or 0 when j is beyond the target count.
+gfx/scene3d.amni	fn light_upload()	Lights	int	Uploads the light list and its camera-cluster assignments to GPU storage buffers, growing them when needed.
+gfx/scene3d.amni	fn local_shadow_pass()	Shadows	int	Renders depth layers for shadow-casting local lights, skipping blended and no-shadow materials and off-screen geometry.
+gfx/scene3d.amni	fn contact_on() bool	Shadows	int	Returns whether contact shadows are enabled, which requires sun shadows on and a positive contact strength.
+gfx/scene3d.amni	fn contact_pass()	Shadows	int	Renders a screen-space contact shadow texture toward the sun from the depth and normal prepass.
+gfx/scene3d.amni	fn ssr_pass()	Screen Space Reflections	int	Builds a depth hierarchy and traces screen-space reflection hits, updating the reflection uniforms.
+gfx/scene3d.amni	fn ssr_capture()	Screen Space Reflections	int	Copies the resolved color into a mipmapped image for reflections to sample next frame.
+gfx/scene3d.amni	fn trans_capture()	Shading	int	Copies the scene color into a mipmapped texture that transmissive materials sample for refraction.
+gfx/scene3d.amni	fn set_lut(rgba const byte[:], n int) bool	Color Grading	pub	Replaces the color grading lookup table from n×n×n RGBA8 texels; returns false if n is under 2 or data is too short.
+gfx/scene3d.amni	fn identity_lut(n int)	Color Grading	pub	Installs a neutral identity color grading lookup table of size n per axis, leaving colors unchanged.
+gfx/scene3d.amni	fn lut_strip(rgba const byte[:], w int, h int) bool	Color Grading	pub	Loads a color grading lookup table from a strip image whose width equals height squared; returns false otherwise.
+gfx/scene3d.amni	fn lut_cube(text const byte[:]) bool	Color Grading	pub	Parses a .cube text file into the color grading lookup table; returns false if the size or data is invalid.
+gfx/scene3d.amni	fn exposure_pass()	Exposure	int	Runs the compute passes that build a luminance histogram and adapt the automatic exposure value each frame.
+gfx/scene3d.amni	fn exposure_now() f32	Exposure	pub	Returns the current automatic exposure multiplier read back from the GPU, or 1.0 if the read fails.
+gfx/scene3d.amni	fn render_begin() bool	Rendering Setup	pub	Runs the first half of a frame through color and fog passes; returns false if the renderer is not ready.
+gfx/scene3d.amni	fn render_end(target gfx::Texture)	Rendering Setup	pub	Finishes the frame with lens, temporal, bloom, exposure and grading passes into the given RGBA8 target.
+binary.he	le(data const byte[:], at int, n int) uint	Byte Reading	pub	Reads n bytes starting at an offset as an unsigned little-endian number, without checking bounds, so the caller must ensure they fit.
+json.he	struct DocNode { kind int	Document Tree	int	Internal index-based node record holding kind, numeric value, pool offsets for text and key, and sibling links for a parsed document.
+json.he	struct Doc { nodes DocNode[>..]	Document Tree	int	Internal index-based document holding a node list and a shared byte pool for strings and keys.
+json.he	digits_u64(text const byte[:], from int, to int) uint, bool	Document Tree	int	Parses a decimal digit range into an unsigned integer, returning false when empty, malformed, leading-zero, or overflowing.
+json.he	as_u64(d Doc&, n int) uint, bool	Document Tree	int	Returns node n of an index-based document as an unsigned integer, with false when it is not a suitable number.
+json.he	struct Node { next Node&<u32>?, first Node&<u32>?, key const byte[:], val Value }	Document Tree	pub	Parsed JSON node linking to its first child and next sibling, with its member key and typed value.
+json.he	enum Value { Null, Bool { v bool }, Int { v int }, UInt { v uint }, Num { v real }, Str { s const byte[:] }, Arr { count int }, Obj { count int } }	Document Tree	pub	Tagged value of a parsed JSON node: null, bool, signed or unsigned integer, real, string, or array or object with a child count.
+json.he	value_of(n DocNode&, pool const byte[:]) Value	Document Tree	int	Converts an internal document node and its string pool into a typed Value.
+json.he	parse(text const byte[:], doc Node[>..]&, decoded byte[>..]&) Node?, byte[>..]	Document Tree	pub	Parses JSON text into nodes appended to doc, returning the root node, or null with an error message on failure.
+json.he	member(n Node?, key byte[:]) Node?	Document Tree	pub	Returns the member of an object node with the given key, or null when absent or not an object.
+json.he	each<F>(n Node&)	Document Tree	pub	Calls the given block with each child of a node, in order.
+json.he	as_f64(n Node?) real, bool	Document Tree	pub	Returns a node's number as a real with true, or false when it is null or not numeric.
+json.he	as_i64(n Node?) int, bool	Document Tree	pub	Returns a node's value as a signed integer with true, or false when it is null or not an integer.
+json.he	as_u64(n Node?) uint, bool	Document Tree	pub	Returns a node's value as an unsigned integer with true, or false when null, negative, or not an integer.
+json.he	as_bool(n Node?) bool, bool	Document Tree	pub	Returns a node's boolean value with true, or false when it is null or not a boolean.
+json.he	as_string(n Node?) const byte[:], bool	Document Tree	pub	Returns a node's string contents with true, or false when it is null or not a string.
+regex.he	both_cases(on bool[256]&)	Compiling Patterns	int	Adds the uppercase and lowercase counterparts of every letter already set in a byte table, for case-insensitive matching.
+regex.he	build(pattern byte[:], err byte[>..]&, fold bool) Regex	Compiling Patterns	int	Parses and lays out a pattern into a Regex, leaving any error text in err and optionally folding letter case.
+regex.he	compile_ignore_case(pattern byte[:], err byte[>..]&) Regex	Compiling Patterns	pub	Compiles a pattern that ignores letter case, leaving the reason in err and matching nothing when the pattern is bad.
+regex.he	compile_ignore_case(pattern byte[:]) Regex	Compiling Patterns	pub	Compiles a pattern that ignores letter case, stopping the program with the reason when the pattern is bad.
+tiles/js.he	num_str(x real) byte[>..]	Number Formatting	pub	Converts a real number to its JavaScript-style string form, handling NaN, Infinity, zero, and switching to exponent notation for very large or small values.
+tiles/js.he	to_fixed(x real, digits int) byte[>..]	Number Formatting	pub	Formats a real number with a fixed count of decimal digits, returning "NaN" for NaN and exponent-style output at 1e21 or above.
+tiles/js.he	locale_string(x real, max_digits int) byte[>..]	Locale Formatting	pub	Formats a real number with locale-style digit grouping and at most max_digits fractional digits, using ∞ symbols for infinities.
+tiles/py.he	is_ws(c byte) bool	Whitespace	int	Returns whether a byte is an ASCII whitespace character (space or tab through carriage return).
+tiles/py.he	strip_ws(s const byte[:]) const byte[:]	Whitespace	int	Returns a subslice of the text with leading and trailing whitespace removed.
+tiles/py.he	scan_digits(s const byte[:], i int, out byte[>..]&) int	Number Parsing	int	Appends digits from a position to the output, skipping single underscores between digits, and returns the index where scanning stopped.
+tiles/py.he	int_of(text const byte[:]) int, bool	Number Parsing	pub	Parses text as a signed integer with Python rules, returning false if invalid or out of 64-bit range.
+tiles/py.he	int_of(d json::Doc&, node int) int, bool	Number Parsing	pub	Converts a JSON node to an integer, handling booleans, numbers and numeric strings, returning false if impossible.
+tiles/py.he	float_of(text const byte[:]) real, bool	Number Parsing	pub	Parses text as a float with Python rules, accepting inf and nan, and returns false if invalid.
+tiles/py.he	put_repr(out byte[>..]&, s const byte[:])	Value Formatting	int	Appends the Python repr of a string to the output buffer.
+tiles/py.he	put_bool(out byte[>..]&, d json::Doc&, node int)	Value Formatting	int	Appends Python-style True or False for a JSON boolean node to the output buffer.
+tiles/py.he	put_num(out byte[>..]&, d json::Doc&, node int)	Value Formatting	int	Appends a JSON numeric node to the output using Python number formatting.
+tiles/py.he	recursive fn repr_into(out byte[>..]&, d json::Doc&, node int, scratch int[>..]&)	Value Formatting	int	Recursively appends the Python repr of a JSON node, including arrays and objects, using a scratch stack.
+tiles/py.he	str_of(d json::Doc&, node int) byte[>..]	Value Formatting	pub	Returns a JSON node as a string, using the raw text for strings and Python repr otherwise.
+tiles/py.he	truthy(d json::Doc&, node int) bool	Value Formatting	pub	Returns whether a JSON node is truthy under Python rules, such as empty strings and zero being false.
+tiles/py.he	struct Hms { h int, m int, s int, us int }	Date Parsing	int	Holds hours, minutes, seconds and microseconds parsed from an ISO time string.
+tiles/py.he	num_at(s const byte[:], at int, n int) int	Date Parsing	int	Parses a fixed number of digits at a position, returning -1 if too short or non-digit.
+tiles/py.he	is_leap(y int) bool	Date Parsing	int	Returns whether a year is a Gregorian leap year.
+tiles/py.he	month_days(y int, m int) int	Date Parsing	int	Returns the number of days in a given month of a given year.
+tiles/py.he	days_from_civil(y int, m int, d int) int	Date Parsing	int	Returns the day count since the Unix epoch for a civil year, month and day.
+tiles/py.he	iso_week_days(y int, w int, d int) int, bool	Date Parsing	int	Converts an ISO year, week and weekday to days since the epoch, returning false if invalid.
+tiles/py.he	date_end(s const byte[:]) int	Date Parsing	int	Returns the end index of the date portion of an ISO string, or -1 if malformed.
+tiles/py.he	parse_date(s const byte[:], de int) int, bool	Date Parsing	int	Parses an ISO calendar, week or ordinal date prefix into days since the epoch, returning false if invalid.
+tiles/py.he	parse_hms(t const byte[:]) Hms, bool	Date Parsing	int	Parses an ISO time string into hours, minutes, seconds and microseconds, returning false if malformed.
+tiles/py.he	fromisoformat(text const byte[:]) int, bool	Date Parsing	pub	Parses an ISO 8601 date or datetime with optional time zone into microseconds since the epoch, returning false if invalid.
+tiles/py.he	var g_f byte[>..]	Address Parsing	int	Global buffer holding the header text currently being parsed.
+tiles/py.he	var g_pos int = 0	Address Parsing	int	Global read position within the header buffer.
+tiles/py.he	var g_cm byte[>..]	Address Parsing	int	Global buffer accumulating comment text for the current address.
+tiles/py.he	var g_ncm int = 0	Address Parsing	int	Global count of comments collected for the current address.
+tiles/py.he	var g_ws byte[>..]	Address Parsing	int	Global buffer holding whitespace skipped between address tokens.
+tiles/py.he	var g_pname byte[>..]	Address Parsing	int	Global buffer accumulating the display name phrase of the current address.
+tiles/py.he	var g_pn int = 0	Address Parsing	int	Global count of phrases collected in the current display name.
+tiles/py.he	var g_pfl int = 0	Address Parsing	int	Global length of the display name after the first phrase.
+tiles/py.he	is_special(c byte) bool	Address Parsing	int	Returns whether a byte is an address special character such as parentheses, angle brackets, at sign or comma.
+tiles/py.he	is_atomend(c byte) bool	Address Parsing	int	Returns whether a byte ends an address atom, being whitespace or a special character.
+tiles/py.he	is_phraseend(c byte) bool	Address Parsing	int	Returns whether a byte ends a phrase atom, treating periods as part of the phrase.
+tiles/py.he	is_blank(c byte) bool	Address Parsing	int	Returns whether a byte is blank, including whitespace and ASCII separator control characters.
+tiles/py.he	recursive fn read_comment(out byte[>..]&)	Address Parsing	int	Recursively reads a parenthesized comment, with nested comments and backslash escapes, into the output buffer.
+tiles/py.he	read_plain(out byte[>..]&, endc byte)	Address Parsing	int	Reads a quoted or bracketed section up to the end byte, handling backslash escapes, into the output buffer.
+tiles/py.he	ad_comment()	Address Parsing	int	Reads a comment at the current position and appends it to the comment buffer.
+tiles/py.he	ad_goto()	Address Parsing	int	Skips whitespace and comments, recording skipped spaces and tabs in the whitespace buffer.
+tiles/py.he	ad_atom(out byte[>..]&, phrase bool)	Address Parsing	int	Reads an atom at the current position into the output buffer, optionally stopping at phrase ends.
+tiles/py.he	ph_start()	Address Parsing	int	Marks the start of a new display name phrase, adding a separating space if needed.
+tiles/py.he	ph_end()	Address Parsing	int	Records the display name length after the first phrase finishes.
+tiles/py.he	ad_phrases()	Address Parsing	int	Reads display name phrases, including quoted strings and comments, into the global name buffer.
+tiles/py.he	ad_domain(out byte[>..]&)	Address Parsing	int	Reads a domain, including bracketed literals and comments, into the output buffer, clearing it if another at sign appears.
+tiles/py.he	pop_blank(asb byte[>..]&, starts int[>..]&)	Address Parsing	int	Removes the last recorded token from the address buffer if it contains only blank characters.
+tiles/py.he	ad_spec(out byte[>..]&)	Address Parsing	int	Reads an address specification of local part and optional domain into the output buffer.
+tiles/py.he	ad_route(out byte[>..]&)	Address Parsing	int	Reads an angle-bracketed route address, skipping obsolete routing domains, and writes its address spec to the output.
+tiles/py.he	add_pair(names byte[>..][>..]&, addrs byte[>..][>..]&, n const byte[:], a const byte[:])	Address Parsing	int	Appends a name and address pair, leaving both empty if the address contains a bracket.
+tiles/py.he	ad_case_spec(names byte[>..][>..]&, addrs byte[>..][>..]&)	Address Parsing	int	Parses a bare address spec and appends it with the collected comments as its name.
+tiles/py.he	ad_case_route(names byte[>..][>..]&, addrs byte[>..][>..]&)	Address Parsing	int	Parses a route address and appends it with the display name and comments as its name.
+tiles/py.he	recursive fn ad_address(names byte[>..][>..]&, addrs byte[>..][>..]&)	Address Parsing	int	Recursively parses one address or group from the header and appends its name and address pairs.
+tiles/py.he	ad_parse(header const byte[:], names byte[>..][>..]&, addrs byte[>..][>..]&)	Address Parsing	int	Parses a whole header into lists of names and addresses, adding an empty pair if an address yields nothing.
+tiles/py.he	strip_esc(s const byte[:], c byte, out byte[>..]&)	Address Parsing	int	Copies text to the output while removing backslash escapes before a given character.
+tiles/py.he	count_commas(s const byte[:], a int, b int) int	Address Parsing	int	Counts commas in a range of the text.
+tiles/py.he	expected_count(addr const byte[:]) int	Address Parsing	int	Estimates the number of addresses in a header by counting commas outside quoted strings.
+tiles/py.he	getaddresses(header const byte[:], names byte[>..][>..]&, addrs byte[>..][>..]&)	Address Parsing	pub	Parses an address header into parallel lists of names and addresses, returning a single empty pair if malformed.
+gfx/envmap.amni	var cubes int = 0;	Environment Lighting	int	Count of cubemap slots currently allocated in the environment cube array texture.
+gfx/envmap.amni	var cube_n int = 0;	Environment Lighting	int	Width and height in pixels of each face in the currently allocated environment cube array.
+gfx/envmap.amni	var gen int = 0;	Environment Lighting	int	Generation counter incremented when the environment cubemap contents are replaced, so dependents can detect changes.
+gfx/envmap.amni	var pipe_copy gfx::Pipeline;	Environment Lighting	int	Pipeline used to copy existing cubemap faces and mips into a newly allocated cube array.
+gfx/envmap.amni	struct CopyU	Environment Lighting	int	Uniform block carrying the face, slot and mip indices for the cubemap copy shader.
+gfx/envmap.amni	fn faces(t gfx::Texture, m int, p gfx::Pipeline, src gfx::Texture, s gfx::Sampler, rough f32, count f32, src_size f32, base int)	Environment Lighting	int	Renders all six faces of one mip level into the cube array using the given prefilter pipeline, roughness and sample count.
+gfx/envmap.amni	fn make(n int, k int)	Environment Lighting	int	Allocates a cube array with the given face size and slot count, copying over existing contents when the size matches.
+gfx/envmap.amni	fn reserve(k int)	Environment Lighting	int	Ensures the environment cube array exists and holds at least the requested number of slots.
+gfx/envmap.amni	fn filter(raw gfx::Texture, n int, at int, irr bool)	Environment Lighting	int	Prefilters a raw environment texture into GGX-blurred mip levels of the cube array slot, optionally including an irradiance mip.
+gfx/fx.amni	var eye float3 = float3 { 0.0, 0.0, 0.0 };	Particle Emitters	int	Camera position used to place follow-mode emitters, updated by the module's own simulation code.
+gfx/fx.amni	var shelter_tex gfx::Texture;	GPU Pipeline	int	Texture holding the shelter mask sampled by the simulation shader when the shelter box is active.
+gfx/fx.amni	var shelter_box float4 = float4 { 0.0, 0.0, 0.0, 0.0 };	Particle Emitters	int	Shelter region parameters passed to the simulation shader; a w value above 0.5 enables shelter.
+gfx/fx.amni	var test_no_wrap = false;	GPU Pipeline	int	Debug flag that, when true, disables wrapping in the simulation shader for testing.
+gfx/fx.amni	fn rain() Emitter	Particle Emitters	pub	Returns an emitter preset for falling rain with wrapping, camera following, streaks and splashes.
+gfx/fx.amni	fn snow() Emitter	Particle Emitters	pub	Returns an emitter preset for drifting snow, based on rain with slower speed, curl noise and alpha blending.
+gfx/fx.amni	fn weather_bounds(at float3) f32, f32	Particle Emitters	pub	Returns the horizontal extent and top height covered by active wrapping emitters around the given position.
+gfx/fx.amni	fn draw(view_proj gfx::mat4, view gfx::mat4, right float3, up float3, nd gfx::Texture, have_nd bool, scale f32, w int, h int)	GPU Pipeline	pub	Draws all live particles as billboards using additive then alpha pipelines, with optional normal-depth texture and scale.
+gfx/gltf.amni	fn add_image(im Image, wrap int) int	Asset Data	int	Registers an already decoded image in the global pools with the given wrap mode and returns its new texture index.
+gfx/gltf.amni	fn add_texture_rgba(px const byte[:], w int, h int, wrap int) int	Asset Data	pub	Adds raw RGBA pixel data of the given width and height as a texture with the given wrap mode, returning its index.
+gfx.he	TEXTURE_2D := 0 as i32; TEXTURE_2D_ARRAY := 1 as i32; TEXTURE_3D := 2 as i32; TEXTURE_CUBE := 3 as i32; TEXTURE_CUBE_ARRAY := 4 as i32	Textures	pub	Texture dimensionality constants (2D, 2D array, 3D, cube, cube array) selecting the kind field when creating a texture.
+gfx/scene3d.amni	let MAX_PROBES = 8;	Reflection Probes	pub	Maximum number of reflection probes the scene can hold at once.
+gfx/scene3d.amni	struct SsgiU	Global Illumination	int	Uniform block passed to the screen-space global illumination trace shader.
+gfx/scene3d.amni	struct SsgiAU	Global Illumination	int	Uniform block passed to the screen-space global illumination accumulation shader.
+gfx/scene3d.amni	struct SsgiUpU	Global Illumination	int	Uniform block passed to the screen-space global illumination upsample compute pass.
+gfx/scene3d.amni	var ssgi_on = false;	Global Illumination	pub	Flag that turns screen-space global illumination on when true; off by default.
+gfx/scene3d.amni	var ssgi_rays = 4;	Global Illumination	pub	Number of rays traced per pixel for screen-space global illumination.
+gfx/scene3d.amni	var ssgi_steps = 64;	Global Illumination	pub	Maximum march steps each screen-space global illumination ray takes.
+gfx/scene3d.amni	var ssgi_dist f32 = 10.0;	Global Illumination	pub	Maximum distance in world units a screen-space global illumination ray travels.
+gfx/scene3d.amni	var ssgi_thickness f32 = 0.05;	Global Illumination	pub	Assumed depth thickness of surfaces when screen-space global illumination rays test for hits.
+gfx/scene3d.amni	var ssgi_edge f32 = 0.02;	Global Illumination	pub	Screen-edge fade width applied to screen-space global illumination.
+gfx/scene3d.amni	var ssgi_intensity f32 = 1.0;	Global Illumination	pub	Scale applied to the indirect light that screen-space global illumination adds.
+gfx/scene3d.amni	var ssgi_ao f32 = 1.0;	Global Illumination	pub	Strength of the ambient occlusion that screen-space global illumination produces.
+gfx/scene3d.amni	var ssgi_frames f32 = 17.0;	Global Illumination	pub	Number of frames over which screen-space global illumination results accumulate.
+gfx/scene3d.amni	var ssgi_new gfx::Texture;	Global Illumination	int	Texture holding the newest half-size screen-space global illumination result.
+gfx/scene3d.amni	var ssgi_hc gfx::Texture[>..] = [];	Global Illumination	int	Pair of history color textures used for screen-space global illumination accumulation.
+gfx/scene3d.amni	var ssgi_hz gfx::Texture[>..] = [];	Global Illumination	int	Pair of history depth textures used for screen-space global illumination reprojection.
+gfx/scene3d.amni	var ssgi_buf gfx::Buffer;	Global Illumination	int	Storage buffer used by the screen-space global illumination compute upsample.
+gfx/scene3d.amni	var ssgi_cur = 0;	Global Illumination	int	Index of the history texture currently in use by screen-space global illumination.
+gfx/scene3d.amni	var ssgi_valid = false;	Global Illumination	int	Flag that records whether screen-space global illumination history holds usable data.
+gfx/scene3d.amni	var pipe_ssgi_trace gfx::Pipeline;	Global Illumination	int	Pipeline that traces screen-space global illumination rays.
+gfx/scene3d.amni	var pipe_ssgi_accum gfx::Pipeline;	Global Illumination	int	Pipeline that accumulates screen-space global illumination over time.
+gfx/scene3d.amni	var pipe_ssgi_up gfx::ComputePipeline;	Global Illumination	int	Compute pipeline that upsamples the half-size screen-space global illumination result.
+gfx/scene3d.amni	var test_rect_naive = false;	Debug Views	int	Test hook that selects the naive rectangular light path; false in normal use.
+gfx/scene3d.amni	struct Probe	Reflection Probes	pub	A box-shaped reflection probe with a capture position, bounds and edge fade.
+gfx/scene3d.amni	struct Decal	Decals	pub	A projected decal with position, rotation, size, textures, opacity and material overrides.
+gfx/scene3d.amni	var decals Decal[>..] = [];	Decals	pub	List of decals currently placed in the scene.
+gfx/scene3d.amni	struct ProbeCopyU	Reflection Probes	int	Uniform block used when copying a captured probe face into the probe array.
+gfx/scene3d.amni	var probes Probe[>..] = [];	Reflection Probes	pub	List of reflection probes currently placed in the scene.
+gfx/scene3d.amni	var probe_res = 256;	Reflection Probes	pub	Resolution in pixels of each reflection probe capture face.
+gfx/scene3d.amni	var probe_near f32 = 0.05;	Reflection Probes	pub	Near clipping distance used when capturing reflection probes.
+gfx/scene3d.amni	var probe_intensity f32 = 1.0;	Reflection Probes	pub	Scale applied to the light that reflection probes contribute.
+gfx/scene3d.amni	var probe_parallax = true;	Reflection Probes	pub	Flag that enables parallax-corrected probe reflections when true.
+gfx/scene3d.amni	var probe_bounces = 3;	Reflection Probes	pub	Number of light bounces used when capturing reflection probes.
+gfx/scene3d.amni	var cap_np = 0;	Reflection Probes	int	Count of probes captured so far during the current capture.
+gfx/scene3d.amni	var probes_dirty = false;	Reflection Probes	int	Flag marking that probes need to be recaptured on the next frame.
+gfx/scene3d.amni	var probe_gen = -1;	Reflection Probes	int	Generation counter recording which probe set was last captured.
+gfx/scene3d.amni	var capturing = false;	Reflection Probes	int	Flag set while a probe capture is in progress.
+gfx/scene3d.amni	var pipe_probe_copy gfx::Pipeline;	Reflection Probes	int	Pipeline that copies captured probe faces into the probe array.
+gfx/scene3d.amni	var shelter = true;	Shadows	pub	Flag that enables the shelter map, which occludes sky light under cover, when true.
+gfx/scene3d.amni	var shelter_res = 512;	Shadows	pub	Resolution in pixels of the shelter map.
+gfx/scene3d.amni	var shelter_size = 0;	Shadows	int	Current allocated size of the shelter map.
+gfx/scene3d.amni	var shelter_map gfx::Texture;	Shadows	int	Texture holding the shelter map.
+gfx/scene3d.amni	var shelter_depth gfx::Texture;	Shadows	int	Depth texture used when rendering the shelter map.
+gfx/scene3d.amni	var pipe_shelter gfx::Pipeline;	Shadows	int	Pipeline that renders the shelter map.
+gfx/scene3d.amni	fn add_probe(pos float3, lo float3, hi float3, fade f32)	Reflection Probes	pub	Adds a reflection probe with capture position, box bounds and edge fade, ignoring it once the probe limit is reached.
+gfx/scene3d.amni	fn clear_probes()	Reflection Probes	pub	Removes all reflection probes and schedules a recapture.
+gfx/scene3d.amni	fn add_decal(d Decal) int	Decals	pub	Adds a decal to the scene and returns its index.
+gfx/scene3d.amni	fn clear_decals()	Decals	pub	Removes all decals from the scene.
+gfx/scene3d.amni	fn recapture()	Reflection Probes	pub	Schedules all reflection probes to be captured again on the next frame.
+gfx/scene3d.amni	fn probe_vol(p Probe) f32	Reflection Probes	int	Returns the volume of a probe's bounding box in cubic world units.
+gfx/scene3d.amni	fn add_rect(pos float3, target float3, axis float3, width f32, height f32, rgb float3, range f32, shadows bool)	Lights	pub	Adds a rectangular area light aimed at a target, with width, height, color, range and optional shadows.
+gfx/scene3d.amni	fn rect_axis(l Light) float3	Lights	int	Returns the unit vector along a light's rectangle width, orthogonal to its direction.
+gfx/scene3d.amni	fn make_ssgi()	Global Illumination	int	Allocates the half-size screen-space global illumination targets and buffer on first use.
+gfx/scene3d.amni	let MAX_PROBES = 8;	Reflection Probes	pub	Maximum number of reflection probes the scene can hold at once.
+gfx/scene3d.amni	fn shelter_pass()	Shelter Map	int	Renders a top-down depth map around the eye so weather effects can tell which pixels are sheltered from above.
+gfx/scene3d.amni	fn ssgi_live() bool	Screen Space Global Illumination	int	Returns whether screen-space GI is active, meaning it is enabled while baked GI and probe capture are off.
+gfx/scene3d.amni	fn ssgi_pass()	Screen Space Global Illumination	int	Traces, accumulates and upsamples screen-space indirect light each frame, publishing the result to the frame uniforms when it succeeds.
+gfx/scene3d.amni	fn probe_capture()	Reflection Probes	int	Sorts probes by volume and captures the scene into the environment cube maps used for reflections.
+gfx.he	struct CGP { vs uint, fs uint, vbd uint, nvb u32, pad 4, va uint, nva u32, pad 4, prim i32, fill i32, cull i32, ff i32, dbc f32, dbcl f32, dbs f32, edb bool, edc bool, pad 2, sc i32, smask u32, emask bool, a2c bool, pad 	GPU Bindings	int	Raw C struct describing a graphics pipeline creation request, laid out for the SDL GPU call and not used directly by programs.
+gfx.he	cctd(fmt int, mode int, rgb bool) CCTD	Pipelines	int	Builds the raw C color-target description for a blend mode, format and optional RGB write mask, for pipeline creation.
+gfx/scene3d.amni	struct InstSet	Instancing	int	Record describing one set of instanced copies of an asset, with its range, LOD, bounds and visibility lists.
+gfx/scene3d.amni	struct Wind	Wind	pub	Wind settings holding direction, strength, speed and time, used to sway foliage.
+gfx/scene3d.amni	var alpha_to_coverage = false;	Shading	pub	Flag enabling alpha-to-coverage for cut-out surfaces.
+gfx/scene3d.amni	var mip_bias f32 = 0.0;	Shading	pub	Texture mip level bias applied when sampling, in mip levels.
+gfx/scene3d.amni	var mip_bias_auto = true;	Shading	pub	Flag that lets the renderer choose the mip bias automatically.
+gfx/scene3d.amni	var test_morph_still = false;	Shading	int	Test hook that holds morph targets still.
+gfx/scene3d.amni	var pipe_cut gfx::Pipeline;	Rendering Setup	int	Pipeline for drawing cut-out surfaces.
+gfx/scene3d.amni	var pipe_cut_two gfx::Pipeline;	Rendering Setup	int	Pipeline for drawing double-sided cut-out surfaces.
+gfx/scene3d.amni	var instances InstSet[>..] = [];	Instancing	int	List of instance sets added to the scene.
+gfx/scene3d.amni	var inst_m gfx::mat4[>..] = [];	Instancing	int	Per-instance model matrices for all instance sets.
+gfx/scene3d.amni	var inst_c float4[>..] = [];	Instancing	int	Per-instance bounding spheres, stored as center and radius.
+gfx/scene3d.amni	var inst_ids f32[>..] = [];	Instancing	int	Per-instance ids of the instances that passed culling.
+gfx/scene3d.amni	var inst_t0 f32[>..] = [];	Instancing	int	Per-instance data array for the first texture-related shader input.
+gfx/scene3d.amni	var inst_t1 f32[>..] = [];	Instancing	int	Per-instance data array for the second texture-related shader input.
+gfx/scene3d.amni	var inst_t2 f32[>..] = [];	Instancing	int	Per-instance data array for the third texture-related shader input.
+gfx/scene3d.amni	var inst_t3 f32[>..] = [];	Instancing	int	Per-instance data array for the fourth texture-related shader input.
+gfx/scene3d.amni	var inst_dirty = true;	Instancing	int	Flag marking instance data as needing re-upload or re-culling.
+gfx/scene3d.amni	var inst_all = false;	Instancing	int	Flag that draws every instance, bypassing culling results.
+gfx/scene3d.amni	var instance_cull = true;	Instancing	pub	Flag that turns culling of individual instances on or off.
+gfx/scene3d.amni	var xbuf gfx::Buffer;	Instancing	int	GPU buffer holding instance transform data.
+gfx/scene3d.amni	var xbuf_cap int = 0;	Instancing	int	Current capacity of the instance transform buffer.
+gfx/scene3d.amni	var idbuf gfx::Buffer;	Instancing	int	GPU buffer holding visible instance ids.
+gfx/scene3d.amni	var idbuf_cap int = 0;	Instancing	int	Current capacity of the instance id buffer.
+gfx/scene3d.amni	var fr float4[6] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 6];	Instancing	int	Six frustum planes used for instance culling.
+gfx/scene3d.amni	var wind Wind = Wind { dir: float3 { 1.0, 0.0, 0.0 }, strength: 0.0, speed: 1.0, time: 0.0 };	Wind	pub	Current wind settings that drive foliage sway.
+gfx/scene3d.amni	var wind_prev f32 = 0.0;	Wind	int	Previous frame's wind value kept for motion vectors.
+gfx/scene3d.amni	var wind_fresh = true;	Wind	int	Flag marking that no previous wind state exists yet.
+gfx/scene3d.amni	var wind_u float4 = float4 { 0.0, 0.0, 0.0, 1.0 };	Wind	int	Wind values packed for upload to shaders.
+gfx/scene3d.amni	var pushers float4[>..] = [];	Wind	pub	List of float4 pusher values that displace swaying foliage.
+gfx/scene3d.amni	var prev_pushers float4[>..] = [];	Wind	int	Previous frame's pushers kept for motion vectors.
+gfx/scene3d.amni	var push_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	Wind	int	Pusher values packed for shader upload.
+gfx/scene3d.amni	var ppush_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	Wind	int	Previous frame's pusher values packed for shader upload.
+gfx/scene3d.amni	var cur_wb int[>..] = [];	Motion Vectors	int	Current frame's morph weight base offsets per draw.
+gfx/scene3d.amni	var prev_wb int[>..] = [];	Motion Vectors	int	Previous frame's morph weight base offsets per draw.
+gfx/scene3d.amni	var cur_w f32[>..] = [];	Motion Vectors	int	Current frame's morph weights.
+gfx/scene3d.amni	var old_w f32[>..] = [];	Motion Vectors	int	Previous frame's morph weights.
+gfx/scene3d.amni	fn corner(lo float3, hi float3, k int) float3	Instancing	int	Returns one of the eight corners of a box, selected by the low three bits of k.
+gfx/scene3d.amni	fn asset_box(asset int) float3, float3	Scene Items	pub	Returns the minimum and maximum corners of an asset's bounding box in its rest pose.
+gfx/scene3d.amni	fn sway(item int, amount f32)	Wind	pub	Makes an item sway in the wind by the given amount, using its asset's top height.
+gfx/scene3d.amni	fn inst_bound(set int, k int)	Instancing	int	Recomputes the bounding sphere of one instance from its matrix.
+gfx/scene3d.amni	fn add_instances(asset int, mats gfx::mat4[:]) int	Instancing	pub	Adds a set of instances of an asset from model matrices and returns the set index.
+gfx/scene3d.amni	fn set_instance(set int, k int, m gfx::mat4)	Instancing	pub	Replaces one instance's matrix in a set and updates its bounds.
+gfx/scene3d.amni	fn clear_instances()	Instancing	pub	Removes all instance sets and their matrices.
+gfx/scene3d.amni	fn instance_drawn(set int, lod int) int	Instancing	pub	Returns how many instances of a set were drawn at the given LOD.
+gfx/scene3d.amni	fn instance_list(set int, lod int) int[>..]	Instancing	pub	Returns the indices of instances of a set drawn at the given LOD.
+gfx/scene3d.amni	fn instance_triangles(set int) int	Instancing	pub	Returns the triangle count drawn for an instance set across its LODs.
+gfx/scene3d.amni	fn frustum(m gfx::mat4)	Scene Items	int	Extracts the six normalized frustum clip planes from a view-projection matrix for culling instances against the camera.
+gfx/scene3d.amni	fn gather_instances()	Instancing	int	Flattens instance sets into per-frame draw batches, culling against the view frustum, splitting LODs, and uploading instance ids and transforms to GPU buffers.
+gfx/scene3d.amni	fn mw(pool f32[:], base int, j int, n int) f32	Motion Vectors	int	Returns a morph target weight from a pool, or 0.0 when the base is negative or the index is out of range.
+gfx/scene3d.amni	fn signed_range(l Light) f32	Lights	int	Returns a light's range as positive, or negative when its falloff mode is 1, clamped to at least 0.01.
+gfx/scene3d.amni	fn cut_cover(m gltf::Material) bool	Shading	int	Returns whether a material is alpha-masked and alpha-to-coverage is enabled, so cut-out edges use coverage.
+gfx/scene3d.amni	fn lit_pipe(m gltf::Material) gfx::Pipeline	Shading	int	Picks the lit pipeline for a material, using the cut-out variant when alpha-to-coverage applies and the two-sided variant when double sided.
+gfx/scene3d.amni	fn mip_scale() f32	Shading	int	Returns the texture mip scale from the output-to-render width ratio when auto bias is on, combined with the manual mip bias.
+gfx/shapes.amni	fn blade(height f32, width f32, tip f32, segments int, m gltf::Material) int	Mesh Building	pub	Builds a flat, double-sided tapered strip mesh of given height, base width and tip width, split into segments, and returns its asset id.
+gfx/bc.amni	let BC1 = 1;	Format Codes	pub	Constant identifying the BC1 block format (8 bytes per 4x4 block) for use with size, decode and encode.
+gfx/bc.amni	let BC3 = 3;	Format Codes	pub	Constant identifying the BC3 block format (16 bytes per block, with alpha) for use with size, decode and encode.
+gfx/bc.amni	let BC4 = 4;	Format Codes	pub	Constant identifying the single-channel BC4 block format (8 bytes per block) for use with size, decode and encode.
+gfx/bc.amni	let BC5 = 5;	Format Codes	pub	Constant identifying the two-channel BC5 block format (16 bytes per block) for use with size, decode and encode.
+gfx/bc.amni	let BC7 = 7;	Format Codes	pub	Constant identifying the BC7 block format (16 bytes per block) for use with size, decode and encode.
+gfx/bc.amni	let P2 int[64] = [52428, 34952, 61166, 60616, 51328, 65260, 65224, 60544, 51200, 65516, 65152, 59392, 65512, 65280, 65520, 61440, 63248, 142, 28928, 2254, 140, 29456, 12544, 36046, 2188, 12560, 26214, 13932, 6120, 4080, 	BC7 Internals	int	Lookup table of two-subset partition masks, one bit per pixel, for the 64 BC7 partitions.
+gfx/bc.amni	let P3 int[64] = [2858963024, 1784303680, 1515864576, 1414570152, 2779054080, 2694860880, 1431675040, 1515868240, 2857697280, 2857719040, 2863289600, 2425393296, 2492765332, 2762253476, 2846200912, 705315408, 2777960512,	BC7 Internals	int	Lookup table of three-subset partition maps, two bits per pixel, for the 64 BC7 partitions.
+gfx/bc.amni	let A2 int[64] = [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 2, 8, 2, 2, 8, 8, 15, 2, 8, 2, 2, 8, 8, 2, 2, 15, 15, 6, 8, 2, 8, 15, 15, 2, 8, 2, 2, 2, 15, 15, 6, 6, 2, 6, 8, 15, 15, 2, 2, 15, 15, 	BC7 Internals	int	Table of anchor pixel indices for the second subset in two-subset BC7 partitions.
+gfx/bc.amni	let A3A int[64] = [3, 3, 15, 15, 8, 3, 15, 15, 8, 8, 6, 6, 6, 5, 3, 3, 3, 3, 8, 15, 3, 3, 6, 10, 5, 8, 8, 6, 8, 5, 15, 15, 8, 15, 3, 5, 6, 10, 8, 15, 15, 3, 15, 5, 15, 15, 15, 15, 3, 15, 5, 5, 5, 8, 5, 10, 5, 10, 8, 13, 	BC7 Internals	int	Table of anchor pixel indices for the second subset in three-subset BC7 partitions.
+gfx/bc.amni	let A3B int[64] = [15, 8, 8, 3, 15, 15, 3, 8, 15, 15, 15, 15, 15, 15, 15, 8, 15, 8, 15, 3, 15, 8, 15, 8, 3, 15, 6, 10, 15, 15, 10, 8, 15, 3, 15, 10, 10, 8, 9, 10, 6, 15, 8, 15, 3, 6, 6, 8, 15, 3, 15, 15, 15, 15, 15, 15, 	BC7 Internals	int	Table of anchor pixel indices for the third subset in three-subset BC7 partitions.
+gfx/bc.amni	let W2 int[4] = [0, 21, 43, 64];	BC7 Internals	int	Interpolation weight table for 2-bit BC7 indices, on a scale of 64.
+gfx/bc.amni	let W3 int[8] = [0, 9, 18, 27, 37, 46, 55, 64];	BC7 Internals	int	Interpolation weight table for 3-bit BC7 indices, on a scale of 64.
+gfx/bc.amni	let W4 int[16] = [0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64];	BC7 Internals	int	Interpolation weight table for 4-bit BC7 indices, on a scale of 64.
+gfx/bc.amni	let M_SUBSETS int[8] = [3, 2, 3, 2, 1, 1, 1, 2];	BC7 Internals	int	Number of subsets used by each of the eight BC7 modes.
+gfx/bc.amni	let M_PART int[8] = [4, 6, 6, 6, 0, 0, 0, 6];	BC7 Internals	int	Number of partition selector bits for each of the eight BC7 modes.
+gfx/bc.amni	let M_CBITS int[8] = [4, 6, 5, 7, 5, 7, 7, 5];	BC7 Internals	int	Color endpoint bit width per channel for each of the eight BC7 modes.
+gfx/bc.amni	let M_ABITS int[8] = [0, 0, 0, 0, 6, 8, 7, 5];	BC7 Internals	int	Alpha endpoint bit width for each of the eight BC7 modes, zero when the mode has no alpha.
+gfx/bc.amni	let M_PBITS int[8] = [1, 2, 0, 1, 0, 0, 1, 1];	BC7 Internals	int	Per-mode flag giving how the BC7 endpoint p-bits are stored: none, per endpoint, or per subset.
+gfx/bc.amni	let M_IBITS int[8] = [3, 3, 2, 2, 2, 2, 4, 2];	BC7 Internals	int	Index bit width for each of the eight BC7 modes.
+gfx/bc.amni	fn block_bytes(kind int) int	Format Codes	pub	Returns the bytes per 4x4 block for a format code, or 0 if the format is unsupported.
+gfx/bc.amni	fn size(kind int, w int, h int) int	Format Codes	pub	Returns the compressed byte size of a w by h pixel image in the given format, rounding up to whole blocks.
+gfx/bc.amni	fn e5(v int) int	BC7 Internals	int	Expands a 5-bit color value to 8 bits by bit replication.
+gfx/bc.amni	fn e6(v int) int	BC7 Internals	int	Expands a 6-bit color value to 8 bits by bit replication.
+gfx/bc.amni	fn color_block(b const byte[:], at int, four bool, px byte[:], o int)	BC7 Internals	int	Decodes one BC1-style color block into 16 RGBA pixels, treating it as four-color mode when requested.
+gfx/bc.amni	fn alpha_palette(a0 int, a1 int, pal int[:])	BC7 Internals	int	Fills an 8-entry alpha palette from two endpoint values, using the BC3 and BC4 interpolation rules.
+gfx/bc.amni	fn alpha_block(b const byte[:], at int, px byte[:], o int, step int)	BC7 Internals	int	Decodes one BC3-style alpha block into a single channel of 16 pixels at the given offset and stride.
+gfx/bc.amni	fn bits(b const byte[:], at int, pos int, n int) int	BC7 Internals	int	Reads n bits from a block starting at a bit position, least significant bit first.
+gfx/bc.amni	fn bc7_anchor(i int, ns int, part int) bool	BC7 Internals	int	Returns whether a pixel index is an anchor index for the given subset count and partition.
+gfx/bc.amni	fn bc7_w(n int, k int) int	BC7 Internals	int	Returns the interpolation weight for index k at the given index bit width.
+gfx/bc.amni	fn bc7_block(b const byte[:], at int, px byte[:], o int)	BC7 Internals	int	Decodes one BC7 block into 16 RGBA pixels, writing transparent black for an invalid mode.
+gfx/bc.amni	fn decode(kind int, blocks const byte[:], w int, h int, out byte[>..]&) bool	Format Codes	pub	Decodes block-compressed data into RGBA pixels in out, returning false for an unsupported format, bad size or too little data.
+gfx/bc.amni	fn fetch(rgba const byte[:], w int, h int, bx int, by int, px byte[:])	BC7 Internals	int	Copies a 4x4 pixel tile from an RGBA image into a buffer, clamping coordinates at the image edges.
+gfx/bc.amni	fn c565(r real, g real, bl real) int	BC7 Internals	int	Converts RGB values in the 0 to 255 range to a packed RGB565 color with rounding.
+gfx/bc.amni	fn clamp255(x real) real	BC7 Internals	int	Clamps a real value to the range 0 to 255.
+gfx/bc.amni	fn pal4(c0 int, c1 int, pal int[:])	BC7 Internals	int	Builds the four-color RGB palette for a BC1 block from two RGB565 endpoints.
+gfx/bc.amni	fn assign4(px const byte[:], pal const int[:], idx int[:]) int	BC7 Internals	int	Assigns each of 16 pixels to its nearest palette entry and returns the total squared error.
+gfx/bc.amni	fn pack_color(px const byte[:], b byte[:], at int, four bool)	BC7 Internals	int	Encodes 16 RGBA pixels into a BC1-style color block using a principal axis fit with refinement.
+gfx/bc.amni	fn pack_alpha(px const byte[:], o int, step int, b byte[:], at int)	BC7 Internals	int	Encodes one channel of 16 pixels into a BC3-style alpha block at the given offset.
+gfx/bc.amni	fn bq_end(ef const real[:], at int, opaque bool, qf int[:]) int	BC7 Internals	int	Quantizes one BC7 endpoint to 7 bits plus the best p-bit, returning the chosen p-bit.
+gfx/bc.amni	fn bq_make(ef const real[:], opaque bool, qf int[:], pb int[:], ev int[:])	BC7 Internals	int	Quantizes both endpoints of a BC7 block and computes their expanded values and p-bits.
+gfx/bc.amni	fn bq_assign(px const byte[:], ev const int[:], idx int[:]) int	BC7 Internals	int	Assigns 4-bit BC7 indices to 16 pixels and returns the total squared error.
+gfx/bc.amni	fn bq_put(b byte[:], at int, pos int&, v int, n int)	BC7 Internals	int	Appends the low n bits of a value to a block at a running bit position.
+gfx/bc.amni	fn pack_bc7(px const byte[:], b byte[:], at int)	BC7 Internals	int	Encodes 16 RGBA pixels into a BC7 mode 6 block using a principal axis fit with refinement.
+gfx/bc.amni	fn encode(kind int, rgba const byte[:], w int, h int, out byte[>..]&) bool	Format Codes	pub	Encodes RGBA pixels into block-compressed data in out, returning false for an unsupported format, bad size or too little data.
+gfx/bc.amni	var srgb_dec real[256];	Mipmaps	int	Lookup table converting 8-bit sRGB values to linear floating point, filled on first use.
+gfx/bc.amni	var srgb_ok bool = false;	Mipmaps	int	Flag recording whether the sRGB decoding table has been filled.
+gfx/bc.amni	fn halve(rgba const byte[:], w int, h int, srgb bool, out byte[>..]&) int, int	Mipmaps	pub	Downsamples an RGBA image to half size in out, optionally averaging in linear space for sRGB, and returns the new width and height.
+gfx/gltf.amni	fn image_file(i int) const byte[:]	Asset Data	int	Returns the encoded bytes of the image at absolute index i, as stored in the module's coded-data pool.
+gfx/gltf.amni	fn add_texture_ktx2(file const byte[:], wrap int) int	Loading	pub	Registers a KTX2 texture from file bytes with the given wrap mode, and returns its texture index.
+gfx.he	TBC := [13, 54, 15, 56, 16, 17, 18, 57]	Texture Formats	int	Lookup table of native format codes for block-compressed (BC) texture formats, indexed by the gfx BC format constant minus 21.
+gfx.he	isblock(f int) bool	Texture Formats	int	Returns whether a native texture format code is a block-compressed format, which affects how uploads and readbacks are sized.
+gfx.he	upload_texture(o CTReg&, data const byte[:], fresh bool, blk bool, what const byte[:]) bool	Textures	int	Uploads bytes into a texture region through a transfer buffer, using a fresh command buffer or the current one; returns false on failure.
+gfx.he	format_supported(format i32) bool	Texture Formats	pub	Returns whether the device supports a gfx texture format for sampled 2D textures; false if gfx is not open or the format is unknown.
+gfx/ktx2.amni	struct Info	KTX2 Reading	pub	Describes the result of parsing a KTX2 file, including format kind, color space, dimensions, level count, supercompression scheme and error code.
+gfx/ktx2.amni	let E_NONE = 0;	KTX2 Reading	pub	Error code meaning the file parsed successfully with no error.
+gfx/ktx2.amni	let E_SHORT = 1;	KTX2 Reading	pub	Error code meaning the file is too short to hold the header or level index.
+gfx/ktx2.amni	let E_MAGIC = 2;	KTX2 Reading	pub	Error code meaning the file does not start with the KTX2 identifier bytes.
+gfx/ktx2.amni	let E_FORMAT = 3;	KTX2 Reading	pub	Error code meaning the file's Vulkan pixel format is not supported.
+gfx/ktx2.amni	let E_SHAPE = 4;	KTX2 Reading	pub	Error code meaning dimensions, depth, layers, faces or level count are unsupported or out of range.
+gfx/ktx2.amni	let E_SCHEME = 5;	KTX2 Reading	pub	Error code meaning the supercompression scheme is neither none nor zlib.
+gfx/ktx2.amni	let E_LEVEL = 6;	KTX2 Reading	pub	Error code meaning a mip level entry has an invalid offset, length or uncompressed size.
+gfx/ktx2.amni	fn level_size(kind int, w int, h int, n int) int	KTX2 Reading	pub	Returns the uncompressed byte size of mip level n for the given format kind and base dimensions.
+gfx/ktx2.amni	fn is_ktx2(file const byte[:]) bool	KTX2 Reading	pub	Returns whether the data begins with the 12-byte KTX2 file identifier.
+gfx/ktx2.amni	fn rd32(f const byte[:], at int) int	KTX2 Reading	int	Reads a little-endian 32-bit integer from the byte slice at the given offset.
+gfx/ktx2.amni	fn rd64(f const byte[:], at int) int	KTX2 Reading	int	Reads a little-endian 64-bit integer at an offset, returning -1 if the value exceeds 31 high bits.
+gfx/ktx2.amni	fn vk_kind(vk int) int	KTX2 Reading	int	Maps a Vulkan format code to this module's format kind, returning -1 if unsupported.
+gfx/ktx2.amni	fn ktx_fail(code int) Info	KTX2 Reading	int	Builds an Info value with the given error code and ok set to false.
+gfx/ktx2.amni	fn read(file const byte[:]) Info	KTX2 Reading	pub	Parses and validates a KTX2 file header and level index, returning an Info with ok false and an error code on failure.
+gfx/ktx2.amni	fn adler32(data const byte[:]) int	KTX2 Reading	int	Computes the Adler-32 checksum of the data, used to verify zlib-compressed levels.
+gfx/ktx2.amni	fn level(file const byte[:], info Info, n int, out byte[>..]&) bool	KTX2 Reading	pub	Extracts mip level n into the output buffer, inflating zlib data and verifying it; returns false on failure.
+gfx/ktx2.amni	fn put16(out byte[>..]&, v int)	KTX2 Writing	int	Appends a 16-bit value to the output buffer in little-endian order.
+gfx/ktx2.amni	fn put32(out byte[>..]&, v int)	KTX2 Writing	int	Appends a 32-bit value to the output buffer in little-endian order.
+gfx/ktx2.amni	fn put32be(out byte[>..]&, v int)	KTX2 Writing	int	Appends a 32-bit value to the output buffer in big-endian order.
+gfx/ktx2.amni	fn put64(out byte[>..]&, v int)	KTX2 Writing	int	Appends a 64-bit value to the output buffer in little-endian order.
+gfx/ktx2.amni	fn sample_count(kind int) int	KTX2 Writing	int	Returns the number of data format descriptor samples for a format kind, or 0 if unsupported.
+gfx/ktx2.amni	fn vk_of(kind int, srgb bool) int	KTX2 Writing	int	Returns the Vulkan format code for a format kind and color space.
+gfx/ktx2.amni	fn put_sample(out byte[>..]&, bit_off int, bits int, channel int, upper int)	KTX2 Writing	int	Appends one data format descriptor sample entry with bit offset, length, channel and upper bound.
+gfx/ktx2.amni	fn put_dfd(out byte[>..]&, kind int, srgb bool)	KTX2 Writing	int	Appends the data format descriptor block for a format kind and color space to the output buffer.
+gfx/ktx2.amni	fn stored_len(len int, deflate bool) int	KTX2 Writing	int	Returns the byte length of a level when stored, adding zlib stored-block framing if deflate is true.
+gfx/ktx2.amni	fn write(kind int, srgb bool, w int, h int, levels int, data const byte[:], deflate bool, out byte[>..]&) bool	KTX2 Writing	pub	Builds a KTX2 file from level data into the output buffer, optionally zlib-wrapped; returns false on invalid arguments.
+gfx/scene3d.amni	struct Caustics	Caustics	pub	Settings for underwater light caustics, including strength, focus, wave pattern, water absorption and the box they cover.
+gfx/scene3d.amni	var tex_compress = false;	Texture Compression	pub	Flag that turns on block compression of textures when they are uploaded, off by default.
+gfx/scene3d.amni	var tex_gpu_bc = true;	Texture Compression	pub	Flag allowing block-compressed textures to be uploaded as-is when the GPU supports the format; otherwise they are decoded.
+gfx/scene3d.amni	var tex_cache byte[>..] = [];	Texture Compression	int	Directory path of the on-disk cache of baked compressed textures, empty when caching is disabled.
+gfx/scene3d.amni	var tex_encoded = 0;	Texture Compression	int	Count of textures encoded to compressed form during baking.
+gfx/scene3d.amni	var tex_cached = 0;	Texture Compression	int	Count of textures found already baked in the on-disk cache.
+gfx/scene3d.amni	var tex_mem = 0;	Texture Compression	int	Running total of bytes of texture memory allocated for loaded images.
+gfx/scene3d.amni	var tex_ns = 0;	Texture Compression	int	Nanosecond counter for texture loading time.
+gfx/scene3d.amni	fn texture_bytes() int	Texture Compression	pub	Returns the total bytes of texture memory allocated for loaded images.
+gfx/scene3d.amni	fn set_texture_cache(dir const byte[:])	Texture Compression	pub	Sets the directory used to cache baked compressed textures on disk.
+gfx/scene3d.amni	var caustics Caustics = Caustics { .. };	Caustics	pub	Global caustics settings that the caller edits between frames.
+gfx/scene3d.amni	fn chain_bytes(kind int, w int, h int, levels int) int	Texture Compression	int	Returns the total byte size of a texture's mip chain for the given format kind, size and level count.
+gfx/scene3d.amni	fn tex_path(image int, srgb bool, out byte[>..]&)	Texture Compression	int	Builds the cache file path for an image, derived from a hash of its contents, size and color space.
+gfx/scene3d.amni	fn tex_bake(image int, srgb bool, file byte[>..]&) bool	Texture Compression	int	Encodes an image to a BC7 KTX2 file with mips, reusing a matching cached file; returns false on failure.
+gfx/scene3d.amni	fn ktx_texture(file const byte[:], srgb bool) gfx::Texture	Texture Compression	int	Creates a GPU texture from KTX2 file bytes, decoding block formats when the GPU lacks support; returns a null texture if invalid.
+gfx/shapes.amni	fn water(half f32) int	Primitive Shapes	pub	Builds a double-sided, transparent water plane of the given half-extent, returning the id of the new mesh asset.
+gfx/ktx2.amni	fn head_fail(e int) Info	KTX2 Reading	int	Builds an Info result that carries only the given error code, with ok left false.
+gfx/ktx2.amni	fn vk_kind(v int) int	KTX2 Reading	int	Maps a Vulkan format number to an internal block-compression kind, returning -1 when unsupported.
+gfx/ktx2.amni	fn vk_srgb(v int) bool	KTX2 Reading	int	Returns whether a Vulkan format number denotes an sRGB color encoding.
+gfx/ktx2.amni	fn max_levels(w int, h int) int	KTX2 Reading	int	Returns the number of mip levels in a full chain for an image of the given width and height.
+gfx/ktx2.amni	fn head(file const byte[:]) Info	KTX2 Reading	pub	Parses and validates a KTX2 header and level index, returning an Info whose ok is false on failure.
+gfx/ktx2.amni	fn span(file const byte[:], info Info, n int) int, int	KTX2 Reading	pub	Returns the byte offset and stored length of mip level n, or -1 and 0 when invalid.
+gfx/ktx2.amni	fn unpack(stored const byte[:], info Info, n int, out byte[>..]&) bool	KTX2 Reading	pub	Decodes one stored mip level into out, handling raw or zlib data, and returns false on any failure.
+gfx/ktx2.amni	fn put_sample(out byte[>..]&, bit_off int, bits int, chan int, upper int)	KTX2 Writing	int	Appends one sample descriptor entry for a data format descriptor to out, using the given bit offset, width, channel and upper bound.
+gfx/scene3d.amni	var tex_stream = false;	Texture Streaming	pub	Flag that turns on mip-level streaming for textures, loading lower detail first and refining as needed.
+gfx/scene3d.amni	var tex_budget = 0;	Texture Streaming	pub	Sets the texture memory budget in bytes that streaming tries to stay under; zero means no limit.
+gfx/scene3d.amni	var tex_upload_cap = 4194304;	Texture Streaming	pub	Caps how many bytes of texture data streaming may upload per step, defaulting to 4 MiB.
+gfx/scene3d.amni	var tex_hold = 30;	Texture Streaming	pub	Number of frames a texture keeps its detail level before streaming lets it drop to a lower one.
+gfx/scene3d.amni	var tex_wait = false;	Texture Streaming	pub	Flag that makes streaming wait for wanted detail levels instead of spreading loads across frames.
+gfx/scene3d.amni	var tex_stream_bias = 0;	Texture Streaming	pub	Integer offset added to the wanted mip level, so positive values trade sharpness for memory.
+gfx/scene3d.amni	var tex_streamed = 0;	Texture Streaming	int	Running count of bytes uploaded to the GPU by texture streaming, kept for statistics.
+gfx/scene3d.amni	var tex_steps = 0;	Texture Streaming	int	Running count of streaming texture rebuild steps performed, kept for statistics.
+gfx/scene3d.amni	var tex_pending = 0;	Texture Streaming	int	Statistics counter for texture streaming work still pending.
+gfx/scene3d.amni	var tex_starved = 0;	Texture Streaming	int	Statistics counter for streaming requests starved by the upload cap or budget.
+gfx/scene3d.amni	var tex_read = 0;	Texture Streaming	int	Running count of bytes read from disk by texture baking and streaming, kept for statistics.
+gfx/scene3d.amni	var tex_stream_ns = 0;	Texture Streaming	int	Accumulated nanoseconds spent in texture streaming updates, kept for statistics.
+gfx/scene3d.amni	struct TexStream	Texture Streaming	int	Per-texture streaming state record holding the source, mip range, wanted level and idle count.
+gfx/scene3d.amni	var streams TexStream[>..] = [];	Texture Streaming	int	List of streaming records indexed by image number times two plus one for sRGB.
+gfx/scene3d.amni	var stream_pool byte[>..] = [];	Texture Streaming	int	Byte pool holding cache paths or encoded files that streamed textures read mip data from.
+gfx/scene3d.amni	var stream_lv int[>..] = [];	Texture Streaming	int	Table of per-level offset, size and cumulative chain size entries for streamed textures.
+gfx/scene3d.amni	var stream_mem = 0;	Texture Streaming	int	Total bytes of texture memory currently held by streamed textures.
+gfx/scene3d.amni	var uv_dens f32[>..] = [];	Texture Streaming	int	Cache of the smallest UV-space texel density per primitive and UV set, used to pick mip levels.
+gfx/scene3d.amni	fn tex_bake(image int, srgb bool, path const byte[:], file byte[>..]&, mode int) bool	Texture Compression	int	Encodes an image into a BC7 KTX2 file with mips, reusing a cached file when valid; returns false on failure.
+gfx/scene3d.amni	fn tex_format(kind int, srgb bool) i32	Texture Compression	int	Returns the GPU texture format matching a compression kind and sRGB flag, falling back to uncompressed RGBA8.
+gfx/scene3d.amni	fn stream_chain(s TexStream, n int) int	Texture Streaming	int	Returns the byte size of a streamed texture's mip chain from the given level down.
+gfx/scene3d.amni	fn stream_tail(w int, h int, levels int, blocks bool) int	Texture Streaming	int	Returns how many low mip levels stay resident, stopping once the level drops below 128 pixels or block alignment fails.
+gfx/scene3d.amni	fn stream_fetch(si int, a int, b int, out byte[>..]&) bool	Texture Streaming	int	Reads a byte range of a streamed texture's source from file, embedded data or memory; returns false on failure.
+gfx/scene3d.amni	fn stream_build(si int, top int)	Texture Streaming	int	Builds and uploads a streamed texture from the given top mip down, replacing the previous GPU texture.
+gfx/scene3d.amni	fn stream_open(image int, srgb bool) bool	Texture Streaming	int	Starts streaming an image by reading its KTX2 header or baking it, returns false if it cannot be streamed.
+gfx/scene3d.amni	fn stream_at(image int, srgb bool) int	Texture Streaming	int	Returns the streaming record index for an image, or -1 when it is not streamed.
+gfx/scene3d.amni	fn full_texture(image int, srgb bool) gfx::Texture	Texture Streaming	int	Returns an image's texture at full detail for external use, rebuilding streamed textures up to the needed size.
+gfx/scene3d.amni	fn uv_density(prim int, set int) f32	Texture Streaming	int	Returns the smallest texel-per-world-unit UV density of a primitive's UV set, caching the result.
+gfx/scene3d.amni	fn stream_reach(b Batch, pr gltf::Primitive) f32	Texture Streaming	int	Returns the distance-to-texel scale for a batch, used to estimate which mip level the camera needs.
+gfx/scene3d.amni	fn stream_wants()	Texture Streaming	int	Computes the wanted mip level for every streamed texture from the current batches and camera.
+gfx/scene3d.amni	fn stream_update()	Texture Streaming	int	Updates streaming each frame by choosing target levels, applying the memory budget and rebuilding textures.
+os.he	extern read_file_range(path const byte[:], offset int, count int, out byte[>..]&) bool	Files	pub	Reads count bytes from a file starting at the given byte offset into the output buffer, returning false on failure.
+gfx/rt.amni	var mat_in f32[>..] = [];	Triangle Input	int	Accumulates per-triangle glow and packed metalness and roughness values that add appends, consumed when the tree is built.
+gfx/rt.amni	fn add(a float3, b float3, c float3, rgb float3, metal f32, rough f32, glow float3)	Triangle Input	pub	Appends one triangle with vertices, albedo color, metalness and roughness clamped to 0..1, and emissive glow to the scene input.
+gfx/scene3d.amni	var rt_reflect = false;	Reflection Probes	pub	Flag enabling ray-traced reflections; false leaves them off.
+gfx/scene3d.amni	var rt_rough f32 = 0.3;	Reflection Probes	pub	Roughness cutoff for ray-traced reflections; surfaces rougher than this value are not ray traced.
+gfx/scene3d.amni	var rt_reach f32 = 1000.0;	Reflection Probes	pub	Maximum ray distance for ray-traced reflections, in world units.
+dictionary.he	sorted<K, V>(d dictionary<K, V>&) K[>..]	Dictionary Access	pub	Returns the dictionary's keys as a new sorted list in ascending order, using the default key comparison.
+dictionary.he	sorted<K, V, F>(d dictionary<K, V>&) K[>..]	Dictionary Access	pub	Returns the dictionary's keys as a new sorted list, ordered by the comparison function F supplied as a type parameter.
+dictionary.he	list<K, V>(d dictionary<K, V>&) K[>..]	Dictionary Access	pub	Returns the dictionary's keys as a new list, in table order rather than sorted.
+dictionary.he	pydel<K, V>(d dictionary<K, V>&, k K)	Dictionary Storage	int	Removes a key from the dictionary, serving as the lowering target for Python-style del statements.
+std.he	extern pyout(s const byte[:])	Python Helpers	int	Binds the C runtime routine that writes a byte string to output for Python-dialect printing.
+std.he	lstrip(s byte[:], cs byte[:]) byte[:]	Trimming	pub	Returns the slice of s with any leading bytes found in cs removed.
+std.he	rstrip(s byte[:], cs byte[:]) byte[:]	Trimming	pub	Returns the slice of s with any trailing bytes found in cs removed.
+std.he	strip(s byte[:], cs byte[:]) byte[:]	Trimming	pub	Returns the slice of s with bytes found in cs removed from both ends.
+std.he	to_int(x real) int	Real Parsing	pub	Converts a real to an int, with the cast unchecked; the result is undefined when out of range.
+std.he	inline pyrcount(a int, b int, s int) int	Python Helpers	int	Counts the iterations of a Python-style range loop from start, stop and step, returning zero when the range is empty.
+std.he	pyc1(s byte[:]) byte	Python Helpers	int	Returns the first byte of a string slice, used when lowering Python single-character access.
+std.he	pydigit(c byte) int	Python Helpers	int	Converts an ASCII digit byte to its integer value by subtracting 48, without checking the byte is a digit.
+std.he	pyown(xs const byte[:][:]) byte[>..][>..]	Python Helpers	int	Copies a slice of byte strings into a new growable array of independently owned strings.
+std.he	pydel<T>(xs T[>..]&, i int)	Python Helpers	int	Removes the element at an index from a growable array, where a negative index counts from the end.
+std.he	pybi(b bool) int	Python Helpers	int	Converts a boolean to an integer, returning 1 for true and 0 for false.
+std.he	pyf0<T>(xs T[:]) T	Python Helpers	int	Returns the first element of a slice, used when lowering Python tuple field access.
+std.he	pyf1<T>(xs T[:]) T	Python Helpers	int	Returns the second element of a slice, used when lowering Python tuple field access.
+std.he	pyf2<T>(xs T[:]) T	Python Helpers	int	Returns the third element of a slice, used when lowering Python tuple field access.
+std.he	pyf3<T>(xs T[:]) T	Python Helpers	int	Returns the fourth element of a slice, used when lowering Python tuple field access.
+std.he	pystar<T>(xs T[:], sep byte[:]) byte[>..]	Python Formatting	int	Joins the Python-style string forms of a slice's elements into a new string, separated by the given separator.
+std.he	pyformat(n int, spec byte[:]) byte[>..]	Python Formatting	int	Formats an integer like a Python format spec, supporting zero fill, width and the b, o, x, X and d conversions.
+std.he	pych(c byte) byte[>..]	Python Helpers	int	Returns a new growable byte string containing the single given byte.
+std.he	repeat<T>(xs T[:], n int) T[>..]	Slice Transforms	pub	Returns a new array holding the slice's elements repeated n times in order.
+std.he	split(s byte[:], sep byte[:], n int) const byte[:][>..]	Splitting	pub	Splits a string on a separator into slices, stopping after n splits unless n is negative.
+std.he	partition(s byte[:], sep byte[:]) tuple3<const byte[:], const byte[:], const byte[:]>	Splitting	pub	Splits a string at the first separator into the part before, the separator and the part after.
+std.he	pyg(x real, p int) byte[>..]	Python Formatting	int	Formats a real with p significant digits like Python's g conversion, trimming trailing zeros and a bare decimal point.
+std.he	pyrepr(c byte) byte[>..]	Python Formatting	int	Returns the Python repr form of a single byte, as a quoted string.
+std.he	pynone() int	Python Helpers	int	Returns the sentinel integer used to represent Python's None, which is 1 shifted left by 62.
+std.he	pylv(x int) int	Python Helpers	int	Returns an integer unchanged, used when lowering Python assignment to a copied value.
+std.he	pylv(x real) real	Python Helpers	int	Returns a real unchanged, used when lowering Python assignment to a copied value.
+std.he	pylv(x bool) bool	Python Helpers	int	Returns a boolean unchanged, used when lowering Python assignment to a copied value.
+std.he	pylv(c byte) byte[>..]	Python Helpers	int	Converts a byte to a new growable single-byte string for Python assignment.
+std.he	pylv(s byte[:]) byte[>..]	Python Helpers	int	Copies a byte string slice into a new growable string for Python assignment.
+std.he	pylv(s byte[>..]) byte[>..]	Python Helpers	int	Copies a growable byte string into a new independent growable string for Python assignment.
+std.he	pylv<T>(xs T[:]) T[>..]	Python Helpers	int	Copies a slice into a new growable array for Python assignment.
+std.he	pylv<T>(xs T[>..]) T[>..]	Python Helpers	int	Copies a growable array into a new independent growable array for Python assignment.
+std.he	pystep<T>(xs T[:], lo int, hi int, k int) T[>..]	Python Helpers	int	Returns a new array of the slice elements selected by Python-style start, stop and step, with 1 shifted left by 62 meaning an omitted bound.
+gf.he	inline dot64(out byte[:], at int, vecs const byte[:], vat int, s const byte[:], sat int, rot int = 0, orot int = -1)	Field Tables	pub	Computes one 64-byte block as the XOR of sixteen 64-byte vectors multiplied by repeated 4-byte groups, optionally rotating the stored result.
+gf.he	inline dot16(out byte[:], vecs const byte[:], s const byte[:])	Field Tables	pub	Computes sixteen 64-byte dot products at once over 1024-byte blocks, where each output row uses the matching row of s.
+gf.he	inline dot16(out byte[:], vecs const byte[:], s const byte[:], perm const byte[:], rot const byte[:], mode int = 0)	Field Tables	pub	Computes sixteen dot products over 1024-byte blocks with rows permuted and rotated by perm and rot, gathering in mode 0 and scattering otherwise.
+gf.he	dots(o byte[:], v const byte[:], g const byte[:], rot int, orot int)	Field Tables	int	Computes one 64-byte dot product with a portable fallback when vector instructions are absent, used by the inline dot functions.
+json.he	inline format_number(out byte[>..]&, v real, plus_exp bool = false)	Writing JSON	pub	Appends a real number to the output buffer as JSON text, writing "null" for NaN or infinity and ".0" on whole values; plus_exp adds a "+" to positive exponents.
+json.he	format_finite(out byte[>..]&, b uint, plus_exp bool)	Writing JSON	int	Appends the shortest-digit form of a finite real, given its raw bits, to the output buffer; helper for format_number.
+regex.he	struct Machine { now Threads, later Threads, seen int[>..], stamp int, work int[>..], best int[>..], width int, vis u32[>..], stk int[>..] }	Matching Engine	int	Holds the Pike machine's working state: live thread lists, visit marks, saved slots, and backtracking buffers, reused across searches.
+regex.he	BACK_BITS := 1 << 21	Matching Engine	int	Constant giving the most instruction and position pairs the backtracking search may mark before the Pike machine is used.
+regex.he	inline stuck(prog Op[:], sets ByteSet[:], text byte[:], pc int, i int) bool	Matching Engine	int	Returns true when the instruction at pc consumes a byte and the byte at position i cannot match its set.
+regex.he	inline room(m Machine&, bits int)	Matching Engine	int	Grows the machine's visit bit array so it can hold at least the given number of bits.
+regex.he	back(re Regex&, m Machine&, text byte[:], from int) bool	Matching Engine	int	Searches by backtracking from a start position, marking tried instruction and position pairs, and returns whether a match was found.
+regex.he	pike(re Regex&, m Machine&, text byte[:], from int) bool	Matching Engine	int	Searches with the Pike machine from a start position, running all threads in lockstep, and returns whether a match was found.
+std.he	extern std_mulhi(a uint, b uint) uint	Bit Operations	int	Multiplies two unsigned integers and returns the high 64 bits of the product; a thin C binding for internal use.
+std.he	extern std_vk_cpu() int	String Splitting	int	Returns the CPU capability flag, 1 when the vectorized string routines are usable; a thin C binding behind hxk.
+std.he	extern std_ptr(s const byte[:]) uint	Raw Memory	int	Returns the raw address of a byte slice as an unsigned integer for use with low-level C bindings.
+std.he	extern std_ld8(p int) uint	Raw Memory	int	Loads an unsigned 64-bit value from the raw memory address p.
+std.he	extern std_st8(p int, v uint)	Raw Memory	int	Stores the unsigned 64-bit value v at the raw memory address p.
+std.he	extern std_st1(p int, v int)	Raw Memory	int	Stores the low byte of integer v at the raw memory address p.
+std.he	extern std_zdec(b uint, e int&) uint	Number Formatting	int	Decodes the unsigned value b into digits and writes the decimal exponent through e; a thin C binding.
+std.he	extern std_vk_span(p uint, n int) int	String Splitting	int	Scans n bytes starting at address p with vector code and returns how many bytes to skip; used by each_word.
+std.he	extern std_vk_hexenc(d uint, s uint, n int)	Byte Encoding	int	Encodes n bytes at address s as hexadecimal text written to address d; a thin C binding.
+std.he	extern std_vk_hexdec(d uint, s uint, n int) int	Byte Encoding	int	Decodes n hexadecimal characters at address s into bytes at address d and returns a status result; a thin C binding.
+std.he	HXK ~= -1	String Splitting	int	Cached CPU capability value, initialized to -1 until first checked by hxk.
+std.he	inline hxk() bool	String Splitting	int	Returns true when the vectorized string fast path is available, checking the CPU once and caching the result.
+std.he	fixed_parts(v real, decimals int, away bool = false) uint, uint, bool	Number Formatting	int	Splits a real into its integer part and a rounded decimals-digit fraction as integers, ties to even or away from zero; returns false for sizes of 2^53 or more, inf, nan, or decimals outside 0 to 18.
+tiles/js.he	fixed_locale(x real, digits int, or_zero bool = false) byte[>..]	Locale Formatting	pub	Formats a real as a string with fixed decimals and comma-grouped thousands, trimming trailing zeros; with or_zero true, omits the minus sign when the rounded result is zero.
+gfx.he	draw_indexed_indirect(args Buffer, offset int)	Drawing	pub	Draws indexed geometry using arguments read from an indirect buffer, which must hold five u32 values at a 4-byte-aligned offset and requires a bound index buffer.
+gfx/meshlet.amni	struct V3	Geometry Math	int	Internal 3D vector of real components used by the meshlet builder's geometry routines.
+gfx/meshlet.amni	fn vget(pos const f32[:], stride int, at int, v int) V3	Geometry Math	int	Reads the three position components of vertex v from a strided float array into a V3.
+gfx/meshlet.amni	fn v3dot(a V3, b V3) real	Geometry Math	int	Returns the dot product of two vectors.
+gfx/meshlet.amni	fn v3len(a V3) real	Geometry Math	int	Returns the Euclidean length of a vector.
+gfx/meshlet.amni	fn v3cross(a V3, b V3) V3	Geometry Math	int	Returns the cross product of two vectors.
+gfx/meshlet.amni	let MAX_TRIS = 128;	Meshlet Building	int	Maximum number of triangles placed in one emitted cluster.
+gfx/meshlet.amni	let GROUP = 8;	Meshlet Building	int	Target number of clusters merged into one group when building hierarchy levels.
+gfx/meshlet.amni	let GROUP_MAX = 16;	Meshlet Building	int	Upper limit on clusters allowed in one group.
+gfx/meshlet.amni	let SOLO = 256;	Meshlet Building	int	Cluster count at or below which all clusters are put into a single group.
+gfx/meshlet.amni	let ROW = 20;	Meshlet Building	int	Number of float values stored per cluster row in the cluster table.
+gfx/meshlet.amni	let SAMPLES = 128;	Meshlet Building	int	Maximum number of sample vertices kept per cluster for error measurement.
+gfx/meshlet.amni	let FAR f32 = 1e30;	Meshlet Building	int	Large sentinel float value written into the cluster table as an unset error bound.
+gfx/meshlet.amni	var idx u32[>..];	Meshlet Building	pub	Growing array of triangle vertex indices for all emitted clusters.
+gfx/meshlet.amni	var tab f32[>..];	Meshlet Building	pub	Growing float table holding one ROW-sized bounds and error record per cluster.
+gfx/meshlet.amni	var rng u32[>..];	Meshlet Building	pub	Growing array of start and length pairs locating each cluster's indices in idx.
+gfx/meshlet.amni	var count int = 0;	Meshlet Building	pub	Total number of clusters emitted so far.
+gfx/meshlet.amni	var leaves int = 0;	Meshlet Building	pub	Number of leaf-level clusters built from the original mesh.
+gfx/meshlet.amni	var levels int = 0;	Meshlet Building	pub	Number of hierarchy levels built so far.
+gfx/meshlet.amni	var level_tris int[>..];	Meshlet Building	pub	Growing array of the total triangle count emitted at each hierarchy level.
+gfx/meshlet.amni	var weld int[>..];	Meshlet Building	int	Maps each vertex to the representative vertex sharing its quantized position.
+gfx/meshlet.amni	var smp int[>..];	Meshlet Building	int	Growing array of sample vertex ids collected across all clusters.
+gfx/meshlet.amni	var srng int[>..];	Meshlet Building	int	Growing array of start and length pairs locating each cluster's samples in smp.
+gfx/meshlet.amni	var next_v int = 0;	Meshlet Building	int	Index of the next unused vertex slot where simplification writes new vertices.
+gfx/meshlet.amni	fn weld_build(pos const f32[:], stride int, at int, nv int)	Meshlet Building	pub	Builds the weld map that merges vertices at identical quantized positions, clearing any previous map.
+gfx/meshlet.amni	fn radix_pass(keys const int[:], src const int[:], dst int[:], shift int)	Meshlet Building	int	Performs one 10-bit counting sort pass of indices by key at the given shift.
+gfx/meshlet.amni	fn sort_by_key(keys const int[:], order int[>..]&)	Meshlet Building	int	Fills order with indices sorted by ascending integer key using three radix passes.
+gfx/meshlet.amni	fn v3sc(a V3, s real) V3	Geometry Math	int	Returns a vector scaled by a real factor.
+gfx/meshlet.amni	fn v3at(a V3, ax int) real	Geometry Math	int	Returns the vector component selected by axis number 0, 1 or otherwise 2.
+gfx/meshlet.amni	fn frac(a real, b real) real	Geometry Math	int	Returns a divided by b, or zero when b is nearly zero.
+gfx/meshlet.amni	fn seg_dist(p V3, a V3, b V3) real	Geometry Math	int	Returns the distance from a point to a line segment.
+gfx/meshlet.amni	fn tri_dist(p V3, a V3, b V3, c V3) real	Geometry Math	int	Returns the distance from a point to a triangle.
+gfx/meshlet.amni	fn nearest(samples const int[:], tris const int[:], pos const f32[:], stride int, at int, near int[>..]&, dist real[>..]&) real	Meshlet Building	int	Finds the nearest triangle and distance for each sample vertex, returning the largest distance.
+gfx/meshlet.amni	fn emit(tris const int[:], pos const f32[:], stride int, at int, level int, err f32, own bool, lx f32, ly f32, lz f32, lr f32, samples const int[:], near const int[:], dist const real[:], made int[>..]&)	Meshlet Building	int	Splits triangles into spatially ordered clusters of limited size and appends their bounds, cones and samples to the tables.
+gfx/meshlet.amni	struct Cand	Mesh Simplification	int	Candidate edge collapse holding its vertices, move flag, interpolation parameter, cost and target position.
+gfx/meshlet.amni	var pmap int[>..];	Mesh Simplification	int	Maps weld ids to local vertex numbers during simplification, with negative meaning unassigned.
+gfx/meshlet.amni	var sp_org int[>..];	Mesh Simplification	int	Original vertex index for each triangle corner during simplification.
+gfx/meshlet.amni	var sp_plc int[>..];	Mesh Simplification	int	Local welded vertex number for each triangle corner during simplification.
+gfx/meshlet.amni	var sp_live bool[>..];	Mesh Simplification	int	Flags marking which triangles are still alive during simplification.
+gfx/meshlet.amni	var sp_pp V3[>..];	Mesh Simplification	int	Current position of each local vertex during simplification.
+gfx/meshlet.amni	var sp_q real[>..];	Mesh Simplification	int	Ten accumulated quadric error coefficients per local vertex.
+gfx/meshlet.amni	var sp_w real[>..];	Mesh Simplification	int	Accumulated triangle area weight per local vertex.
+gfx/meshlet.amni	var sp_lock bool[>..];	Mesh Simplification	int	Flags marking boundary vertices that must not be collapsed away.
+gfx/meshlet.amni	var sp_ts int[>..];	Mesh Simplification	int	Start offsets into sp_tl listing triangles around each vertex.
+gfx/meshlet.amni	var sp_tl int[>..];	Mesh Simplification	int	Flat list of triangle ids adjacent to each local vertex.
+gfx/meshlet.amni	fn sp_corner(t int, q int) V3	Mesh Simplification	int	Returns the position of corner q of triangle t.
+gfx/meshlet.amni	fn sp_has(t int, a int) bool	Mesh Simplification	int	Returns whether triangle t uses local vertex a.
+gfx/meshlet.amni	fn sp_slot(t int, a int) int	Mesh Simplification	int	Returns which corner of triangle t uses vertex a, or -1 if none.
+gfx/meshlet.amni	fn sp_pair(a int, b int, oa int[>..]&, fa int[>..]&) bool	Mesh Simplification	int	Collects the original vertices at a and their counterparts at b, returning false if the mapping is inconsistent.
+gfx/meshlet.amni	fn sp_inverse(oa const int[:], fa const int[:], ob const int[:], fb const int[:]) bool	Mesh Simplification	int	Returns whether two vertex correspondence maps are exact inverses of each other.
+gfx/meshlet.amni	fn sp_qs(a int, b int, k int) real	Mesh Simplification	int	Returns the sum of one quadric coefficient for two vertices.
+gfx/meshlet.amni	fn sp_mulq(a int, b int, v V3) V3	Mesh Simplification	int	Multiplies the combined quadric matrix of two vertices by a vector.
+gfx/meshlet.amni	fn sp_qerr(a int, b int, p V3) real	Mesh Simplification	int	Returns the area-normalized quadric error of placing the merged vertex at a point.
+gfx/meshlet.amni	fn sp_flips(a int, b int, p V3, snap bool) bool	Mesh Simplification	int	Returns whether collapsing to a point would flip or degenerate any surrounding triangle.
+gfx/meshlet.amni	fn simplify(tris const int[:], pos f32[:], stride int, at int, target int, out int[>..]&) real	Mesh Simplification	pub	Collapses edges to reduce triangles toward a target count, returning the largest geometric error introduced.
+gfx/meshlet.amni	let NBR = 16;	Mesh Simplification	int	Maximum number of neighbors tracked per cluster when grouping.
+gfx/meshlet.amni	fn g_add_nb(nbp int[>..]&, nbc int[>..]&, nbn int[>..]&, i int, j int)	Mesh Simplification	int	Adds or increments a neighbor entry for cluster i, ignoring new neighbors beyond the limit.
+gfx/meshlet.amni	fn group(cur const int[:], groups int[>..]&, gfirst int[>..]&)	Meshlet Building	pub	Partitions the current clusters into groups for the next hierarchy level.
+gfx/meshlet.amni	fn build(pos f32[:], stride int, at int, nv int, indices const u32[:])	Meshlet Building	pub	Builds the meshlet hierarchy from a vertex position buffer and triangle indices, replacing any previously built data; welds vertices and simplifies grouped clusters per level.
+gfx/meshlet.amni	fn cut(e f32, out u32[>..]&)	Level Selection	pub	Fills the output array with triangle indices of all clusters whose error range contains the given error threshold e.
+gfx/meshlet.amni	fn cut_tris(e f32) int	Level Selection	pub	Returns the number of triangles in the clusters selected for the given error threshold e, matching what cut would output.
+gfx/scene3d.amni	var meshlets = false;	Meshlet Culling	pub	Flag that turns on meshlet-based rendering of large meshes, off by default.
+gfx/scene3d.amni	var meshlet_px f32 = 1.0;	Meshlet Culling	pub	Pixel-size threshold, in pixels, used when selecting meshlet detail; defaults to 1.0.
+gfx/scene3d.amni	var meshlet_cone = true;	Meshlet Culling	pub	Flag enabling normal-cone culling of meshlets, on by default.
+gfx/scene3d.amni	var meshlet_cpu = false;	Meshlet Culling	pub	Flag that runs meshlet culling on the CPU instead of the GPU compute pipeline, off by default.
+gfx/scene3d.amni	var meshlet_min = 4000;	Meshlet Culling	pub	Minimum mesh size, defaulting to 4000, at which meshlet rendering applies.
+gfx/scene3d.amni	var meshlet_budget = 8000000;	Meshlet Culling	pub	Budget limit for meshlet rendering work, defaulting to 8000000.
+gfx/scene3d.amni	var ml_first int[>..] = [];	Meshlet Culling	int	Per-mesh index of the first meshlet entry, rebuilt when meshlet data changes.
+gfx/scene3d.amni	var ml_count int[>..] = [];	Meshlet Culling	int	Per-mesh meshlet counts, kept alongside the first-meshlet indices.
+gfx/scene3d.amni	var ml_tab f32[>..] = [];	Meshlet Culling	int	CPU-side meshlet table data uploaded to the GPU table buffer.
+gfx/scene3d.amni	var ml_rng u32[>..] = [];	Meshlet Culling	int	CPU-side meshlet range data uploaded to the GPU range buffer.
+gfx/scene3d.amni	var ml_idx u32[>..] = [];	Meshlet Culling	int	CPU-side meshlet index data uploaded to the GPU index buffer.
+gfx/scene3d.amni	var ml_draws f32[>..] = [];	Meshlet Culling	int	CPU-side per-draw meshlet data uploaded to the GPU draw buffer.
+gfx/scene3d.amni	var ml_bases int[>..] = [];	Meshlet Culling	int	Base offsets into the meshlet arrays for each draw.
+gfx/scene3d.amni	var ml_sel u32[>..] = [];	Meshlet Culling	int	CPU-side list of selected meshlets produced by culling.
+gfx/scene3d.amni	var ml_tab_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer holding the meshlet table.
+gfx/scene3d.amni	var ml_rng_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer holding the meshlet ranges.
+gfx/scene3d.amni	var ml_idx_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer holding the meshlet indices.
+gfx/scene3d.amni	var ml_draw_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer holding the meshlet draw records.
+gfx/scene3d.amni	var ml_args_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer holding the indirect draw arguments for meshlets.
+gfx/scene3d.amni	var ml_out_buf gfx::Buffer;	Meshlet Culling	int	GPU buffer receiving the meshlets that survive culling.
+gfx/scene3d.amni	var ml_dirty = false;	Meshlet Culling	int	Flag marking meshlet data as changed and needing re-upload.
+gfx/scene3d.amni	var ml_have = false;	Meshlet Culling	int	Flag recording whether meshlet data currently exists.
+gfx/scene3d.amni	var ml_draw_cap = 0;	Meshlet Culling	int	Current capacity of the meshlet draw buffer.
+gfx/scene3d.amni	var ml_out_cap = 0;	Meshlet Culling	int	Current capacity of the meshlet output buffer.
+gfx/scene3d.amni	var pipe_ml_cull gfx::ComputePipeline;	Meshlet Culling	int	Compute pipeline that culls meshlets on the GPU.
+gfx/scene3d.amni	var pipe_ml_fit gfx::ComputePipeline;	Meshlet Culling	int	Compute pipeline that fits meshlet output for drawing.
+gfx/scene3d.amni	struct MlU	Meshlet Culling	int	Uniform block for meshlet culling holding eye position, LOD parameters and six frustum planes.
+gfx/scene3d.amni	struct MlFitU	Meshlet Culling	int	Uniform block for the meshlet fit pass holding a single count vector.
+gfx/scene3d.amni	fn meshlet_prepare()	Meshlet Culling	int	Uploads newly built meshlet data for each loaded primitive, skipping skinned, morphed, blended, tiny or special-shaded ones.
+gfx/scene3d.amni	fn meshlet_slot(pi int, m gfx::mat4, two bool) int	Meshlet Culling	int	Registers a draw instance's transform for meshlet culling and returns its slot, or -1 if the primitive has no meshlets.
+gfx/scene3d.amni	fn ml_at(d int, c int, r int) float3	Meshlet Culling	int	Returns a meshlet's bounding point transformed by a draw's matrix, selected by row index.
+gfx/scene3d.amni	fn ml_far(p float3, e float4) f32	Meshlet Culling	int	Returns the distance between a point and the eye position.
+gfx/scene3d.amni	fn ml_keep(d int, c int, cam bool, u MlU) bool	Meshlet Culling	int	Decides whether a meshlet survives level-of-detail, frustum and backface cone tests for a draw.
+gfx/scene3d.amni	fn ml_plane(a float4, b float4, k f32) float4	Meshlet Culling	int	Returns a normalized frustum plane built by combining two plane vectors with a scale factor.
+gfx/scene3d.amni	fn meshlet_select()	Meshlet Culling	int	Selects visible meshlets for all draws each frame, on the CPU or via GPU compute, and fills indirect draw arguments.
+gfx/scene3d.amni	fn meshlet_stats() int, int, int	Meshlet Culling	pub	Returns counts of camera-visible triangles, total selected triangles, and draws whose output overflowed the buffer budget.

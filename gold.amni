@@ -18,6 +18,7 @@ var TCR = 0;
 var COST = 0.0;
 var CALLS = 0;
 var VERB = false;
+var WIDE = false;
 struct Sp { a int, b int }
 struct Blk { kind int, src Sp, he Sp, l0 int, l1 int, key uint, pend bool }
 struct Pk { name Sp, dir Sp, lang Sp, main Sp, test Sp, notes Sp }
@@ -62,7 +63,7 @@ fn setup() {
 	var rd byte[>..] = [];
 	if resource_dir(rd) && is_dir(str(rd, "/packs")) { envor("GOLD_ROOT", rd, ROOT); } else { envor("GOLD_ROOT", str(HOME, "/ai/amni-lang/gold"), ROOT); }
 	var h byte[>..] = [];
-	envor("GOLD_HELIUM", str(HOME, "/ai/amni-lang/helium-gold"), h);
+	envor("GOLD_HELIUM", str(HOME, "/ai/amni-lang/helium"), h);
 	envor("GOLD_HC", str(h, "/build/hc"), HC);
 	envor("GOLD_HC_LIB", str(h, "/hc/lib"), HCLIB);
 	format_int(TAG, (random_seed() >> 16) as! int, 16, 12, '0');
@@ -82,18 +83,57 @@ fn cell_lit(c const byte[:], out byte[>..]&) {
 	out.push('"');
 }
 fn epart(c const byte[:]) int { for x, i in c { if x == 'e' || x == 'E' { return i; } } -1 }
-fn cell_sc(c const byte[:], s const byte[:]) byte[>..] {
-	if s.len == 0 || !numlit(c) || epart(c) >= 0 || (s == "." && find(c, ".") >= 0) { return copy(c); }
-	if s == "." { str(c, ".0") } else { str(c, s) }
+fn dg(x byte) bool { x >= '0' && x <= '9' }
+fn drun(c const byte[:], i int) int { var j = i; while j < c.len && dg(c[j]) { j++; } j }
+fn fnum(c const byte[:]) Sp {
+	var i = 0;
+	while i < c.len && !dg(c[i]) { i++; }
+	if i == c.len { return Sp { -1, -1 }; }
+	var j = drun(c, i);
+	if j + 1 < c.len && c[j] == '.' && dg(c[j + 1]) { j = drun(c, j + 1); }
+	Sp { i, j }
 }
-fn cell_pk(c const byte[:], s const byte[:]) byte[>..] {
-	if s.len == 0 || !numlit(c) { return copy(c); }
+fn plain(c const byte[:]) bool { let f = fnum(c); f.a == 0 && f.b == c.len }
+fn pint(t const byte[:]) int { var v = 0; var neg = false; for x in t { if x == '-' { neg = true; } else if dg(x) { v = v * 10 + (x as int) - 48; } } if neg { 0 - v } else { v } }
+fn dtext(c const byte[:], z int) byte[>..] {
 	let k = epart(c);
-	if s == "." { return if k < 0 && ends_with(c, ".0") { copy(c[..(c.len - 2)]) } else { copy(c) }; }
-	if k < 0 { return str(c, "e0"); }
-	if c[k..] != s { return copy(c); }
-	let m = c[..k];
-	if ends_with(m, ".0") { copy(m[..(m.len - 2)]) } else { copy(m) }
+	let m = if k >= 0 { c[..k] } else { c };
+	var e = z + (if k >= 0 { pint(c[(k + 1)..]) } else { 0 });
+	var d byte[>..] = [];
+	var fr = false;
+	for x in m { if x == '.' { fr = true; } else if dg(x) { if fr { e -= 1; } if d.len > 0 || x != '0' { d.push(x); } } }
+	while d.len > 0 && d[d.len - 1] == '0' { d.pop(); e += 1; }
+	var t byte[>..] = [];
+	if c.len > 0 && c[0] == '-' { t.push('-'); }
+	if d.len == 0 { t.push('0'); return t; }
+	let w = d.len + e;
+	if e >= 0 { t.append(d); for i in 0..e { t.push('0'); } } else if w > 0 { t.append(d[..w]); t.push('.'); t.append(d[w..]); } else { t.append("0."); for i in w..0 { t.push('0'); } t.append(d); }
+	t
+}
+fn tcl(x byte) int { if dg(x) { 3 } else if (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') { 4 } else if x == '|' { 2 } else { 1 } }
+fn ttok(c const byte[:]) int {
+	var t = 0;
+	var i = 0;
+	while i < c.len { let k = tcl(c[i]); var j = i + 1; while k > 1 && j < c.len && tcl(c[j]) == k { j++; } t += (j - i + k - 1) / k; i = j; }
+	t
+}
+fn cell_sc(c const byte[:], s const byte[:], up const byte[:]) byte[>..] {
+	if s == "+" { let f = fnum(up); return if !plain(c) { copy(c) } else if f.a < 0 { str("'", c, "'") } else { str(up[..f.a], c, up[f.b..]) }; }
+	if s.len == 0 || !numlit(c) || epart(c) >= 0 { return copy(c); }
+	let j = if s[0] == '.' { drun(s, 1) } else { 0 };
+	if j > 1 && find(c, "_") < 0 && !hexlit(c) { let t = dtext(c, 0 - pint(s[..j])); return str(t, if find(t, ".") < 0 { ".0" } else { "" }, s[j..]); }
+	str(c, if s == "." && find(c, ".") < 0 { ".0" } else { "" }, s[j..])
+}
+fn cell_pk(c const byte[:], s const byte[:], up const byte[:]) byte[>..] {
+	if s == "+" { let f = fnum(up); let r = up.len - f.b; return if f.a >= 0 && c.len >= f.a + r && c[..f.a] == up[..f.a] && c[(c.len - r)..] == up[f.b..] && plain(c[f.a..(c.len - r)]) { copy(c[f.a..(c.len - r)]) } else { copy(c) }; }
+	if s.len == 0 || !numlit(c) || hexlit(c) || find(c, "_") >= 0 { return copy(c); }
+	let j = if s[0] == '.' { drun(s, 1) } else { 0 };
+	let k = epart(c);
+	let n = pint(s[..j]);
+	let q = dtext(c, n - pint(s[j..]));
+	if (k < 0 && j == s.len) || (k >= 0 && c[k..] == s[j..]) { return q; }
+	let alt = if k >= 0 { copy(c) } else { str(c, "e0") };
+	if ttok(q) <= ttok(alt) { q } else { alt }
 }
 fn table_rows(rows const byte[:], g byte[>..][>..][>..]&) {
 	var spec byte[>..][>..] = [];
@@ -102,40 +142,81 @@ fn table_rows(rows const byte[:], g byte[>..][>..][>..]&) {
 		if t.len == 0 || t.starts_with("#") { continue; }
 		if t.starts_with("@") { spec.clear(); for c in split(t[1..], '|') { spec.push(copy(trim(c))); } continue; }
 		var cells byte[>..][>..] = [];
-		for c, i in split(t, '|') { let v = trim(c); if (v == "\"" || v.len == 0) && g.len > 0 && i < g[g.len - 1].len { cells.push(copy(g[g.len - 1][i])); } else if v.len == 0 { cells.push(copy("''")); } else { cells.push(cell_sc(v, if i < spec.len { spec[i] } else { "" })); } }
+		for c, i in split(t, '|') {
+			let v = trim(c);
+			let has = g.len > 0 && i < g[g.len - 1].len;
+			if (v == "\"" || v.len == 0) && has { cells.push(copy(g[g.len - 1][i])); } else if v.len == 0 { cells.push(copy("''")); } else { cells.push(cell_sc(v, if i < spec.len { spec[i] } else { "" }, if has { g[g.len - 1][i] } else { "" })); }
+		}
+		while g.len > 0 && cells.len < g[g.len - 1].len { cells.push(copy(g[g.len - 1][cells.len])); }
 		g.push(copy(cells));
 	}
 }
+fn col_cost(g byte[>..][>..][>..]&, j int, s const byte[:]) int {
+	var t = ttok(s);
+	for r, a in g { let has = a > 0 && j < g[a - 1].len; if j < r.len && !(has && g[a - 1][j] == r[j]) { t += ttok(cell_pk(r[j], s, if has { g[a - 1][j] } else { "" })); } }
+	t
+}
 fn pack_rows(rows const byte[:], out byte[>..]&) {
-	var g byte[>..][>..][>..] = [];
-	table_rows(rows, g);
-	var n = 0;
-	for r in g { n = max(n, r.len); }
-	var sp byte[>..][>..] = [];
-	for j in 0..n {
-		var isr = false;
-		var allr = true;
-		var nn = 0;
-		var bc = 0;
-		var best byte[>..] = [];
-		for r in g { if j < r.len && numlit(r[j]) { nn += 1; if find(r[j], ".") >= 0 || epart(r[j]) >= 0 { isr = true; } else { allr = false; } } }
-		for r, a in g {
-			if j >= r.len || !numlit(r[j]) || epart(r[j]) < 0 { continue; }
-			let ex = r[j][epart(r[j])..];
-			if ex == best { continue; }
-			var cnt = 0;
-			for q in g { if j < q.len && numlit(q[j]) && epart(q[j]) >= 0 && q[j][epart(q[j])..] == ex { cnt += 1; } }
-			if cnt > bc { bc = cnt; best.clear(); best.append(ex); }
+	var cur = copy(rows);
+	for it in 0..7 {
+		var g byte[>..][>..][>..] = [];
+		table_rows(cur, g);
+		if WIDE { cur.clear(); for r in g { for c, j in r { if j > 0 { cur.push('|'); } cur.append(c); } cur.push('\n'); } break; }
+		var n = 0;
+		for r in g { n = max(n, r.len); }
+		var sp byte[>..][>..] = [];
+		var tot = 0;
+		for j in 0..n {
+			var allr = true;
+			var text = true;
+			var anyn = false;
+			var exs byte[>..][>..] = [];
+			exs.push(copy(""));
+			for r in g {
+				if j >= r.len { continue; }
+				let c = r[j];
+				let k = epart(c);
+				if c == "true" || c == "false" { text = false; }
+				if !numlit(c) { continue; }
+				text = false;
+				anyn = true;
+				if hexlit(c) || find(c, "_") >= 0 || (k < 0 && find(c, ".") < 0) { allr = false; continue; }
+				var known = k < 0;
+				for e in exs { if k >= 0 && e == c[k..] { known = true; } }
+				if !known { exs.push(copy(c[k..])); }
+			}
+			var cands byte[>..][>..] = [];
+			if anyn && allr { for x in exs { for nn in 0..8 { var s byte[>..] = []; if nn > 0 || x.len == 0 { s.push('.'); } if nn > 0 { s.push((48 + nn) as! byte); } s.append(x); cands.push(copy(s)); } } } else if text { cands.push(copy("+")); }
+			let base = col_cost(g, j, "");
+			var bv = 0;
+			var bs byte[>..] = [];
+			for s in cands { let sv = base - col_cost(g, j, s); if sv > bv && sv * (if s == "+" { 1 } else { 7 }) >= g.len { bv = sv; bs.clear(); bs.append(s); } }
+			sp.push(copy(bs));
+			tot += bv;
 		}
-		sp.push(if !(isr && allr) { copy("") } else if bc * 2 > nn { copy(best) } else { copy(".") });
+		while sp.len > 0 && sp[sp.len - 1].len == 0 { sp.pop(); }
+		var nx byte[>..] = [];
+		var own = 0;
+		nx.push('@');
+		for x, j in sp { if j > 0 { nx.push('|'); } nx.append(x); own += ttok(x); }
+		if tot > ttok(nx) + 1 - own { nx.push('\n'); } else { nx.clear(); sp.clear(); }
+		for r, a in g {
+			let st = nx.len;
+			var m = st;
+			for c, j in r {
+				let has = a > 0 && j < g[a - 1].len;
+				if j > 0 { nx.push('|'); }
+				if !(has && g[a - 1][j] == c) { nx.append(cell_pk(c, if j < sp.len { sp[j] } else { "" }, if has { g[a - 1][j] } else { "" })); m = nx.len; }
+			}
+			if a > 0 { nx.resize(m, 0); if m == st { nx.push('"'); } }
+			nx.push('\n');
+		}
+		let same = nx == cur;
+		cur.clear();
+		cur.append(nx);
+		if same { break; }
 	}
-	var any = false;
-	for x in sp { if x.len > 0 { any = true; } }
-	if any { out.push('@'); for x, j in sp { if j > 0 { out.push('|'); } out.append(x); } out.push('\n'); }
-	for r, a in g {
-		for c, j in r { if j > 0 { out.push('|'); } if !(a > 0 && j < g[a - 1].len && g[a - 1][j] == c) { out.append(cell_pk(c, sp[j])); } }
-		out.push('\n');
-	}
+	out.append(cur);
 }
 fn pack_tables(src const byte[:], out byte[>..]&) {
 	var rows byte[>..] = [];
@@ -147,7 +228,7 @@ fn pack_tables(src const byte[:], out byte[>..]&) {
 		out.append(raw);
 		out.push('\n');
 	}
-	if out.len > 0 && (src.len == 0 || src[src.len - 1] != '\n') { out.pop(); }
+	if out.len > 0 { out.pop(); }
 }
 fn gen_table(head const byte[:], rows const byte[:], out byte[>..]&) {
 	let w = words(head);
@@ -270,20 +351,53 @@ fn load_pack(name const byte[:]) bool {
 	}
 	true
 }
+fn modof(file const byte[:]) byte[>..] { var o byte[>..] = []; let e = rfind(file, "."); for c in file[..(if e > 0 { e } else { file.len })] { o.push(if c == '/' { '.' } else { c }); } o }
+fn is_const(nm const byte[:]) bool { let s = nm[(rfind(nm, "::") + 1)..]; var up = false; for c in s { if c >= 'a' && c <= 'z' { return false; } up = up || (c >= 'A' && c <= 'Z'); } up }
+fn dia_tile(d const byte[:]) const byte[:] { if d == "python" || d == "numpy" { "py" } else if d == "rust" { "rs" } else if d == "kotlin" { "kt" } else { d } }
+fn is_tile(f const byte[:]) bool { if !f.starts_with("tiles/") { return false; } for d in words(DIA) { if stem(f) == dia_tile(d) { return true; } } false }
+fn doc_hit(b const byte[:], nm const byte[:]) bool { let k = find(b, str("`", nm)); k >= 0 && k + nm.len + 1 < b.len && !idc(b[k + nm.len + 1]) }
+fn arity(s const byte[:], nm const byte[:]) int { let k = find(s, str(nm, "(")); if k < 0 { return -1; } var n = 0; var d = 0; var any = false; for c in s[(k + nm.len + 1)..] { if c == ')' && d == 0 { break; } if c == '(' || c == '[' { d++; } if (c == ')' || c == ']') && d > 0 { d--; } if c == ',' && d == 0 { n++; } any = any || c != ' '; } if any { n + 1 } else { 0 } }
+fn gold_doc(gs const byte[:], nm const byte[:], sig const byte[:], out byte[>..]&) {
+	var blk byte[>..] = [];
+	var first byte[>..] = [];
+	let want = arity(sig, nm);
+	for l in split(str(gs, "\n\n"), '\n') {
+		let t = trim(l);
+		if t.len > 0 { if blk.len > 0 { blk.push(' '); } blk.append(t); continue; }
+		if doc_hit(blk, nm) { let k = find(blk, str("`", nm, "(")); if k >= 0 && arity(blk[k..], nm) == want { out.append(blk[..min(blk.len, 400)]); return; } if first.len == 0 { first.append(blk[..min(blk.len, 400)]); } }
+		blk.clear();
+	}
+	out.append(first);
+}
+fn lint(src const byte[:], bi int) int {
+	var n = 0;
+	var ln = 0;
+	for raw in split(src, '\n') {
+		ln++;
+		if find(raw, " | ") >= 0 { continue; }
+		var t byte[>..] = [];
+		var bt byte[>..] = [];
+		var qc = 0 as byte;
+		for c in raw { if qc != 0 { if c == qc { qc = 0; bt.push(' '); } else if qc == '`' { bt.push(c); } continue; } if c == '`' || c == '"' { qc = c; continue; } t.push(c); }
+		for op in ["->", "=>", "==", "!=", "&&", "||", ":=", "+=", "-=", "[>..]", "[:]", "byte[", "fn "] { if find(t, op) >= 0 || (op != "||" && op != "fn " && find(bt, op) >= 0) { write_stderr(str("gold: block ", bi, " line ", ln, ": `", op, "` is code\n")); n++; } }
+	}
+	n
+}
 fn import_of(p Pk, file const byte[:], out byte[>..]&) {
-	let s = stem(file);
-	let kw = if at(p.lang) == "amni" && LANG == "amni" { "import " } else if LANG == "amni" { "import " } else { "use " };
-	if at(p.name) == "std" { if s != "std" { out.append(kw); let e = rfind(file, "."); for c in file[..(if e > 0 { e } else { file.len })] { out.push(if c == '/' { '.' } else { c }); } } return; }
+	let kw = if LANG == "amni" { "import " } else { "use " };
+	if at(p.name) == "std" { if stem(file) != "std" { out.append(kw); out.append(modof(file)); } return; }
 	var rel = file;
 	let mn = at(p.main);
 	if mn.len > 0 { let md = dirof(mn); if file.starts_with(md) && file.len > md.len + 1 { rel = file[(md.len + 1)..]; } }
-	let e = rfind(rel, ".");
 	out.append(kw);
-	for c in rel[..(if e > 0 { e } else { rel.len })] { out.push(if c == '/' { '.' } else { c }); }
+	out.append(modof(rel));
 }
 fn index_file(full const byte[:], rel const byte[:], api byte[>..]&) {
 	var src byte[>..] = [];
 	if !readall(full, src) { return; }
+	var gs byte[>..] = [];
+	let ge = rfind(full, ".");
+	let hasg = ge > 0 && readall(str(full[..ge], ".gold"), gs);
 	let he = ends_with(full, ".he");
 	var ns byte[..64] = "";
 	var doc byte[>..] = [];
@@ -323,7 +437,8 @@ fn index_file(full const byte[:], rel const byte[:], api byte[>..]&) {
 		format(api, nm, "\t", kind, "\t");
 		for c in sig { api.push(if c == '\t' { ' ' } else { c }); }
 		format(api, "\t", rel, "\t", ln, "\t");
-		for c in doc { api.push(if c == '\t' { ' ' } else { c }); }
+		if doc.len == 0 && hasg { gold_doc(gs, nm, sig, doc); }
+		for c in doc { api.push(if c == '\t' || c == '\n' { ' ' } else { c }); }
 		api.push('\n');
 		doc.clear();
 	}
@@ -429,9 +544,9 @@ fn auto_import(errs const byte[:]) bool {
 		if k < 0 { k = find(l, "unknown identifier: "); w = 20; }
 		if k < 0 { continue; }
 		let nm = trim(l[(k + w)..]);
-		var mod byte[..32] = "";
+		var mod byte[>..] = [];
 		var nmods = 0;
-		for r in R { if r.pk == 0 && at(r.name) == nm { let st = stem(at(r.file)); if st != mod[..] && st != "std" { mod = ""; if st.len < 32 { format(mod, st); } nmods++; } } }
+		for r in R { if r.pk == 0 && at(r.name) == nm { let st = modof(at(r.file)); if st[..] != mod[..] && st[..] != "std" { mod.clear(); mod.append(st); nmods++; } } }
 		if nmods == 1 && !in_imports(mod) { format(IMPORTS, mod, "\n"); added = true; if VERB { write_stderr(str("gold: auto import ", mod, " for ", nm, "\n")); } }
 	}
 	added
@@ -446,7 +561,7 @@ fn context(text const byte[:], out byte[>..]&) {
 	var e byte[>..] = [];
 	if env("GOLD_K", e) { let v, ok = parse_int(e); if ok { k = v; } }
 	retrieve(text, k, top);
-	for r, i in R { if r.pk == 0 && r.kind != 2 && in_imports(stem(at(r.file))) && !contains(top, i) { top.push(i); } }
+	for r, i in R { if r.pk == 0 && (r.kind != 2 || is_const(at(r.name))) && (in_imports(modof(at(r.file))) || is_tile(at(r.file))) && !contains(top, i) { top.push(i); } }
 	if top.len == 0 { return; }
 	out.append("\n# Existing API you can call (import the module shown; call these instead of rewriting them)\n");
 	var last = -1;
@@ -492,10 +607,29 @@ fn fallback(out byte[>..]&) { envor("GOLD_MODEL_FALLBACK", "sonnet", out); }
 fn LROUNDS() int { var e byte[>..] = []; envor("GOLD_LOCAL_ROUNDS", "2", e); let v, ok = parse_int(e); if ok { v } else { 2 } }
 fn lurl(path const byte[:]) byte[>..] { var u byte[>..] = []; envor("GOLD_LOCAL_URL", "http://127.0.0.1:18790", u); while u.len > 0 && u[u.len - 1] == '/' { u.resize(u.len - 1, 0); } u.append(path); u }
 fn lhealth() bool { var h = net::http_fetch("GET", lurl("/health"), "", "", 3000); h.status == 200 }
+fn lunit(out byte[>..]&) { envor("GOLD_LOCAL_UNIT", "amni-bonsai.service", out); }
+var LCTX = 0;
+fn lbudget() int {
+	if LCTX == 0 { var h = net::http_fetch("GET", lurl("/props"), "", "", 3000); var d = json::Doc {}; let r, e = json::parse(h.body, d); let n = if h.status == 200 && r >= 0 { jint(d, "n_ctx") } else { 0 }; LCTX = if n > 7000 { n } else { 24000 }; }
+	(LCTX - 7000) * 3
+}
+fn fit_local(p const byte[:], out byte[>..]&) {
+	let lim = lbudget();
+	if p.len <= lim { out.append(p); return; }
+	let ls = split(p, '\n');
+	var sec int[>..] = [];
+	var keep int[>..] = [];
+	var s = 0;
+	for l in ls { s = if l.starts_with("# Code samples") { 1 } else if l.starts_with("# Existing API") { 2 } else if l.starts_with("# Problems") { 3 } else if l.starts_with("# ") { 0 } else { s }; sec.push(s); keep.push(1); }
+	var over = p.len - lim;
+	for w in 3 { var i = ls.len - 1; while over > 0 && i >= 0 { if sec[i] == w + 1 && !ls[i].starts_with("#") { keep[i] = 0; over = over - ls[i].len - 1; } i = i - 1; } }
+	for l, i in ls { if keep[i] == 1 { out.append(l); out.push('\n'); } }
+	if VERB { write_stderr(str("gold: local prompt cut from ", p.len, " to ", out.len, " chars\n")); }
+}
 fn lup() bool {
 	if lhealth() { return true; }
 	var unit byte[>..] = [];
-	envor("GOLD_LOCAL_UNIT", "granite-gold.service", unit);
+	lunit(unit);
 	var c byte[>..] = [];
 	c.append("systemctl --user start --no-block ");
 	q(c, unit);
@@ -513,7 +647,7 @@ fn lup() bool {
 fn local_stop() {
 	if !LSTART { return; }
 	var unit byte[>..] = [];
-	envor("GOLD_LOCAL_UNIT", "granite-gold.service", unit);
+	lunit(unit);
 	var c byte[>..] = [];
 	c.append("systemctl --user stop ");
 	q(c, unit);
@@ -524,16 +658,18 @@ fn local_stop() {
 fn local_done(rc int) int { local_stop(); rc }
 fn ask_local(sys const byte[:], prompt const byte[:], out byte[>..]&) bool {
 	if LDOWN || !lup() { LDOWN = true; return false; }
+	var fp byte[>..] = [];
+	fit_local(prompt, fp);
 	var b byte[>..] = [];
 	b.append("{\"messages\":[{\"role\":\"system\",\"content\":");
 	json::format_string(b, sys);
 	b.append("},{\"role\":\"user\",\"content\":");
-	json::format_string(b, prompt);
+	json::format_string(b, fp);
 	b.append("}],\"temperature\":0.2,\"max_tokens\":16384,\"stream\":false}");
 	let t0 = time();
 	var h = net::http_fetch("POST", lurl("/v1/chat/completions"), "Content-Type: application/json\r\n", b, 1800000);
 	LCALLS++;
-	if h.status != 200 { write_stderr(str("gold: local model call failed (", h.status, "): ", h.err, h.body[..min(h.body.len, 300)], "\n")); LDOWN = true; return false; }
+	if h.status != 200 { write_stderr(str("gold: local model call failed (", h.status, "): ", h.err, h.body[..min(h.body.len, 300)], "\n")); LDOWN = h.status != 400; return false; }
 	var doc = json::Doc {};
 	let root, err = json::parse(h.body, doc);
 	if root < 0 { LDOWN = true; return false; }
@@ -555,6 +691,7 @@ fn ask(model const byte[:], sys const byte[:], prompt const byte[:], out byte[>.
 		if ask_local(sys, prompt, out) { return true; }
 		var fb byte[>..] = [];
 		fallback(fb);
+		if is_local(fb) { write_stderr("gold: local model unavailable, no cloud fallback set\n"); return false; }
 		write_stderr(str("gold: local model unavailable, using ", fb, "\n"));
 		return ask(fb, sys, prompt, out);
 	}
@@ -712,7 +849,7 @@ fn check(target const byte[:], text const byte[:], errs byte[>..]&) int {
 	n
 }
 fn block_of(line int) int { for b, i in B { if b.kind < 2 && line >= b.l0 && line <= b.l1 { return i; } } -1 }
-fn sysmsg() const byte[:] { "You are the Gold translator. Gold is a programming language written in plain English; you turn each Gold block into working Helium code that does exactly what the block says. Reply with code only, in the block format requested, never prose or markdown fences. Never write comments or blank lines inside code. Call the existing API listed in the prompt instead of reimplementing it." }
+fn sysmsg() const byte[:] { "You are the Gold translator. Gold is a programming language written in plain English; you turn each Gold block into working Helium code that does exactly what the block says. Reply with code only, in the block format requested, never prose or markdown fences. Never write comments or blank lines inside code. Call the existing API listed in the prompt instead of reimplementing it. Tiles (modules under tiles/) are verified copies of other languages' built-ins: when a block names one by its phrase, such as Python's int() or like toFixed, call that tile instead of writing the behavior again." }
 fn gold_text(out byte[>..]&, show_he bool) {
 	for b, i in B {
 		if b.kind == 0 { format(out, "[", i, "] ", trim(at(b.src)), "\n"); if show_he && !b.pend && b.he.b > b.he.a { format(out, "  -> already written as:\n", at(b.he), "\n"); } }
@@ -856,6 +993,10 @@ fn build(gp const byte[:], run_args const byte[:], quiet bool, outp byte[>..]&) 
 		let hit = lk.get(b.key);
 		if hit { b.he = hit; } else { b.pend = true; pend.push(i); }
 	}
+	var nl = 0;
+	for i in pend { nl += lint(at(B[i].src), i); }
+	var lw byte[>..] = [];
+	if nl > 0 && !(env("GOLD_LINT", lw) && lw == "warn") { print("gold: ", nl, " line(s) read as code, not English; say them in words (names in backticks, exact text in quotes), or GOLD_LINT=warn to build anyway"); return false; }
 	var model byte[>..] = [];
 	var hard byte[>..] = [];
 	envor("GOLD_MODEL", "sonnet", model);
@@ -983,7 +1124,7 @@ fn cmd_port(a byte[:][:]) int {
 	var p byte[>..] = [];
 	context(src[..min(src.len, 6000)], p);
 	format(p, "\n# Gold language\nGold is plain English that is translated block by block into ", lang_name(LANG), ". A Gold file is a header (use <pack>, into <file>, lang <x>) then blocks separated by blank lines. Each block describes one unit in a few precise sentences: a type with its fields, a function with its name, inputs, result and exact behavior, or the top-level program. Name things in backticks when other code depends on the exact name. Include constants, formats and edge cases, but no code. Be as brief as you can while staying exact: short sentences, formulas written inline in the source's exact evaluation order and grouping, since floating-point results depend on it (`p*b*b*(3*a+b)/powi(span,3)` where the source has `p * b * b * (3.0 * a + b) / span.powi(3)`; `powi(x,n)` only where the source uses powi, `x*x` where it multiplies, never `^`), std math functions named rather than defined (`tanh`, `powi`, `fabs` for a float absolute value that turns -0.0 into 0.0 like Rust, Python, Java and JS do), and the source language's quirks the port must keep stated plainly (saturating float-to-int casts, float sums that start at -0.0, how numbers, NaN and infinity are printed), no restating what a name or the API already makes obvious, no examples unless they settle an ambiguity. An optional `expect:` block lists the exact output a standalone program prints. The header's `dialect` line already states the source language's conventions (listed above), so never restate them in blocks. Literal data of more than about 5 rows goes in a ```table <fn> <Type>``` fence: one row per line, cells separated by `|` in the struct's field order, a cell of just `\"` repeats the cell above, numbers exactly as the source writes them, other cells are strings (single-quote a string that looks like a number); Gold expands it to `<fn>() <Type>[>..]` itself. Keep the source's cost model: work the source does once (compiled regexes in fields or constants, lookup tables built at startup) is said to be done once and kept in a module-level `var`, never redone per call; a hot inner loop over a small table says how the table is laid out when that layout is what makes it fast.\n");
-	format(p, "\n# Source to port (", srcp, ")\n", src, "\n\n# Task\nWrite the Gold file that ports this source to Helium with the same behavior. Use the existing Helium API above where it fits. Start with this header exactly:\n", hdr, "\nReply with the Gold file only.\n");
+	format(p, "\n# Source to port (", srcp, ")\n", src, "\n\n# Task\nWrite the Gold file that ports this source to Helium with the same behavior. Use the existing Helium API and tiles above where they fit.\n", english_rules(), "\nStart with this header exactly:\n", hdr, "\nReply with the Gold file only.\n");
 	var reply byte[>..] = [];
 	var hard byte[>..] = [];
 	envor("GOLD_MODEL_PORT", "opus", hard);
@@ -1001,8 +1142,9 @@ fn cmd_port(a byte[:][:]) int {
 	var op byte[>..] = [];
 	if build(gout, "", false, op) { 0 } else { 1 }
 }
-fn squeeze_rules() const byte[:] { "Rewrite this Gold file to be as short as possible. A translator model will rebuild every block from your text alone, seeing the same language reference, Helium API and source conventions listed above, and a check compares every output byte against the original program on hundreds of cases. So keep everything that changes any output, and cut everything the translator would do anyway.\nCut: names and types the signatures already show; explanation and motivation; struct field lists that JSON keys, a table header or a signature already give; formulas a domain expert knows by name (write the name, e.g. `Euler buckling load`, `Wahl factor`, `Lame hoop stress`) unless the program groups or orders the arithmetic differently from the textbook form; zero or empty defaults; anything a `dialect` convention above already says; repeats (say a shared rule once, in the first block that needs it, and refer to it by a short name after).\nWrite tersely: `f(a, b) -> T:` then formulas and rules separated by `;`, alternatives as `a|b|c`, no articles or filler words.\nKeep every performance instruction (work done once and kept in a module `var`, table layouts, avoiding per-call allocation), and add one where the code clearly redoes fixed work per call (a table or database rebuilt on every lookup, a regex compiled per call). Keep exactly: header lines (add `dialect <source language>` if missing and a conventions file fits: rust, python, js, java, kotlin, numpy), one blank line between blocks, names in backticks that other code or the driver calls, constants, output and error texts, JSON key names and order, arithmetic whose order matters, quirks, and every fence. Data rows of more than about 5 rows go in a ```table <fn> <Type>``` fence: one row per line, cells separated by `|` in the struct's field order, a cell of just `\"` repeats the cell above it, numbers written exactly as the source has them, other cells are strings (wrap a string that looks like a number in single quotes)." }
-fn sq_sys() const byte[:] { "You compress Gold, a programming language of plain English blocks, to its shortest exact form. Reply with the Gold file only, no fences around it and no commentary." }
+fn english_rules() const byte[:] { "Write dense plain English: the fewest tokens that still read as sentences a programmer would put in a spec. A translator model rebuilds every block from the text alone, seeing the same language reference, Helium API, tiles and source conventions listed above, and a check compares every output byte against the original program on hundreds of cases, so keep everything that changes any output and cut everything the translator would do anyway.\nDescribe behavior, not structure: no internal structs, helpers or signatures; put a name in backticks only when other code or the test driver calls it, and leave out a `main` block when a driver supplies one.\nName exact behaviors instead of spelling them out: a listed tile by its phrase, or the source built-in (Python's int() of x, Python's float of the value's str, like toFixed, like en-US toLocaleString, Rust's Display for f64), and textbook formulas by name (Euler buckling load, Wahl factor) unless the program orders the arithmetic differently. Say which operation and whose data: \"Python's int() of x\", not \"x is an int\"; \"the attachments the case lists under the email's id\", not \"the email's attachments\".\nState a fact shared by several blocks once, at the top, define a term once and reuse it, and drop zero or empty defaults and anything a dialect convention already says.\nNo code in prose: no operators such as -> => == != && || :=, no ; chains, no Helium types or signatures; write comparisons in words (at least, below, from 1 to 5). Math formulas, exact strings in quotes, names and regexes in backticks are fine.\nTables: more than about 5 data rows go in a ```table <fn> <Type>``` fence (one row per line, cells separated by | in the struct's field order, a cell of just \" repeats the cell above, numbers exactly as the source writes them, a string that looks like a number in single quotes); a short lookup list may be plain `a | b` lines with a header line.\nKeep every performance instruction (work done once and kept in a module var, table layouts, no per-call allocation) and add one where the code clearly redoes fixed work per call. Keep exactly: header lines (add `dialect <source language>` if missing and one fits: rust, python, js, java, kotlin, numpy), one blank line between blocks, constants, output and error texts, JSON key names and order, arithmetic whose order matters, quirks, and every fence." }
+fn squeeze_rules() byte[>..] { str("Rewrite this Gold file in the style below, shorter than it is now. Copy every ```table fence that starts with an @ row unchanged, byte for byte: Gold has already packed it.\n", english_rules()) }
+fn sq_sys() const byte[:] { "You rewrite Gold, a programming language of plain English blocks, into its shortest exact plain-English form. Reply with the Gold file only, no fences around it and no commentary." }
 fn strip_fence_wrap(r const byte[:], out byte[>..]&) {
 	var ls = split(r, '\n');
 	var a = 0;
@@ -1086,9 +1228,11 @@ fn usage() {
 	print("  gold find <pack,pack> words show the API a sentence retrieves");
 	print("  gold port <src> [use=] [into=] [lang=] [ns=] [gold=]   write Gold for existing code, then build it");
 	print("  gold test file.gold         build, then run the packs' test commands");
-	print("  gold squeeze f.gold check='cmd' [rounds=4]   shorten the Gold, keeping it only if it rebuilds and the check passes");
+	print("  gold squeeze f.gold check='cmd' [rounds=4]   rewrite it as shorter plain English, kept only if it rebuilds and the check passes");
+	print("  gold lint f.gold            list lines that read as code instead of English (build rejects them in changed blocks)");
 	print("  gold compact f.gold         pack its data tables (column scales, blank = same as above); no model call");
-	print("\nenv: GOLD_MODEL (sonnet; granite or local:<name> = the local llama-server, GOLD_LOCAL_URL http://127.0.0.1:18790, started via GOLD_LOCAL_UNIT granite-gold.service, waiting GOLD_LOCAL_WAIT 120 s for the GPU; it gets the first GOLD_LOCAL_ROUNDS 2 repair rounds, then GOLD_MODEL_FALLBACK sonnet takes over, and the whole build falls back when the local model is unavailable), GOLD_MODEL_HARD (opus, last repair), GOLD_MODEL_PORT, GOLD_TRIES (4, extended up to 10 while each round changes the errors), GOLD_K (70), GOLD_HC, GOLD_HC_LIB, GOLD_VERBOSE");
+	print("  gold compact f.gold wide    write its data tables back out in full, every cell spelled out");
+	print("\nenv: GOLD_MODEL (sonnet; granite or local:<name> = the local llama-server, GOLD_LOCAL_URL http://127.0.0.1:18790, started via GOLD_LOCAL_UNIT amni-bonsai.service, waiting GOLD_LOCAL_WAIT 120 s for the GPU; it gets the first GOLD_LOCAL_ROUNDS 2 repair rounds, then GOLD_MODEL_FALLBACK sonnet takes over, and the whole build falls back when the local model is unavailable), GOLD_MODEL_HARD (opus, last repair), GOLD_MODEL_PORT, GOLD_TRIES (4, extended up to 10 while each round changes the errors), GOLD_K (70), GOLD_HC, GOLD_HC_LIB, GOLD_VERBOSE");
 }
 fn main() {
 	setup();
@@ -1101,7 +1245,8 @@ fn main() {
 	if cmd == "find" { exit(cmd_find(rest)); }
 	if cmd == "port" { exit(local_done(cmd_port(rest))); }
 	if cmd == "squeeze" { exit(local_done(cmd_squeeze(rest))); }
-	if cmd == "compact" { var o byte[>..] = []; var pk byte[>..] = []; if rest.len == 0 || !readall(rest[0], o) { print("usage: gold compact <file.gold>"); exit(2); } pack_tables(o, pk); write_file(rest[0], pk); print("gold compact: ", rest[0], " ", o.len, " -> ", pk.len, " bytes"); exit(0); }
+	if cmd == "lint" { var ls byte[>..] = []; if rest.len == 0 || !readall(rest[0], ls) { print("usage: gold lint <file.gold>"); exit(2); } parse_gold(ls); var nl = 0; for b, i in B { if b.kind == 0 { nl += lint(at(b.src), i); } } print("gold: ", nl, " line(s) read as code"); exit(if nl > 0 { 1 } else { 0 }); }
+	if cmd == "compact" { var o byte[>..] = []; var pk byte[>..] = []; if rest.len == 0 || !readall(rest[0], o) { print("usage: gold compact <file.gold> [wide]"); exit(2); } WIDE = rest.len > 1 && rest[1] == "wide"; pack_tables(o, pk); write_file(rest[0], pk); print("gold compact: ", rest[0], " ", o.len, " -> ", pk.len, " bytes"); exit(0); }
 	if cmd != "build" && cmd != "run" && cmd != "show" && cmd != "test" || rest.len == 0 { usage(); exit(2); }
 	var pa byte[>..] = [];
 	var dd = false;

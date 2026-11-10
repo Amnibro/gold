@@ -49,5 +49,12 @@
    "E"
   ]
  ],
- "norm_note": "20 malformed-input cases: both reject the input, but serde's error wording differs"
+ "norm_note": "20 malformed-input cases: both reject the input, but serde's error wording differs",
+ "extra": [
+  {
+   "name": "rust_native",
+   "cmd": "ref/target-native/release/calcref",
+   "label": "the original built for this CPU (rustc -C target-cpu=native)"
+  }
+ ]
 }

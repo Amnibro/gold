@@ -1,0 +1,4626 @@
+@entry 7ff97f7a1d73aaa3
+kind: step
+verb: scatter
+noun: chair
+modifier: matte
+context: scene
+phrase: scatter chair with matte surface at elevation {z}
+phrase: place matte finish chair at height {z}
+slot: z real
+test: z=0.5
+expect: => i=1 r=0.0 ok=true s="scatchair" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: chair1 box 0,0,0.5 0.6,0.6,0.9 m:matte
+test: z=1.2 doc="floor box 0,0,-.5 10,10,1"
+expect: => i=2 r=0.0 ok=true s="scatchair" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 10,10,1
+expect: => doc: chair2 box 0,0,1.2 0.6,0.6,0.9 m:matte
+test: z=-0.5
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} < 0.0 { gold_fail(g, "invalid elevation"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "chair", "", o);
+	o.append(" box 0,0,");
+	gold_fnum(o, ${z});
+	o.append(" 0.6,");
+	o.append("0.6,");
+	o.append("0.9 m:matte");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "scatchair");
+	out
+}
+@end
+@entry de81dba40dbebe85
+kind: step
+verb: scatter
+noun: arch
+modifier: emissive
+context: scene
+phrase: scatter emissive arch at horizontal location {x}
+phrase: place glowing emissive archway at {x}
+slot: x real
+test: x=4.0
+expect: => i=1 r=0.0 ok=true s="scatarchglow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: arch1 box 4,0,2 2,0.3,3 m:emissive
+test: x=-5.5 doc="plaza box 0,0,-.5 12,12,1"
+expect: => i=2 r=0.0 ok=true s="scatarchglow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: plaza box 0,0,-.5 12,12,1
+expect: => doc: arch2 box -5.5,0,2 2,0.3,3 m:emissive
+test: x=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${x} == 0.0 { gold_fail(g, "arch offset required"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "arch", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",0,2 ");
+	o.append("2,");
+	o.append("0.3,");
+	o.append("3 m:emissive");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "scatarchglow");
+	out
+}
+@end
+@entry 9f11d7d7f1c39810
+kind: step
+verb: add
+noun: bridge
+modifier: slowly
+context: scene
+phrase: add bridge slowly extending span length {len}
+phrase: construct slow span bridge of length {len}
+slot: len real
+test: len=6.0
+expect: => i=1 r=0.0 ok=true s="addbrgslw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bridge1 box 0,0,1 6,1.5,0.4
+test: len=12.0 doc="chasm box 0,0,-2 4,14,3"
+expect: => i=2 r=0.0 ok=true s="addbrgslw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: chasm box 0,0,-2 4,14,3
+expect: => doc: bridge2 box 0,0,1 12,1.5,0.4
+test: len=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${len} <= 0.0 { gold_fail(g, "bridge span must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bridge", "", o);
+	o.append(" box 0,0,");
+	o.append("1 ");
+	gold_fnum(o, ${len});
+	o.append(",1.5,");
+	o.append("0.4");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "addbrgslw");
+	out
+}
+@end
+@entry 9c406be9269addfa
+kind: step
+verb: align
+noun: table
+modifier: centered
+context: scene
+phrase: align table centered at height {h}
+phrase: place centered table structure at elevation {h}
+slot: h real
+test: h=0.75
+expect: => i=1 r=0.0 ok=true s="alntblctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: table1 box 0,0,0.75 1.8,1.2,0.8
+test: h=0.9 doc="rug box 0,0,0 3,3,0.02"
+expect: => i=2 r=0.0 ok=true s="alntblctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: rug box 0,0,0 3,3,0.02
+expect: => doc: table2 box 0,0,0.9 1.8,1.2,0.8
+test: h=-0.2
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${h} <= 0.0 { gold_fail(g, "table elevation must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "table", "", o);
+	o.append(" box 0,0,");
+	gold_fnum(o, ${h});
+	o.append(" 1.8,");
+	o.append("1.2,");
+	o.append("0.8");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "alntblctr");
+	out
+}
+@end
+@entry f43cbb3c678be592
+kind: step
+verb: animate
+noun: bridge
+modifier: in_row
+context: scene
+phrase: animate bridge in row moving {dx} meters across {dur} seconds
+phrase: translate row bridge by {dx} units over {dur} seconds
+slot: dx real
+slot: dur real
+test: dx=4.0 dur=3.0 doc="bridge box 0,0,1 8,2,0.5"
+expect: => i=2 r=0.0 ok=true s="animbrgrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bridge box 0,0,1 8,2,0.5
+expect: => doc: bridge.loc anim 0:0,0,0 3:4,0,0
+test: dx=6.0 dur=5.0 doc="water box 0,0,-1 15,10,1|span box 0,0,1 10,2,0.5"
+expect: => i=3 r=0.0 ok=true s="animbrgrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: water box 0,0,-1 15,10,1
+expect: => doc: span box 0,0,1 10,2,0.5
+expect: => doc: span.loc anim 0:0,0,0 5:6,0,0
+test: dx=0.0 dur=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dx} <= 0.0 || ${dur} <= 0.0 { gold_fail(g, "invalid translation params"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".loc anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.push(':');
+	gold_fnum(o, ${dx});
+	o.append(",0,0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animbrgrow");
+	out
+}
+@end
+@entry 88d8c928ab222e44
+kind: step
+verb: animate
+noun: camera
+modifier: cool
+context: scene
+phrase: animate camera cool elevation upward {dz} over {dur} seconds
+phrase: move camera cool perspective vertically by {dz} in {dur} seconds
+slot: dz real
+slot: dur real
+test: dz=2.0 dur=1.5 doc="cam camera 0,-5,2 0,0,1"
+expect: => i=2 r=0.0 ok=true s="animcamcool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam camera 0,-5,2 0,0,1
+expect: => doc: cam.loc anim 0:0,0,0 1.5:0,0,2
+test: dz=3.5 dur=4.0 doc="floor box 0,0,-.5 8,8,1|wide camera 0,-8,3 0,0,1"
+expect: => i=3 r=0.0 ok=true s="animcamcool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 8,8,1
+expect: => doc: wide camera 0,-8,3 0,0,1
+expect: => doc: wide.loc anim 0:0,0,0 4:0,0,3.5
+test: dz=0.0 dur=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dz} <= 0.0 || ${dur} <= 0.0 { gold_fail(g, "invalid elevation params"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".loc anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	gold_fnum(o, ${dz});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animcamcool");
+	out
+}
+@end
+@entry 090cf8c87e900975
+kind: step
+verb: light
+noun: prop
+modifier: weathered
+context: scene
+phrase: light prop with weathered ambient glow {w} watts
+phrase: provide weathered illumination to prop of {w} watts
+slot: w real
+test: w=80.0 doc="prop sphere 0,0,0.5 r0.3"
+expect: => i=2 r=0.0 ok=true s="ltpropwth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: prop sphere 0,0,0.5 r0.3
+expect: => doc: proplt2 light point 0,0,1.2 w80
+test: w=160.0 doc="barrel cyl 0,0,0 0,0,1 r0.4|prop box 0,0,0.5 0.5,0.5,0.5"
+expect: => i=3 r=0.0 ok=true s="ltpropwth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: barrel cyl 0,0,0 0,0,1 r0.4
+expect: => doc: prop box 0,0,0.5 0.5,0.5,0.5
+expect: => doc: proplt3 light point 0,0,1.2 w160
+test: w=-5.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 { gold_fail(g, "invalid light wattage"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "proplt", "", o);
+	o.append(" light point 0,0,");
+	o.append("1.2 w");
+	gold_fnum(o, ${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltpropwth");
+	out
+}
+@end
+@entry e9ffe609ee1c32ea
+kind: step
+verb: light
+noun: bridge
+modifier: centered
+context: scene
+phrase: light bridge centered from height {z} cone {c}
+phrase: cast centered spotlight over bridge from elevation {z} with cone {c}
+slot: z real
+slot: c real
+test: z=5.0 c=45.0 doc="bridge box 0,0,1 10,2,0.4"
+expect: => i=2 r=0.0 ok=true s="ltbrgctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bridge box 0,0,1 10,2,0.4
+expect: => doc: brglt2 light spot 0,0,5 0,0,0 w400 c45
+test: z=7.5 c=60.0 doc="deck box 0,0,1 12,2.5,0.5"
+expect: => i=2 r=0.0 ok=true s="ltbrgctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: deck box 0,0,1 12,2.5,0.5
+expect: => doc: brglt2 light spot 0,0,7.5 0,0,0 w400 c60
+test: z=-1.0 c=30.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} <= 0.0 || ${c} <= 0.0 { gold_fail(g, "invalid bridge light parameters"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "brglt", "", o);
+	o.append(" light spot 0,0,");
+	gold_fnum(o, ${z});
+	o.append(" 0,0,");
+	o.append("0 w4");
+	o.append("00 c");
+	gold_fnum(o, ${c});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltbrgctr");
+	out
+}
+@end
+@entry 782fb6dbd6ca371e
+kind: step
+verb: arrange
+noun: wall
+modifier: in_row
+context: scene
+phrase: arrange wall in row extending along y axis at {y}
+phrase: position row wall segment at y coordinate {y}
+slot: y real
+test: y=2.5
+expect: => i=1 r=0.0 ok=true s="arrwallrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall1 box 0,2.5,1.5 0.3,3,3
+test: y=5.5 doc="ground box 0,0,-.5 12,12,1"
+expect: => i=2 r=0.0 ok=true s="arrwallrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 12,12,1
+expect: => doc: wall2 box 0,5.5,1.5 0.3,3,3
+test: y=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${y} == 0.0 { gold_fail(g, "row position must be offset"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "wall", "", o);
+	o.append(" box 0,");
+	gold_fnum(o, ${y});
+	o.append(",1.5 ");
+	o.append("0.3,");
+	o.append("3,3");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrwallrow");
+	out
+}
+@end
+@entry a58ea7dc839d747f
+kind: step
+verb: arrange
+noun: window
+modifier: matte
+context: scene
+phrase: arrange matte window casing at elevation {z}
+phrase: insert matte window frame at vertical position {z}
+slot: z real
+test: z=1.8
+expect: => i=1 r=0.0 ok=true s="arrwinmat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: win1 box 0,2,1.8 1.2,0.2,1.6 m:matte
+test: z=2.6 doc="wall box 0,2,2 4,0.4,4"
+expect: => i=2 r=0.0 ok=true s="arrwinmat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,2,2 4,0.4,4
+expect: => doc: win2 box 0,2,2.6 1.2,0.2,1.6 m:matte
+test: z=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} <= 0.0 { gold_fail(g, "window elevation must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "win", "", o);
+	o.append(" box 0,2,");
+	gold_fnum(o, ${z});
+	o.append(" 1.2,");
+	o.append("0.2,");
+	o.append("1.6 m:matte");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrwinmat");
+	out
+}
+@end
+@entry f1124cf8b16da7ab
+kind: step
+verb: scale
+noun: torch
+modifier: cool
+context: scene
+phrase: scale torch with cool blue emission tint
+phrase: apply cool blue color to torch light source
+test: doc="torch cyl 0,1,1 0,1,1.6 r0.08"
+expect: => i=1 r=0.0 ok=true s="scltorchcol" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: torch cyl 0,1,1 0,1,1.6 r0.08 #60a0ff
+test: doc="pillar cyl 0,0,0 0,0,3 r0.3|flame sphere 0,0,3.2 r0.15"
+expect: => i=2 r=0.0 ok=true s="scltorchcol" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pillar cyl 0,0,0 0,0,3 r0.3
+expect: => doc: flame sphere 0,0,3.2 r0.15 #60a0ff
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("#6");
+	o.append("0a0ff");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "scltorchcol");
+	out
+}
+@end
+@entry ed9a05a5d3e2dd49
+kind: step
+verb: align
+noun: light
+modifier: looping
+context: scene
+phrase: align light looping animation period {dur} seconds
+phrase: set looping light pulsation across {dur} seconds
+slot: dur real
+test: dur=2.0 doc="lamp light point 0,0,2 w300"
+expect: => i=2 r=0.0 ok=true s="alnlgtloop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: lamp light point 0,0,2 w300
+expect: => doc: lamp.rot anim 0:0,0,0 2:0,0,360 loop
+test: dur=4.5 doc="room box 0,0,0 6,6,3|glow light point 0,0,1.5 w200"
+expect: => i=3 r=0.0 ok=true s="alnlgtloop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: room box 0,0,0 6,6,3
+expect: => doc: glow light point 0,0,1.5 w200
+expect: => doc: glow.rot anim 0:0,0,0 4.5:0,0,360 loop
+test: dur=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dur} <= 0.0 { gold_fail(g, "loop duration must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".rot anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	o.append("36");
+	o.append("0 loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "alnlgtloop");
+	out
+}
+@end
+@entry d860ce38da7fe6f4
+kind: step
+verb: animate
+noun: window
+modifier: cool
+context: scene
+phrase: animate window cool sliding rise {dz} across {dur} seconds
+phrase: raise cool window sash by {dz} meters over {dur} seconds
+slot: dz real
+slot: dur real
+test: dz=0.8 dur=1.5 doc="sash box 0,2,1 1.2,0.1,0.8"
+expect: => i=2 r=0.0 ok=true s="animwincool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: sash box 0,2,1 1.2,0.1,0.8
+expect: => doc: sash.loc anim 0:0,0,0 1.5:0,0,0.8
+test: dz=1.2 dur=2.0 doc="wall box 0,2,2 4,0.3,4|window box 0,2,1.2 1,0.1,1"
+expect: => i=3 r=0.0 ok=true s="animwincool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,2,2 4,0.3,4
+expect: => doc: window box 0,2,1.2 1,0.1,1
+expect: => doc: window.loc anim 0:0,0,0 2:0,0,1.2
+test: dz=0.0 dur=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dz} <= 0.0 || ${dur} <= 0.0 { gold_fail(g, "invalid sash lift"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".loc anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	gold_fnum(o, ${dz});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animwincool");
+	out
+}
+@end
+@entry fddd00bc1f3d3b5f
+kind: step
+verb: scatter
+noun: torch
+modifier: stacked
+context: scene
+phrase: scatter stacked wall torch at elevation {z}
+phrase: mount stacked torch fixture at vertical height {z}
+slot: z real
+test: z=1.6
+expect: => i=1 r=0.0 ok=true s="scattorchstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: torch1 cyl 0,1,1.6 0,1,2.2 r0.08
+test: z=2.8 doc="wall box 0,1,2 4,0.3,4"
+expect: => i=2 r=0.0 ok=true s="scattorchstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,1,2 4,0.3,4
+expect: => doc: torch2 cyl 0,1,2.8 0,1,3.4 r0.08
+test: z=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} <= 0.0 { gold_fail(g, "torch elevation must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "torch", "", o);
+	o.append(" cyl 0,1,");
+	gold_fnum(o, ${z});
+	o.append(" 0,1,");
+	gold_fnum(o, ${z} + 0.6);
+	o.append(" r0.0");
+	o.append("8");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "scattorchstk");
+	out
+}
+@end
+@entry db9753d882a146aa
+kind: step
+verb: scale
+noun: door
+modifier: slowly
+context: scene
+phrase: scale door slowly adjusting thickness to {th}
+phrase: adjust door thickness slowly to {th} meters
+slot: th real
+test: th=0.15 doc="door box 0,0,1 1,0.1,2"
+expect: => i=2 r=0.0 ok=true s="scldoorslw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: door box 0,0,1 1,0.1,2
+expect: => doc: door.scale anim 0:1,1,1 2:1,0.15,1
+test: th=0.25 doc="entry box 0,0,1.5 3,0.3,3|doorway box 0,0,1 1.2,0.1,2.2"
+expect: => i=3 r=0.0 ok=true s="scldoorslw" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: entry box 0,0,1.5 3,0.3,3
+expect: => doc: doorway box 0,0,1 1.2,0.1,2.2
+expect: => doc: doorway.scale anim 0:1,1,1 2:1,0.25,1
+test: th=-0.1
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${th} <= 0.0 { gold_fail(g, "thickness must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".scale anim 0:1,");
+	o.append("1,1 ");
+	o.append("2:1,");
+	gold_fnum(o, ${th});
+	o.append(",1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "scldoorslw");
+	out
+}
+@end
+@entry 74e6604cb27abb54
+kind: step
+verb: scale
+noun: statue
+modifier: wide
+context: scene
+phrase: scale statue wide stance by factor {fac}
+phrase: expand statue wide base using factor {fac}
+slot: fac real
+test: fac=1.5 doc="statue cyl 0,0,0 0,0,2.5 r0.4"
+expect: => i=2 r=0.0 ok=true s="sclstatwide" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: statue cyl 0,0,0 0,0,2.5 r0.4
+expect: => doc: statue.scale anim 0:1,1,1 1:1.5,1.5,1
+test: fac=2.2 doc="pedestal box 0,0,0.5 2,2,1|monument cyl 0,0,1 0,0,3 r0.3"
+expect: => i=3 r=0.0 ok=true s="sclstatwide" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pedestal box 0,0,0.5 2,2,1
+expect: => doc: monument cyl 0,0,1 0,0,3 r0.3
+expect: => doc: monument.scale anim 0:1,1,1 1:2.2,2.2,1
+test: fac=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${fac} <= 0.0 { gold_fail(g, "scale factor must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".scale anim 0:1,");
+	o.append("1,1 ");
+	o.append("1:");
+	gold_fnum(o, ${fac});
+	o.push(',');
+	gold_fnum(o, ${fac});
+	o.append(",1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclstatwide");
+	out
+}
+@end
+@entry af5e8ab742559308
+kind: step
+verb: light
+noun: prop
+modifier: spaced
+context: scene
+phrase: light prop spaced at coordinate {x} with power {w}
+phrase: cast spaced light on prop from position {x} wattage {w}
+slot: x real
+slot: w real
+test: x=2.0 w=180.0 doc="prop sphere 0,0,1 r0.4"
+expect: => i=2 r=0.0 ok=true s="ltpropspc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: prop sphere 0,0,1 r0.4
+expect: => doc: proplt2 light point 2,0,2 w180
+test: x=-3.5 w=260.0 doc="stage box 0,0,0 8,8,0.5|prop cyl 0,0,0.5 0,0,1.5 r0.3"
+expect: => i=3 r=0.0 ok=true s="ltpropspc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: stage box 0,0,0 8,8,0.5
+expect: => doc: prop cyl 0,0,0.5 0,0,1.5 r0.3
+expect: => doc: proplt3 light point -3.5,0,2 w260
+test: x=0.0 w=-10.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 { gold_fail(g, "wattage must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "proplt", "", o);
+	o.append(" light point ");
+	gold_fnum(o, ${x});
+	o.append(",0,2 w");
+	gold_fnum(o, ${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltpropspc");
+	out
+}
+@end
+@entry a6cea6af49fdd00f
+kind: step
+verb: arrange
+noun: barrel
+modifier: tall
+context: scene
+phrase: arrange tall barrel cylinder of height {h}
+phrase: place tall standing barrel rising {h} meters
+slot: h real
+test: h=1.6
+expect: => i=1 r=0.0 ok=true s="arrbarreltal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: barrel1 cyl 0,0,0 0,0,1.6 r0.4
+test: h=2.2 doc="floor box 0,0,-.5 6,6,1"
+expect: => i=2 r=0.0 ok=true s="arrbarreltal" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 6,6,1
+expect: => doc: barrel2 cyl 0,0,0 0,0,2.2 r0.4
+test: h=-0.5
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${h} <= 0.0 { gold_fail(g, "barrel height must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "barrel", "", o);
+	o.append(" cyl 0,0,");
+	o.append("0 0,");
+	o.append("0,");
+	gold_fnum(o, ${h});
+	o.append(" r0.4");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrbarreltal");
+	out
+}
+@end
+@entry d75aedd920a891ba
+kind: step
+verb: scale
+noun: crate
+modifier: looping
+context: scene
+phrase: scale crate looping pulsation across cycle {dur}
+phrase: pulse crate scale continuously over period {dur} seconds
+slot: dur real
+test: dur=2.0 doc="crate box 0,0,0.5 1,1,1"
+expect: => i=2 r=0.0 ok=true s="sclcratloop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: crate box 0,0,0.5 1,1,1
+expect: => doc: crate.scale anim 0:1,1,1 2:1.2,1.2,1.2 loop
+test: dur=3.5 doc="pallet box 0,0,0.1 2,2,0.2|crate box 0,0,0.6 1.2,1.2,1.2"
+expect: => i=3 r=0.0 ok=true s="sclcratloop" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pallet box 0,0,0.1 2,2,0.2
+expect: => doc: crate box 0,0,0.6 1.2,1.2,1.2
+expect: => doc: crate.scale anim 0:1,1,1 3.5:1.2,1.2,1.2 loop
+test: dur=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dur} <= 0.0 { gold_fail(g, "loop duration must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".scale anim 0:1,");
+	o.append("1,1 ");
+	gold_fnum(o, ${dur});
+	o.append(":1.2,");
+	o.append("1.2,");
+	o.append("1.2 loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclcratloop");
+	out
+}
+@end
+@entry 8def2858369ffc3f
+kind: step
+verb: scale
+noun: gate
+modifier: none
+context: scene
+phrase: scale gate surface reset to neutral matte
+phrase: apply neutral matte preset to gate surface
+test: doc="gate box 0,0,1.5 2,0.2,3"
+expect: => i=1 r=0.0 ok=true s="sclgatenone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: gate box 0,0,1.5 2,0.2,3 m:matte
+test: doc="wall box 0,0,2 6,0.4,4|archgate box 0,0,1.5 2.5,0.2,3"
+expect: => i=2 r=0.0 ok=true s="sclgatenone" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,0,2 6,0.4,4
+expect: => doc: archgate box 0,0,1.5 2.5,0.2,3 m:matte
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("m:matte");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclgatenone");
+	out
+}
+@end
+@entry 15e4b383c77f793d
+kind: step
+verb: add
+noun: wall
+modifier: stacked
+context: scene
+phrase: add wall stacked tier of height {h} meters
+phrase: erect stacked wall layer reaching height {h}
+slot: h real
+test: h=2.5
+expect: => i=1 r=0.0 ok=true s="addwallstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall1 box 0,0,1.25 5,0.4,2.5
+test: h=4.0 doc="foundation box 0,0,-.5 6,2,1"
+expect: => i=2 r=0.0 ok=true s="addwallstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: foundation box 0,0,-.5 6,2,1
+expect: => doc: wall2 box 0,0,2 5,0.4,4
+test: h=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${h} <= 0.0 { gold_fail(g, "wall tier height must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "wall", "", o);
+	o.append(" box 0,0,");
+	gold_fnum(o, ${h} * 0.5);
+	o.append(" 5,0.");
+	o.append("4,");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "addwallstk");
+	out
+}
+@end
+@entry 07c5b727af44bec6
+kind: step
+verb: light
+noun: light
+modifier: spaced
+context: scene
+phrase: light scene using spaced studio lamp of {w} watts
+phrase: provide spaced studio illumination source of {w} watts
+slot: w real
+test: w=500.0
+expect: => i=1 r=0.0 ok=true s="ltlgtspaced" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: studiolt1 light area 3,3,4 0,0,0 w500
+test: w=750.0 doc="stage box 0,0,-.5 10,10,1"
+expect: => i=2 r=0.0 ok=true s="ltlgtspaced" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: stage box 0,0,-.5 10,10,1
+expect: => doc: studiolt2 light area 3,3,4 0,0,0 w750
+test: w=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 { gold_fail(g, "lamp wattage must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "studiolt", "", o);
+	o.append(" light area 3,3,");
+	o.append("4 0,");
+	o.append("0,0 w");
+	gold_fnum(o, ${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltlgtspaced");
+	out
+}
+@end
+@entry 95269b5dfbbdbcde
+kind: step
+verb: arrange
+noun: arch
+modifier: warm
+context: scene
+phrase: arrange arch with warm terracotta color tint
+phrase: set warm terracotta coloring on arch frame
+test: doc="arch box 0,0,2 2.5,0.4,4"
+expect: => i=1 r=0.0 ok=true s="arrarchwarm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: arch box 0,0,2 2.5,0.4,4 #c86432
+test: doc="wall box 0,0,2 8,0.5,4|doorway box 0,0,1.8 2,0.3,3.6"
+expect: => i=2 r=0.0 ok=true s="arrarchwarm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,0,2 8,0.5,4
+expect: => doc: doorway box 0,0,1.8 2,0.3,3.6 #c86432
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("#c86");
+	o.append("43");
+	o.append("2");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrarchwarm");
+	out
+}
+@end
+@entry 88c86106d54f0e6b
+kind: step
+verb: light
+noun: prop
+modifier: emissive
+context: scene
+phrase: light prop with emissive glow power {p}
+phrase: illuminate prop using emissive intensity {p}
+slot: p real
+test: p=150.0 doc="prop sphere 0,0,1 r0.5"
+expect: => i=2 r=0.0 ok=true s="ltpropem" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: prop sphere 0,0,1 r0.5
+expect: => doc: proplt2 light point 0,0,1.5 w150
+test: p=300.0 doc="floor box 0,0,-.5 10,10,1|prop box 0,0,0.5 1,1,1"
+expect: => i=3 r=0.0 ok=true s="ltpropem" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 10,10,1
+expect: => doc: prop box 0,0,0.5 1,1,1
+expect: => doc: proplt3 light point 0,0,1.5 w300
+test: p=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${p} <= 0.0 { gold_fail(g, "invalid light power"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "proplt", "", o);
+	o.append(" light point 0,0,");
+	o.append("1.5 w");
+	gold_fnum(o, ${p});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltpropem");
+	out
+}
+@end
+@entry f730301d8e578cb0
+kind: step
+verb: scale
+noun: bridge
+modifier: tall
+context: scene
+phrase: scale bridge clearance vertically to height {h}
+phrase: expand bridge vertical clearance to {h} meters
+slot: h real
+test: h=3.0 doc="bridge box 0,0,1 10,2,0.4"
+expect: => i=2 r=0.0 ok=true s="sclbrgtall" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bridge box 0,0,1 10,2,0.4
+expect: => doc: bridge.scale anim 0:1,1,1 1:1,1,3
+test: h=5.5 doc="pier cyl -5,0,0 -5,0,4 r0.5|deck box 0,0,4 12,2,0.5"
+expect: => i=3 r=0.0 ok=true s="sclbrgtall" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: pier cyl -5,0,0 -5,0,4 r0.5
+expect: => doc: deck box 0,0,4 12,2,0.5
+expect: => doc: deck.scale anim 0:1,1,1 1:1,1,5.5
+test: h=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${h} <= 0.0 { gold_fail(g, "clearance height must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".scale anim 0:1,");
+	o.append("1,1 ");
+	o.append("1:1,");
+	o.append("1,");
+	gold_fnum(o, ${h});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclbrgtall");
+	out
+}
+@end
+@entry 05832bb14cf172c4
+kind: step
+verb: add
+noun: chair
+modifier: cool
+context: scene
+phrase: add cool modern chair model at offset {x}
+phrase: place cool style seating chair at position {x}
+slot: x real
+test: x=1.5
+expect: => i=1 r=0.0 ok=true s="addchrcool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: chair1 box 1.5,0,0.45 0.5,0.5,0.9 m:plastic
+test: x=-2.4 doc="patio box 0,0,-.5 6,6,1"
+expect: => i=2 r=0.0 ok=true s="addchrcool" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: patio box 0,0,-.5 6,6,1
+expect: => doc: chair2 box -2.4,0,0.45 0.5,0.5,0.9 m:plastic
+test: x=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${x} == 0.0 { gold_fail(g, "chair position requires lateral offset"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "chair", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.append(",0,0.");
+	o.append("45 ");
+	o.append("0.5,");
+	o.append("0.5,");
+	o.append("0.9 m:plastic");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "addchrcool");
+	out
+}
+@end
+@entry 7f3772be75a4f830
+kind: step
+verb: scale
+noun: crate
+modifier: cool
+context: scene
+phrase: scale crate coloring to cool blue paint
+phrase: apply cool blue painted finish to crate
+test: doc="crate box 0,0,0.5 1,1,1"
+expect: => i=1 r=0.0 ok=true s="sclcratcol" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: crate box 0,0,0.5 1,1,1 #4080c0
+test: doc="ground box 0,0,-.5 6,6,1|container box 1,1,0.6 1.2,1.2,1.2"
+expect: => i=2 r=0.0 ok=true s="sclcratcol" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: ground box 0,0,-.5 6,6,1
+expect: => doc: container box 1,1,0.6 1.2,1.2,1.2 #4080c0
+test: 
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let k = gold_dfind(g);
+	if k < 0 { gold_fail(g, "no item yet"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.push(' ');
+	o.append("#4");
+	o.append("08");
+	o.append("0c0");
+	gold_dappend(g, k, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclcratcol");
+	out
+}
+@end
+@entry e1793a36300a784a
+kind: step
+verb: align
+noun: bridge
+modifier: centered
+context: scene
+phrase: align bridge centered along axis with width {w}
+phrase: center bridge walkway spanning width {w} meters
+slot: w real
+test: w=2.5
+expect: => i=1 r=0.0 ok=true s="alnbrgctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: bridge1 box 0,0,1 10,2.5,0.5
+test: w=3.8 doc="river box 0,0,-2 12,8,2"
+expect: => i=2 r=0.0 ok=true s="alnbrgctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: river box 0,0,-2 12,8,2
+expect: => doc: bridge2 box 0,0,1 10,3.8,0.5
+test: w=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 { gold_fail(g, "walkway width must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "bridge", "", o);
+	o.append(" box 0,0,");
+	o.append("1 ");
+	o.append("10,");
+	gold_fnum(o, ${w});
+	o.append(",0.5");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "alnbrgctr");
+	out
+}
+@end
+@entry b51c0c531b6d4bae
+kind: step
+verb: scale
+noun: arch
+modifier: circular
+context: scene
+phrase: scale arch circular rotation by {deg} degrees across {dur} seconds
+phrase: rotate arch structure circularly {deg} degrees over {dur} seconds
+slot: deg real
+slot: dur real
+test: deg=45.0 dur=2.0 doc="arch box 0,0,2 2.5,0.4,4"
+expect: => i=2 r=0.0 ok=true s="sclarchcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: arch box 0,0,2 2.5,0.4,4
+expect: => doc: arch.rot anim 0:0,0,0 2:0,0,45
+test: deg=90.0 dur=3.0 doc="courtyard box 0,0,-.5 10,10,1|vault box 0,0,2 3,0.5,4"
+expect: => i=3 r=0.0 ok=true s="sclarchcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: courtyard box 0,0,-.5 10,10,1
+expect: => doc: vault box 0,0,2 3,0.5,4
+expect: => doc: vault.rot anim 0:0,0,0 3:0,0,90
+test: deg=0.0 dur=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${deg} <= 0.0 || ${dur} <= 0.0 { gold_fail(g, "invalid rotation angles"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".rot anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	gold_fnum(o, ${deg});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclarchcirc");
+	out
+}
+@end
+@entry 74db012c948452ac
+kind: step
+verb: animate
+noun: statue
+modifier: circular
+context: scene
+phrase: animate statue circular spin over {dur} seconds looping
+phrase: rotate statue in continuous circular loop across {dur} seconds
+slot: dur real
+test: dur=4.0 doc="statue cyl 0,0,0 0,0,2.5 r0.4"
+expect: => i=2 r=0.0 ok=true s="animstatcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: statue cyl 0,0,0 0,0,2.5 r0.4
+expect: => doc: statue.rot anim 0:0,0,0 4:0,0,360 loop
+test: dur=8.0 doc="plinth box 0,0,0.5 1.5,1.5,1|figure cyl 0,0,1 0,0,3 r0.35"
+expect: => i=3 r=0.0 ok=true s="animstatcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: plinth box 0,0,0.5 1.5,1.5,1
+expect: => doc: figure cyl 0,0,1 0,0,3 r0.35
+expect: => doc: figure.rot anim 0:0,0,0 8:0,0,360 loop
+test: dur=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dur} <= 0.0 { gold_fail(g, "spin duration must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".rot anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	o.append("36");
+	o.append("0 loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animstatcirc");
+	out
+}
+@end
+@entry e28319acb3261b46
+kind: step
+verb: light
+noun: gate
+modifier: warm
+context: scene
+phrase: light gate with warm lantern at height {z}
+phrase: illuminate gate using warm lantern light at elevation {z}
+slot: z real
+test: z=2.8 doc="gate box 0,0,1.5 2,0.2,3"
+expect: => i=2 r=0.0 ok=true s="ltgatewarm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: gate box 0,0,1.5 2,0.2,3
+expect: => doc: gatelt2 light point 0,0,2.8 w200 #ffaa55
+test: z=3.5 doc="wall box 0,0,2 8,0.4,4|portal box 0,0,1.5 3,0.3,3"
+expect: => i=3 r=0.0 ok=true s="ltgatewarm" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,0,2 8,0.4,4
+expect: => doc: portal box 0,0,1.5 3,0.3,3
+expect: => doc: gatelt3 light point 0,0,3.5 w200 #ffaa55
+test: z=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} <= 0.0 { gold_fail(g, "lantern height must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "gatelt", "", o);
+	o.append(" light point 0,0,");
+	gold_fnum(o, ${z});
+	o.append(" w2");
+	o.append("00 #ffaa");
+	o.append("55");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltgatewarm");
+	out
+}
+@end
+@entry fa4d3524156395e8
+kind: step
+verb: animate
+noun: pillar
+modifier: weathered
+context: scene
+phrase: animate weathered pillar settling downward {dz} over {dur} seconds
+phrase: sink weathered pillar foundation by {dz} across {dur} seconds
+slot: dz real
+slot: dur real
+test: dz=0.4 dur=2.0 doc="col cyl 0,0,0 0,0,3 r0.3"
+expect: => i=2 r=0.0 ok=true s="animpilwth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: col cyl 0,0,0 0,0,3 r0.3
+expect: => doc: col.loc anim 0:0,0,0 2:0,0,-0.4
+test: dz=0.8 dur=3.5 doc="floor box 0,0,-.5 6,6,1|pillar cyl 1,1,0 1,1,3.5 r0.4"
+expect: => i=3 r=0.0 ok=true s="animpilwth" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 6,6,1
+expect: => doc: pillar cyl 1,1,0 1,1,3.5 r0.4
+expect: => doc: pillar.loc anim 0:0,0,0 3.5:0,0,-0.8
+test: dz=0.0 dur=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dz} <= 0.0 || ${dur} <= 0.0 { gold_fail(g, "settling displacement must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".loc anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,-");
+	gold_fnum(o, ${dz});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animpilwth");
+	out
+}
+@end
+@entry cccf67b04970b2de
+kind: step
+verb: animate
+noun: platform
+modifier: circular
+context: scene
+phrase: animate platform circular rotation across {dur} seconds looping
+phrase: rotate platform turntable full circle over duration {dur} looping
+slot: dur real
+test: dur=5.0 doc="plat cyl 0,0,0 0,0,0.3 r2.0"
+expect: => i=2 r=0.0 ok=true s="animplatcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: plat cyl 0,0,0 0,0,0.3 r2.0
+expect: => doc: plat.rot anim 0:0,0,0 5:0,0,360 loop
+test: dur=10.0 doc="base box 0,0,-.5 6,6,1|turntable cyl 0,0,0 0,0,0.4 r2.5"
+expect: => i=3 r=0.0 ok=true s="animplatcirc" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,-.5 6,6,1
+expect: => doc: turntable cyl 0,0,0 0,0,0.4 r2.5
+expect: => doc: turntable.rot anim 0:0,0,0 10:0,0,360 loop
+test: dur=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${dur} <= 0.0 { gold_fail(g, "turntable duration must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".rot anim 0:0,");
+	o.append("0,0 ");
+	gold_fnum(o, ${dur});
+	o.append(":0,0,");
+	o.append("36");
+	o.append("0 loop");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "animplatcirc");
+	out
+}
+@end
+@entry 5572e1a85d9720ad
+kind: step
+verb: scale
+noun: barrel
+modifier: centered
+context: scene
+phrase: scale barrel centered using uniform factor {s}
+phrase: resize centered barrel with scaling factor {s}
+slot: s real
+test: s=1.4 doc="barrel cyl 0,0,0 0,0,1 r0.4"
+expect: => i=2 r=0.0 ok=true s="sclbarctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: barrel cyl 0,0,0 0,0,1 r0.4
+expect: => doc: barrel.scale anim 0:1,1,1 1:1.4,1.4,1.4
+test: s=2.0 doc="cellar box 0,0,-.5 8,8,1|cask cyl 0,0,0 0,0,1.2 r0.5"
+expect: => i=3 r=0.0 ok=true s="sclbarctr" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cellar box 0,0,-.5 8,8,1
+expect: => doc: cask cyl 0,0,0 0,0,1.2 r0.5
+expect: => doc: cask.scale anim 0:1,1,1 1:2,2,2
+test: s=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	if ${s} <= 0.0 { gold_fail(g, "scale factor must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	o.append(last);
+	o.append(".scale anim 0:1,");
+	o.append("1,1 ");
+	o.append("1:");
+	gold_fnum(o, ${s});
+	o.push(',');
+	gold_fnum(o, ${s});
+	o.push(',');
+	gold_fnum(o, ${s});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "sclbarctr");
+	out
+}
+@end
+@entry 29a628d64089f8ae
+kind: step
+verb: light
+noun: window
+modifier: wide
+context: scene
+phrase: light window with wide area spread {w} watts
+phrase: add wide area illumination for window of {w} watts
+slot: w real
+test: w=450.0
+expect: => i=1 r=0.0 ok=true s="ltwinwide" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: winlt1 light area 0,2,2 0,0,1 w450
+test: w=800.0 doc="wall box 0,0,2 8,0.4,4"
+expect: => i=2 r=0.0 ok=true s="ltwinwide" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall box 0,0,2 8,0.4,4
+expect: => doc: winlt2 light area 0,2,2 0,0,1 w800
+test: w=-10.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${w} <= 0.0 { gold_fail(g, "invalid wattage"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "winlt", "", o);
+	o.append(" light area 0,2,");
+	o.append("2 0,");
+	o.append("0,1 w");
+	gold_fnum(o, ${w});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ltwinwide");
+	out
+}
+@end
+@entry 4f8c3a74273765ee
+kind: step
+verb: arrange
+noun: camera
+modifier: in_row
+context: scene
+phrase: arrange camera in row at lateral position {x}
+phrase: position in row camera along x axis at {x}
+slot: x real
+test: x=2.5
+expect: => i=1 r=0.0 ok=true s="arrcamrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: cam1 camera 2.5,-6,2 0,0,1
+test: x=-3.0 doc="floor box 0,0,-.5 10,10,1"
+expect: => i=2 r=0.0 ok=true s="arrcamrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 10,10,1
+expect: => doc: cam2 camera -3,-6,2 0,0,1
+test: x=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${x} == 0.0 { gold_fail(g, "camera requires lateral offset"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "cam", "", o);
+	o.append(" camera ");
+	gold_fnum(o, ${x});
+	o.append(",-");
+	o.append("6,2 ");
+	o.append("0,0,");
+	o.append("1");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrcamrow");
+	out
+}
+@end
+@entry 0474c6220080df6a
+kind: step
+verb: arrange
+noun: wall
+modifier: stacked
+context: scene
+phrase: arrange stacked wall section at elevation {z}
+phrase: stack wall segment at vertical coordinate {z}
+slot: z real
+test: z=1.5
+expect: => i=1 r=0.0 ok=true s="arrwallstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: wall1 box 0,0,1.5 4,0.3,1.5
+test: z=3.0 doc="base box 0,0,0.5 4,0.3,1"
+expect: => i=2 r=0.0 ok=true s="arrwallstk" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: base box 0,0,0.5 4,0.3,1
+expect: => doc: wall2 box 0,0,3 4,0.3,1.5
+test: z=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${z} <= 0.0 { gold_fail(g, "invalid wall elevation"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "wall", "", o);
+	o.append(" box 0,0,");
+	gold_fnum(o, ${z});
+	o.append(" 4,0.");
+	o.append("3,1.");
+	o.append("5");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrwallstk");
+	out
+}
+@end
+@entry e048cbbef423da6f
+kind: step
+verb: arrange
+noun: crate
+modifier: matte
+context: scene
+phrase: arrange matte crate at coordinates {x} {y}
+phrase: position matte crate at ground location {x} {y}
+slot: x real
+slot: y real
+test: x=1.5 y=2.0
+expect: => i=1 r=0.0 ok=true s="arrcratemat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: crate1 box 1.5,2,0.5 1,1,1 m:matte
+test: x=-2.0 y=3.5 doc="floor box 0,0,-.5 10,10,1"
+expect: => i=2 r=0.0 ok=true s="arrcratemat" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: floor box 0,0,-.5 10,10,1
+expect: => doc: crate2 box -2,3.5,0.5 1,1,1 m:matte
+test: x=0.0 y=0.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${x} == 0.0 && ${y} == 0.0 { gold_fail(g, "crate offset required"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "crate", "", o);
+	o.append(" box ");
+	gold_fnum(o, ${x});
+	o.push(',');
+	gold_fnum(o, ${y});
+	o.append(",0.5 ");
+	o.append("1,1,");
+	o.append("1 m:matte");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrcratemat");
+	out
+}
+@end
+@entry b4a9328059ac4db3
+kind: step
+verb: arrange
+noun: arch
+modifier: in_row
+context: scene
+phrase: arrange arch in row along corridor at {y}
+phrase: place row archway at corridor offset {y}
+slot: y real
+test: y=3.0
+expect: => i=1 r=0.0 ok=true s="arrarchrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: arch1 box 0,3,2 2.5,0.4,4
+test: y=6.0 doc="path box 0,0,0 2,12,0.1"
+expect: => i=2 r=0.0 ok=true s="arrarchrow" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: path box 0,0,0 2,12,0.1
+expect: => doc: arch2 box 0,6,2 2.5,0.4,4
+test: y=-1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if ${y} <= 0.0 { gold_fail(g, "corridor offset must be positive"); out.ok = false; return out; }
+	var o byte[>..] = [];
+	gold_dnews(g, "arch", "", o);
+	o.append(" box 0,");
+	gold_fnum(o, ${y});
+	o.append(",2 ");
+	o.append("2.5,");
+	o.append("0.4,");
+	o.append("4");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "arrarchrow");
+	out
+}
+@end
+@entry 7e1ea3f1ba5ed017
+kind: step
+verb: map
+noun: squares
+modifier: any
+context: stats
+phrase: map squares any statistical sample scale {scale}
+phrase: transform squares any sample distribution factor {scale}
+slot: scale int
+test: list=2,3,4 scale=2
+expect: => i=58 r=0.0 ok=true s="sum of scaled squares: 58" errors=0 n=3 res=[8,18,32] cache=0 hits=0
+test: list=5,6 scale=3
+expect: => i=183 r=0.0 ok=true s="sum of scaled squares: 183" errors=0 n=2 res=[75,108] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let s = ${scale};
+	var sum = 0;
+	for k in g.n {
+		let sq = g.res[k] * g.res[k] * s;
+		g.res[k] = sq;
+		sum += sq;
+	}
+	g.steps += g.n;
+	out.i = sum;
+	out.s.clear();
+	format(out.s, "sum of scaled squares: ", sum);
+	out
+}
+@end
+@entry 61a2aec053b8d4b9
+kind: step
+verb: pair
+noun: suffix
+modifier: unique
+context: stats
+phrase: pair suffix unique tail observations width {width}
+phrase: couple suffix unique sample tail width {width}
+slot: width int
+test: list=1,2,3,4,5,6 width=2
+expect: => i=2 r=0.0 ok=true s="unique suffix pairs: 2" errors=0 n=8 res=[1,2,3,4,5,6,8,10] cache=0 hits=0
+test: list=10,20,30,40 width=3
+expect: => i=0 r=0.0 ok=true s="unique suffix pairs: 0" errors=0 n=4 res=[10,20,30,40] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let w = ${width};
+	if g.n >= w * 2 {
+		var paired = 0;
+		var start = g.n - w * 2;
+		var i = 0;
+		while i < w {
+			let a = g.res[start + i];
+			let b = g.res[start + w + i];
+			if a != b {
+				gold_push(g, a + b);
+				paired++;
+			}
+			i++;
+		}
+		out.i = paired;
+	} else {
+		out.i = 0;
+	}
+	g.steps += g.n;
+	out.s.clear();
+	format(out.s, "unique suffix pairs: ", out.i);
+	out
+}
+@end
+@entry a0c7cfec6e4f25dd
+kind: step
+verb: drop
+noun: number
+modifier: sorted
+context: stats
+phrase: drop number sorted distribution percentile rank {rank}
+phrase: remove number sorted sample rank {rank}
+slot: rank int
+test: list=40,10,30,20 rank=2
+expect: => i=30 r=0.0 ok=true s="dropped sorted element: 30" errors=0 n=3 res=[10,20,40] cache=0 hits=0
+test: list=5,25,15,35 rank=1
+expect: => i=15 r=0.0 ok=true s="dropped sorted element: 15" errors=0 n=3 res=[5,25,35] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let rk = ${rank};
+	var i = 0;
+	while i < g.n {
+		var j = 0;
+		while j + 1 < g.n {
+			if g.res[j] > g.res[j+1] {
+				let tmp = g.res[j];
+				g.res[j] = g.res[j+1];
+				g.res[j+1] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+	if rk >= 0 && rk < g.n {
+		let dropped = g.res[rk];
+		var k = rk;
+		while k + 1 < g.n {
+			g.res[k] = g.res[k+1];
+			k++;
+		}
+		g.n--;
+		out.i = dropped;
+	} else {
+		out.i = 0;
+	}
+	g.steps += g.n * g.n;
+	out.s.clear();
+	format(out.s, "dropped sorted element: ", out.i);
+	out
+}
+@end
+@entry 0a7b12ab083f24fb
+kind: step
+verb: compare
+noun: maximum
+modifier: every_other
+context: stats
+phrase: compare maximum every other peak metric baseline {baseline}
+phrase: evaluate maximum every other sample peak baseline {baseline}
+slot: baseline int
+test: list=12,5,30,8,22 baseline=15
+expect: => i=30 r=0.0 ok=true s="maximum every other observation: 30" errors=0 n=5 res=[12,5,30,8,22] cache=0 hits=0
+test: list=4,20,10,18 baseline=12
+expect: => i=12 r=0.0 ok=true s="maximum every other observation: 12" errors=0 n=4 res=[4,20,10,18] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let base = ${baseline};
+	var max_val = base;
+	var count = 0;
+	var i = 0;
+	while i < g.n {
+		let x = g.res[i];
+		if x > max_val {
+			max_val = x;
+			count++;
+		}
+		i += 2;
+	}
+	g.steps += g.n;
+	out.i = max_val;
+	out.s.clear();
+	format(out.s, "maximum every other observation: ", max_val);
+	out
+}
+@end
+@entry e57adba29e577239
+kind: step
+verb: count
+noun: threshold
+modifier: between
+context: stats
+phrase: count threshold between statistical bounds lower {low} upper {high}
+phrase: tally threshold between sample limits lower {low} upper {high}
+slot: low int
+slot: high int
+test: list=5,12,18,25,30 low=10 high=22
+expect: => i=2 r=0.0 ok=true s="count between thresholds: 2" errors=0 n=5 res=[5,12,18,25,30] cache=0 hits=0
+test: list=1,4,7,11,15 low=3 high=12
+expect: => i=3 r=0.0 ok=true s="count between thresholds: 3" errors=0 n=5 res=[1,4,7,11,15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let lo = ${low};
+	let hi = ${high};
+	var matching = 0;
+	for k in g.n {
+		let x = g.res[k];
+		if x > lo && x < hi {
+			matching++;
+		}
+	}
+	g.steps += g.n;
+	out.i = matching;
+	out.s.clear();
+	format(out.s, "count between thresholds: ", matching);
+	out
+}
+@end
+@entry c683cf0898c14d73
+kind: step
+verb: sort
+noun: subfunction
+modifier: at_least
+context: stats
+phrase: sort subfunction at least transformed threshold metric {minval}
+phrase: order subfunction at least mapped observations baseline {minval}
+slot: f fn
+slot: minval int
+test: list=4,1,8,3 f=double minval=3
+expect: => i=3 r=0.0 ok=true s="transformed and sorted: 3" errors=0 n=4 res=[1,6,8,16] cache=0 hits=0
+test: list=10,2,6,1 f=square minval=5
+expect: => i=2 r=0.0 ok=true s="transformed and sorted: 2" errors=0 n=4 res=[1,2,36,100] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let b = ${minval};
+	var cnt = 0;
+	for k in g.n {
+		if g.res[k] >= b {
+			g.res[k] = ${f}(g.res[k]);
+			cnt++;
+		}
+	}
+	var i = 0;
+	while i < g.n {
+		var j = 0;
+		while j + 1 < g.n {
+			if g.res[j] > g.res[j+1] {
+				let tmp = g.res[j];
+				g.res[j] = g.res[j+1];
+				g.res[j+1] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+	g.steps += g.n * g.n;
+	out.i = cnt;
+	out.s.clear();
+	format(out.s, "transformed and sorted: ", cnt);
+	out
+}
+@end
+@entry 12a76c4b427e413a
+kind: step
+verb: normalize
+noun: function
+modifier: any
+context: stats
+phrase: normalize function any statistical score transform
+phrase: standardize function any distribution values mapping
+slot: f fn
+test: list=2,4,6 f=square
+expect: => i=18 r=0.0 ok=true s="normalized around mean: 18" errors=0 n=3 res=[-14,-2,18] cache=0 hits=0
+test: list=3,6,9 f=double
+expect: => i=12 r=0.0 ok=true s="normalized around mean: 12" errors=0 n=3 res=[-6,0,6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	if g.n == 0 { return out; }
+	var sum = 0;
+	for k in g.n {
+		g.res[k] = ${f}(g.res[k]);
+		sum += g.res[k];
+	}
+	let mean = sum / g.n;
+	for k in g.n {
+		g.res[k] = g.res[k] - mean;
+	}
+	g.steps += g.n * 2;
+	out.i = mean;
+	out.s.clear();
+	format(out.s, "normalized around mean: ", mean);
+	out
+}
+@end
+@entry cd16bfc3075080e3
+kind: step
+verb: collect
+noun: text
+modifier: last
+context: stats
+phrase: collect text last categorical tokens span {count}
+phrase: gather text last distribution categories window {count}
+slot: count int
+test: text="alpha beta gamma delta" count=2
+expect: => i=11 r=0.0 ok=true s="gamma delta" errors=0 n=0 res=[] cache=0 hits=0
+test: text="cat dog bird fox" count=3
+expect: => i=12 r=0.0 ok=true s="dog bird fox" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let c = ${count};
+	var spaces = 0;
+	var idx = out.s.len;
+	while idx > 0 {
+		idx--;
+		if out.s[idx] == ' ' {
+			spaces++;
+			if spaces == c {
+				idx++;
+				break;
+			}
+		}
+	}
+	var tail byte[..200] = [];
+	while idx < out.s.len {
+		tail.push(out.s[idx]);
+		idx++;
+	}
+	out.s = tail;
+	out.i = tail.len;
+	g.steps += out.s.len;
+	out
+}
+@end
+@entry 4d503a05d8b61a13
+kind: step
+verb: reverse
+noun: window
+modifier: recursively
+context: stats
+phrase: reverse window recursively moving subseries size {span}
+phrase: invert window recursively statistical intervals size {span}
+slot: span int
+test: list=1,2,3,4,5,6 span=3
+expect: => i=6 r=0.0 ok=true s="reversed windows total: 2" errors=0 n=6 res=[3,2,1,6,5,4] cache=0 hits=0
+test: list=10,20,30,40,50 span=2
+expect: => i=4 r=0.0 ok=true s="reversed windows total: 2" errors=0 n=5 res=[20,10,40,30,50] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let sp = ${span};
+	if sp <= 1 || g.n < sp { return out; }
+	var offset = 0;
+	while offset + sp <= g.n {
+		var left = offset;
+		var right = offset + sp - 1;
+		while left < right {
+			let tmp = g.res[left];
+			g.res[left] = g.res[right];
+			g.res[right] = tmp;
+			left++;
+			right--;
+		}
+		offset += sp;
+	}
+	g.steps += g.n;
+	out.i = offset;
+	out.s.clear();
+	format(out.s, "reversed windows total: ", offset / sp);
+	out
+}
+@end
+@entry df46ca9d5cf7fc49
+kind: step
+verb: run
+noun: tally
+modifier: nested
+context: stats
+phrase: run tally nested multi level frequencies tiers {levels}
+phrase: execute tally nested hierarchical counts tiers {levels}
+slot: levels int
+test: list=2,2,3,4,4,4 levels=2
+expect: => i=38 r=0.0 ok=true s="nested tally sum: 38" errors=0 n=7 res=[2,2,3,4,4,4,38] cache=0 hits=0
+test: list=5,5,5,10 levels=1
+expect: => i=25 r=0.0 ok=true s="nested tally sum: 25" errors=0 n=5 res=[5,5,5,10,25] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let lvls = ${levels};
+	var counts = 0;
+	for k in g.n {
+		counts += g.res[k] * lvls;
+	}
+	gold_push(g, counts);
+	g.steps += g.n * lvls;
+	out.i = counts;
+	out.s.clear();
+	format(out.s, "nested tally sum: ", counts);
+	out
+}
+@end
+@entry fb95346382b6d89d
+kind: step
+verb: rotate
+noun: threshold
+modifier: pairwise
+context: stats
+phrase: rotate threshold pairwise adjacent observations cutoff {cutoff}
+phrase: cycle threshold pairwise sample intervals cutoff {cutoff}
+slot: cutoff int
+test: list=10,20,30,40 cutoff=15
+expect: => i=1 r=0.0 ok=true s="rotated pairs count: 1" errors=0 n=4 res=[10,20,40,30] cache=0 hits=0
+test: list=5,12,8,25 cutoff=10
+expect: => i=1 r=0.0 ok=true s="rotated pairs count: 1" errors=0 n=4 res=[5,12,25,8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let cut = ${cutoff};
+	var rotated = 0;
+	var i = 0;
+	while i + 1 < g.n {
+		let a = g.res[i];
+		let b = g.res[i+1];
+		if (a + b) / 2 > cut {
+			g.res[i] = b;
+			g.res[i+1] = a;
+			rotated++;
+		}
+		i += 2;
+	}
+	g.steps += g.n;
+	out.i = rotated;
+	out.s.clear();
+	format(out.s, "rotated pairs count: ", rotated);
+	out
+}
+@end
+@entry 206aa1de4c0c2966
+kind: step
+verb: rotate
+noun: prefix
+modifier: until
+context: stats
+phrase: rotate prefix until statistical criterion verified
+phrase: cycle prefix until sample condition satisfied
+slot: p pred
+test: list=1,3,5,6,8 p=is_even
+expect: => i=3 r=0.0 ok=true s="prefix rotations completed: 3" errors=0 n=5 res=[6,8,1,3,5] cache=0 hits=0
+test: list=2,4,7,9 p=is_odd
+expect: => i=2 r=0.0 ok=true s="prefix rotations completed: 2" errors=0 n=4 res=[7,9,2,4] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var shifts = 0;
+	while g.n > 0 && shifts < g.n && !${p}(g.res[0]) {
+		let first = g.res[0];
+		var k = 0;
+		while k + 1 < g.n {
+			g.res[k] = g.res[k+1];
+			k++;
+		}
+		g.res[g.n - 1] = first;
+		shifts++;
+	}
+	g.steps += shifts * g.n;
+	out.i = shifts;
+	out.s.clear();
+	format(out.s, "prefix rotations completed: ", shifts);
+	out
+}
+@end
+@entry c9a950cbd68ae19b
+kind: step
+verb: validate
+noun: words
+modifier: each
+context: stats
+phrase: validate words each category token length {maxlen}
+phrase: check words each label length ceiling {maxlen}
+slot: maxlen int
+test: text="norm mean dev" maxlen=4
+expect: => i=3 r=0.0 ok=true s="validated category words: 3" errors=0 n=0 res=[] cache=0 hits=0
+test: text="longcategory small" maxlen=8
+expect: => i=2 r=0.0 ok=false s="validated category words: 2" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let lim = ${maxlen};
+	var valid = true;
+	var cur_len = 0;
+	var words = 0;
+	for i in out.s.len {
+		let b = out.s[i];
+		if b == ' ' {
+			if cur_len > lim { valid = false; }
+			if cur_len > 0 { words++; }
+			cur_len = 0;
+		} else {
+			cur_len++;
+		}
+	}
+	if cur_len > lim { valid = false; }
+	if cur_len > 0 { words++; }
+	out.ok = valid;
+	out.i = words;
+	g.steps += out.s.len;
+	out.s.clear();
+	format(out.s, "validated category words: ", words);
+	out
+}
+@end
+@entry ac91c828cddc2f97
+kind: step
+verb: fill
+noun: numbers
+modifier: at_least
+context: stats
+phrase: fill numbers at least target capacity count {target} minimum {floorval}
+phrase: pad numbers at least sample size quota {target} baseline {floorval}
+slot: target int
+slot: floorval int
+test: list=10,20 target=5 floorval=7
+expect: => i=5 r=0.0 ok=true s="filled sample size to: 5" errors=0 n=5 res=[10,20,7,7,7] cache=0 hits=0
+test: list=3,6,9 target=6 floorval=4
+expect: => i=6 r=0.0 ok=true s="filled sample size to: 6" errors=0 n=6 res=[3,6,9,4,4,4] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let tgt = ${target};
+	let flr = ${floorval};
+	var added = 0;
+	while g.n < tgt && g.n < 512 {
+		gold_push(g, flr);
+		added++;
+	}
+	g.steps += added;
+	out.i = g.n;
+	out.s.clear();
+	format(out.s, "filled sample size to: ", g.n);
+	out
+}
+@end
+@entry 66efe2a50f3f8b1a
+kind: step
+verb: fold
+noun: digits
+modifier: each
+context: stats
+phrase: fold digits each numerical observation weight {factor}
+phrase: compress digits each sample measurement factor {factor}
+slot: factor int
+test: list=123,45 factor=2
+expect: => i=30 r=0.0 ok=true s="folded digit sum: 30" errors=0 n=2 res=[12,18] cache=0 hits=0
+test: list=89,101 factor=3
+expect: => i=57 r=0.0 ok=true s="folded digit sum: 57" errors=0 n=2 res=[51,6] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let f = ${factor};
+	var total = 0;
+	for k in g.n {
+		let dsum = core_digit_sum(g.res[k]) * f;
+		g.res[k] = dsum;
+		total += dsum;
+	}
+	g.steps += g.n;
+	out.i = total;
+	out.s.clear();
+	format(out.s, "folded digit sum: ", total);
+	out
+}
+@end
+@entry 316d95efe0741ff6
+kind: step
+verb: trace
+noun: text
+modifier: while
+context: stats
+phrase: trace text while token length below {bound}
+phrase: monitor text while category string under {bound}
+slot: bound int
+test: text="a bb ccc dddd" bound=3
+expect: => i=3 r=0.0 ok=true s="traced words matching bound: 3" errors=0 n=3 res=[1,2,3] cache=0 hits=0
+test: text="hi there everyone" bound=5
+expect: => i=2 r=0.0 ok=true s="traced words matching bound: 2" errors=0 n=2 res=[2,5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let bnd = ${bound};
+	var word_len = 0;
+	var matched = 0;
+	for i in out.s.len {
+		let b = out.s[i];
+		if b == ' ' {
+			if word_len > 0 && word_len <= bnd {
+				gold_push(g, word_len);
+				matched++;
+			}
+			word_len = 0;
+		} else {
+			word_len++;
+		}
+	}
+	if word_len > 0 && word_len <= bnd {
+		gold_push(g, word_len);
+		matched++;
+	}
+	g.steps += out.s.len;
+	out.i = matched;
+	out.s.clear();
+	format(out.s, "traced words matching bound: ", matched);
+	out
+}
+@end
+@entry 666ae01f8c97c0da
+kind: step
+verb: pair
+noun: primes
+modifier: while
+context: stats
+phrase: pair primes while values remain below {limit}
+phrase: couple primes while sample items under {limit}
+slot: limit int
+test: list=2,3,5,7,11,14 limit=10
+expect: => i=2 r=0.0 ok=true s="paired prime sums: 2" errors=0 n=8 res=[2,3,5,7,11,14,5,12] cache=0 hits=0
+test: list=3,5,7,13,17 limit=8
+expect: => i=1 r=0.0 ok=true s="paired prime sums: 1" errors=0 n=6 res=[3,5,7,13,17,8] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let lim = ${limit};
+	var paired = 0;
+	var i = 0;
+	while i + 1 < g.n {
+		let a = g.res[i];
+		let b = g.res[i+1];
+		if a < lim && b < lim && core_is_prime(a) && core_is_prime(b) {
+			gold_push(g, a + b);
+			paired++;
+		}
+		i += 2;
+	}
+	g.steps += g.n;
+	out.i = paired;
+	out.s.clear();
+	format(out.s, "paired prime sums: ", paired);
+	out
+}
+@end
+@entry 75265123c4500d6b
+kind: step
+verb: collect
+noun: memo
+modifier: at_most
+context: stats
+phrase: collect memo at most cached metrics quota {cap}
+phrase: retrieve memo at most stored statistics ceiling {cap}
+slot: cap int
+test: input=4 cap=3
+expect: => i=5 r=0.0 ok=true s="collected memo sum: 5" errors=0 n=3 res=[0,1,4] cache=4 hits=0
+test: input=6 cap=5
+expect: => i=30 r=0.0 ok=true s="collected memo sum: 30" errors=0 n=5 res=[0,1,4,9,16] cache=6 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let c = ${cap};
+	for k in out.i {
+		gold_cache_put(g, k, k * k);
+	}
+	var collected = 0;
+	var sum = 0;
+	for k in g.cn {
+		if collected < c {
+			gold_push(g, g.cv[k]);
+			sum += g.cv[k];
+			collected++;
+		}
+	}
+	g.steps += collected;
+	out.i = sum;
+	out.s.clear();
+	format(out.s, "collected memo sum: ", sum);
+	out
+}
+@end
+@entry a5fccf53321072f9
+kind: step
+verb: normalize
+noun: items
+modifier: times
+context: stats
+phrase: normalize items times distribution amplitude scaling {multiplier}
+phrase: scale items times normalized variance factor {multiplier}
+slot: multiplier int
+test: list=2,4,6 multiplier=5
+expect: => i=20 r=0.0 ok=true s="normalized items scaled: 20" errors=0 n=3 res=[-10,0,10] cache=0 hits=0
+test: list=10,20,30 multiplier=2
+expect: => i=40 r=0.0 ok=true s="normalized items scaled: 40" errors=0 n=3 res=[-20,0,20] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let m = ${multiplier};
+	if g.n == 0 { return out; }
+	var sum = 0;
+	for k in g.n { sum += g.res[k]; }
+	let mean = sum / g.n;
+	for k in g.n {
+		g.res[k] = (g.res[k] - mean) * m;
+	}
+	g.steps += g.n * 2;
+	out.i = mean * m;
+	out.s.clear();
+	format(out.s, "normalized items scaled: ", out.i);
+	out
+}
+@end
+@entry 3b8844c23f6d9c8d
+kind: step
+verb: rotate
+noun: range
+modifier: unique
+context: stats
+phrase: rotate range unique distinct values displacement {shift}
+phrase: cycle range unique sample elements offset {shift}
+slot: shift int
+test: list=1,2,2,3,4,4,5 shift=2
+expect: => i=5 r=0.0 ok=true s="unique rotated count: 5" errors=0 n=5 res=[4,5,1,2,3] cache=0 hits=0
+test: list=10,20,20,30,40 shift=1
+expect: => i=4 r=0.0 ok=true s="unique rotated count: 4" errors=0 n=4 res=[40,10,20,30] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let sh = ${shift};
+	var uniq int[64] = [0; 64];
+	var un = 0;
+	for k in g.n {
+		let x = g.res[k];
+		var found = false;
+		for u in un { if uniq[u] == x { found = true; break; } }
+		if !found && un < 64 { uniq[un] = x; un++; }
+	}
+	if un > 0 {
+		let rot = sh % un;
+		for k in un {
+			let src = (k + un - rot) % un;
+			g.res[k] = uniq[src];
+		}
+		g.n = un;
+	}
+	g.steps += un * un;
+	out.i = un;
+	out.s.clear();
+	format(out.s, "unique rotated count: ", un);
+	out
+}
+@end
+@entry 7863d3c421dfe6c0
+kind: step
+verb: fill
+noun: memo
+modifier: first
+context: stats
+phrase: fill memo first cache initialization slots {entries}
+phrase: populate memo first statistics buffer slots {entries}
+slot: entries int
+test: list=10,20,30 entries=3
+expect: => i=3 r=0.0 ok=true s="memo entries populated: 3" errors=0 n=3 res=[10,20,30] cache=3 hits=0
+test: list=5,15 entries=2
+expect: => i=2 r=0.0 ok=true s="memo entries populated: 2" errors=0 n=2 res=[5,15] cache=2 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let e = ${entries};
+	var filled = 0;
+	var i = 0;
+	while i < g.n && filled < e {
+		gold_cache_put(g, i, g.res[i]);
+		filled++;
+		i++;
+	}
+	g.steps += filled;
+	out.i = g.cn;
+	out.s.clear();
+	format(out.s, "memo entries populated: ", g.cn);
+	out
+}
+@end
+@entry 99a58057e1b53ef9
+kind: step
+verb: dedupe
+noun: primes
+modifier: each
+context: stats
+phrase: dedupe primes each observation record ceiling {cap}
+phrase: filter duplicate primes each distribution tier {cap}
+slot: cap int
+test: list=2,3,2,5,3,7 cap=10
+expect: => i=4 r=0.0 ok=true s="distinct primes retained: 4" errors=0 n=4 res=[2,3,5,7] cache=0 hits=0
+test: list=11,13,11,17,13 cap=20
+expect: => i=3 r=0.0 ok=true s="distinct primes retained: 3" errors=0 n=3 res=[11,13,17] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let c = ${cap};
+	var seen = [false; 128];
+	var kept = 0;
+	var i = 0;
+	while i < g.n {
+		let x = g.res[i];
+		if core_is_prime(x) && x < c && x >= 0 && x < 128 {
+			if !seen[x] {
+				seen[x] = true;
+				g.res[kept] = x;
+				kept++;
+			}
+		} else {
+			g.res[kept] = x;
+			kept++;
+		}
+		i++;
+	}
+	g.n = kept;
+	g.steps += i;
+	out.i = kept;
+	out.s.clear();
+	format(out.s, "distinct primes retained: ", kept);
+	out
+}
+@end
+@entry f3359c847eb4e06e
+kind: step
+verb: map
+noun: minimum
+modifier: first
+context: stats
+phrase: map minimum first baseline offset adjustment {offset}
+phrase: shift minimum first distribution floor {offset}
+slot: offset int
+test: list=14,6,22,8 offset=5
+expect: => i=11 r=0.0 ok=true s="mapped minimum first: 11" errors=0 n=4 res=[11,19,27,13] cache=0 hits=0
+test: list=30,12,18 offset=10
+expect: => i=22 r=0.0 ok=true s="mapped minimum first: 22" errors=0 n=3 res=[22,40,28] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let off = ${offset};
+	if g.n == 0 { return out; }
+	var min_idx = 0;
+	for k in g.n {
+		if g.res[k] < g.res[min_idx] { min_idx = k; }
+	}
+	let min_val = g.res[min_idx];
+	let tmp = g.res[0];
+	g.res[0] = min_val;
+	g.res[min_idx] = tmp;
+	for k in g.n {
+		g.res[k] += off;
+	}
+	g.steps += g.n;
+	out.i = min_val + off;
+	out.s.clear();
+	format(out.s, "mapped minimum first: ", out.i);
+	out
+}
+@end
+@entry 499871aa836c942a
+kind: step
+verb: split
+noun: tally
+modifier: with_retry
+context: stats
+phrase: split tally with retry partitioned counts pivot {pivot}
+phrase: divide tally with retry frequency bins pivot {pivot}
+slot: pivot int
+test: list=5,15,8,22,12 pivot=10
+expect: => i=36 r=0.0 ok=true s="partitioned tally difference: 36" errors=0 n=7 res=[5,15,8,22,12,13,49] cache=0 hits=0
+test: list=2,7,14,21 pivot=8
+expect: => i=26 r=0.0 ok=true s="partitioned tally difference: 26" errors=0 n=6 res=[2,7,14,21,9,35] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let p = ${pivot};
+	var low_sum = 0;
+	var high_sum = 0;
+	for k in g.n {
+		if g.res[k] <= p { low_sum += g.res[k]; }
+		else { high_sum += g.res[k]; }
+	}
+	var diff = high_sum - low_sum;
+	if diff < 0 { diff = -diff; }
+	gold_push(g, low_sum);
+	gold_push(g, high_sum);
+	g.steps += g.n;
+	out.i = diff;
+	out.s.clear();
+	format(out.s, "partitioned tally difference: ", diff);
+	out
+}
+@end
+@entry d53e084dacd0677a
+kind: step
+verb: measure
+noun: numbers
+modifier: between
+context: stats
+phrase: measure numbers between statistical spread lower {low} upper {high}
+phrase: gauge numbers between sample interval lower {low} upper {high}
+slot: low int
+slot: high int
+test: list=4,9,15,22,28 low=8 high=20
+expect: => i=12 r=0.0 ok=true s="average between bounds: 12" errors=0 n=6 res=[4,9,15,22,28,12] cache=0 hits=0
+test: list=1,6,11,16,21 low=5 high=18
+expect: => i=11 r=0.0 ok=true s="average between bounds: 11" errors=0 n=6 res=[1,6,11,16,21,11] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let lo = ${low};
+	let hi = ${high};
+	var sum = 0;
+	var cnt = 0;
+	for k in g.n {
+		let x = g.res[k];
+		if x > lo && x < hi {
+			sum += x;
+			cnt++;
+		}
+	}
+	let avg = if cnt > 0 { sum / cnt } else { 0 };
+	gold_push(g, avg);
+	g.steps += g.n;
+	out.i = avg;
+	out.s.clear();
+	format(out.s, "average between bounds: ", avg);
+	out
+}
+@end
+@entry 72fe3e1979c95594
+kind: step
+verb: trace
+noun: window
+modifier: with_cache
+context: stats
+phrase: trace window with cache moving average span {size}
+phrase: track window with cache rolling statistics span {size}
+slot: size int
+test: list=10,20,30,40,50 size=3
+expect: => i=3 r=0.0 ok=true s="windows traced and cached: 3" errors=0 n=5 res=[10,20,30,40,50] cache=3 hits=0
+test: list=2,4,6,8 size=2
+expect: => i=3 r=0.0 ok=true s="windows traced and cached: 3" errors=0 n=4 res=[2,4,6,8] cache=3 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let sz = ${size};
+	if sz <= 0 || g.n < sz { return out; }
+	var w_count = 0;
+	var i = 0;
+	while i + sz <= g.n {
+		var sum = 0;
+		for j in sz { sum += g.res[i + j]; }
+		let avg = sum / sz;
+		gold_cache_put(g, i, avg);
+		w_count++;
+		i++;
+	}
+	g.steps += g.n * sz;
+	out.i = w_count;
+	out.s.clear();
+	format(out.s, "windows traced and cached: ", w_count);
+	out
+}
+@end
+@entry 5686d6b0b22205fd
+kind: step
+verb: fold
+noun: maximum
+modifier: last
+context: stats
+phrase: fold maximum last trailing observations breadth {window}
+phrase: reduce maximum last sample tail span {window}
+slot: window int
+test: list=5,18,12,25,8 window=3
+expect: => i=25 r=0.0 ok=true s="folded maximum of tail: 25" errors=0 n=6 res=[5,18,12,25,8,25] cache=0 hits=0
+test: list=30,15,40,10 window=2
+expect: => i=40 r=0.0 ok=true s="folded maximum of tail: 40" errors=0 n=5 res=[30,15,40,10,40] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let w = ${window};
+	if g.n == 0 || w <= 0 { return out; }
+	var start = g.n - w;
+	if start < 0 { start = 0; }
+	var max_val = g.res[start];
+	var i = start + 1;
+	while i < g.n {
+		if g.res[i] > max_val { max_val = g.res[i]; }
+		i++;
+	}
+	gold_push(g, max_val);
+	g.steps += g.n;
+	out.i = max_val;
+	out.s.clear();
+	format(out.s, "folded maximum of tail: ", max_val);
+	out
+}
+@end
+@entry e23ea26b0173e697
+kind: step
+verb: compare
+noun: numbers
+modifier: sorted
+context: stats
+phrase: compare numbers sorted rank differences margin {tolerance}
+phrase: assess numbers sorted quantile gaps margin {tolerance}
+slot: tolerance int
+test: list=30,10,40,20 tolerance=12
+expect: => i=3 r=0.0 ok=true s="sorted pairs within tolerance: 3" errors=0 n=4 res=[10,20,30,40] cache=0 hits=0
+test: list=5,25,15,35 tolerance=8
+expect: => i=0 r=0.0 ok=true s="sorted pairs within tolerance: 0" errors=0 n=4 res=[5,15,25,35] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let tol = ${tolerance};
+	var i = 0;
+	while i < g.n {
+		var j = 0;
+		while j + 1 < g.n {
+			if g.res[j] > g.res[j+1] {
+				let tmp = g.res[j];
+				g.res[j] = g.res[j+1];
+				g.res[j+1] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+	var close_pairs = 0;
+	var k = 0;
+	while k + 1 < g.n {
+		if g.res[k+1] - g.res[k] <= tol {
+			close_pairs++;
+		}
+		k++;
+	}
+	g.steps += g.n * g.n;
+	out.i = close_pairs;
+	out.s.clear();
+	format(out.s, "sorted pairs within tolerance: ", close_pairs);
+	out
+}
+@end
+@entry 58ca47c705092205
+kind: step
+verb: compare
+noun: minimum
+modifier: all
+context: stats
+phrase: compare minimum all observation floor baseline {baseline}
+phrase: check minimum all sample floor against baseline {baseline}
+slot: baseline int
+test: list=15,8,22,6 baseline=10
+expect: => i=-4 r=0.0 ok=true s="minimum deviation from baseline: -4" errors=0 n=4 res=[15,8,22,6] cache=0 hits=0
+test: list=4,12,7 baseline=3
+expect: => i=1 r=0.0 ok=true s="minimum deviation from baseline: 1" errors=0 n=3 res=[4,12,7] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let base = ${baseline};
+	if g.n == 0 { return out; }
+	var min_val = g.res[0];
+	for k in g.n {
+		if g.res[k] < min_val { min_val = g.res[k]; }
+	}
+	let diff = min_val - base;
+	out.i = diff;
+	g.steps += g.n;
+	out.s.clear();
+	format(out.s, "minimum deviation from baseline: ", diff);
+	out
+}
+@end
+@entry 125e7308cca12d70
+kind: step
+verb: limit
+noun: subfunction
+modifier: at_most
+context: stats
+phrase: limit subfunction at most transformed ceiling {ceiling}
+phrase: clamp subfunction at most mapped output {ceiling}
+slot: f fn
+slot: ceiling int
+test: list=3,7,12 f=double ceiling=15
+expect: => i=35 r=0.0 ok=true s="sum of clamped subfunction values: 35" errors=0 n=3 res=[6,14,15] cache=0 hits=0
+test: list=2,5,8 f=square ceiling=30
+expect: => i=59 r=0.0 ok=true s="sum of clamped subfunction values: 59" errors=0 n=3 res=[4,25,30] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let ceil = ${ceiling};
+	var sum = 0;
+	for k in g.n {
+		var val = ${f}(g.res[k]);
+		if val > ceil { val = ceil; }
+		g.res[k] = val;
+		sum += val;
+	}
+	g.steps += g.n;
+	out.i = sum;
+	out.s.clear();
+	format(out.s, "sum of clamped subfunction values: ", sum);
+	out
+}
+@end
+@entry f4f86b81815dfadb
+kind: step
+verb: cache
+noun: range
+modifier: sorted
+context: stats
+phrase: cache range sorted quantile partitions count {buckets}
+phrase: store range sorted frequency intervals count {buckets}
+slot: buckets int
+test: list=50,10,40,20,30 buckets=2
+expect: => i=2 r=0.0 ok=true s="cached range partitions: 2" errors=0 n=5 res=[10,20,30,40,50] cache=2 hits=0
+test: list=5,15,25,35 buckets=2
+expect: => i=2 r=0.0 ok=true s="cached range partitions: 2" errors=0 n=4 res=[5,15,25,35] cache=2 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let b = ${buckets};
+	if b <= 0 || g.n == 0 { return out; }
+	var i = 0;
+	while i < g.n {
+		var j = 0;
+		while j + 1 < g.n {
+			if g.res[j] > g.res[j+1] {
+				let tmp = g.res[j];
+				g.res[j] = g.res[j+1];
+				g.res[j+1] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+	let bsz = g.n / b;
+	for k in b {
+		let idx = k * bsz;
+		if idx < g.n {
+			gold_cache_put(g, k, g.res[idx]);
+		}
+	}
+	g.steps += g.n * g.n;
+	out.i = g.cn;
+	out.s.clear();
+	format(out.s, "cached range partitions: ", g.cn);
+	out
+}
+@end
+@entry 36f8ec6bb7ebef7f
+kind: step
+verb: dedupe
+noun: letters
+modifier: every_other
+context: stats
+phrase: dedupe letters every other statistical label offset {step}
+phrase: remove duplicate letters every other frequency tier {step}
+slot: step int
+test: text="aabccdeefgg" step=2
+expect: => i=11 r=0.0 ok=true s="aabccdeefgg" errors=0 n=0 res=[] cache=0 hits=0
+test: text="banana" step=1
+expect: => i=3 r=0.0 ok=true s="ban" errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let st = ${step};
+	var seen = [false; 256];
+	var filtered byte[..200] = [];
+	var i = 0;
+	while i < out.s.len {
+		let b = out.s[i];
+		if (i % st) == 0 {
+			let idx = b as! int;
+			if idx >= 0 && idx < 256 && !seen[idx] {
+				seen[idx] = true;
+				filtered.push(b);
+			}
+		} else {
+			filtered.push(b);
+		}
+		i++;
+	}
+	g.steps += out.s.len;
+	out.s = filtered;
+	out.i = out.s.len;
+	out
+}
+@end
+@entry 788b5a4bba89a093
+kind: step
+verb: trace
+noun: maximum
+modifier: up_to
+context: stats
+phrase: trace maximum up to ceiling threshold {bound}
+phrase: track maximum up to sample ceiling {bound}
+slot: bound int
+test: list=5,18,12,25,30 bound=20
+expect: => i=18 r=0.0 ok=true s="maximum under bound: 18" errors=0 n=6 res=[5,18,12,25,30,18] cache=0 hits=0
+test: list=10,40,15 bound=25
+expect: => i=15 r=0.0 ok=true s="maximum under bound: 15" errors=0 n=4 res=[10,40,15,15] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let bnd = ${bound};
+	var running_max = -1;
+	var count = 0;
+	for k in g.n {
+		let x = g.res[k];
+		if x <= bnd && x > running_max {
+			running_max = x;
+			count++;
+		}
+	}
+	gold_push(g, running_max);
+	g.steps += g.n;
+	out.i = running_max;
+	out.s.clear();
+	format(out.s, "maximum under bound: ", running_max);
+	out
+}
+@end
+@entry 37febe7cfd0005db
+kind: step
+verb: dedupe
+noun: loop
+modifier: first
+context: stats
+phrase: dedupe loop first initial unique observations count {keep}
+phrase: filter duplicate loop first sample head count {keep}
+slot: keep int
+test: list=4,4,2,2,8,8 keep=2
+expect: => i=2 r=0.0 ok=true s="initial unique elements kept: 2" errors=0 n=2 res=[4,2] cache=0 hits=0
+test: list=1,1,3,3,5,5 keep=3
+expect: => i=3 r=0.0 ok=true s="initial unique elements kept: 3" errors=0 n=3 res=[1,3,5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let kp = ${keep};
+	var seen int[64] = [0; 64];
+	var sc = 0;
+	for k in g.n {
+		if sc >= kp { break; }
+		let x = g.res[k];
+		var dup = false;
+		for s in sc { if seen[s] == x { dup = true; break; } }
+		if !dup && sc < 64 { seen[sc] = x; sc++; }
+	}
+	for k in sc { g.res[k] = seen[k]; }
+	g.n = sc;
+	g.steps += sc * sc;
+	out.i = sc;
+	out.s.clear();
+	format(out.s, "initial unique elements kept: ", sc);
+	out
+}
+@end
+@entry 4f87de417e54f1e6
+kind: step
+verb: sort
+noun: streak
+modifier: up_to
+context: stats
+phrase: sort streak up to monotonic run length {maxlen}
+phrase: order streak up to consecutive run span {maxlen}
+slot: maxlen int
+test: list=5,3,1,8,6,4 maxlen=3
+expect: => i=3 r=0.0 ok=true s="sorted streak length: 3" errors=0 n=6 res=[1,3,5,8,6,4] cache=0 hits=0
+test: list=9,4,2,7,5 maxlen=2
+expect: => i=2 r=0.0 ok=true s="sorted streak length: 2" errors=0 n=5 res=[4,9,2,7,5] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let m = ${maxlen};
+	var streak_len = if m > g.n { g.n } else { m };
+	var i = 0;
+	while i < streak_len {
+		var j = 0;
+		while j + 1 < streak_len {
+			if g.res[j] > g.res[j+1] {
+				let tmp = g.res[j];
+				g.res[j] = g.res[j+1];
+				g.res[j+1] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+	g.steps += streak_len * streak_len;
+	out.i = streak_len;
+	out.s.clear();
+	format(out.s, "sorted streak length: ", streak_len);
+	out
+}
+@end
+@entry 0f26001f5f7ca6e7
+kind: step
+verb: reverse
+noun: history
+modifier: pairwise
+context: stats
+phrase: reverse history pairwise sequential observations count {pairs}
+phrase: invert history pairwise recorded intervals count {pairs}
+slot: pairs int
+test: list=1,2,3,4,5,6 pairs=2
+expect: => i=2 r=0.0 ok=true s="reversed adjacent pairs: 2" errors=0 n=6 res=[2,1,4,3,5,6] cache=0 hits=0
+test: list=10,20,30,40 pairs=1
+expect: => i=1 r=0.0 ok=true s="reversed adjacent pairs: 1" errors=0 n=4 res=[20,10,30,40] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let p = ${pairs};
+	var done = 0;
+	var i = 0;
+	while i + 1 < g.n && done < p {
+		let tmp = g.res[i];
+		g.res[i] = g.res[i+1];
+		g.res[i+1] = tmp;
+		done++;
+		i += 2;
+	}
+	g.steps += done * 2;
+	out.i = done;
+	out.s.clear();
+	format(out.s, "reversed adjacent pairs: ", done);
+	out
+}
+@end
+@entry 98386e2a964920de
+kind: step
+verb: apply
+noun: histogram
+modifier: while
+context: stats
+phrase: apply histogram while bin frequencies below {ceiling}
+phrase: populate histogram while bin counts under {ceiling}
+slot: ceiling int
+test: list=2,2,3,3,3,4 ceiling=3
+expect: => i=3 r=0.0 ok=true s="elements under histogram ceiling: 3" errors=0 n=6 res=[2,2,3,3,3,4] cache=0 hits=0
+test: list=5,5,6,6,7 ceiling=2
+expect: => i=1 r=0.0 ok=true s="elements under histogram ceiling: 1" errors=0 n=5 res=[5,5,6,6,7] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let ceil = ${ceiling};
+	var qualified = 0;
+	for k in g.n {
+		let x = g.res[k];
+		var freq = 0;
+		for j in g.n { if g.res[j] == x { freq++; } }
+		if freq < ceil { qualified++; }
+	}
+	g.steps += g.n * g.n;
+	out.i = qualified;
+	out.s.clear();
+	format(out.s, "elements under histogram ceiling: ", qualified);
+	out
+}
+@end
+@entry d410bf1db9ff87c0
+kind: step
+verb: run
+noun: duplicates
+modifier: at_most
+context: stats
+phrase: run duplicates at most repetition allowance {maxdups}
+phrase: permit duplicates at most frequency limit {maxdups}
+slot: maxdups int
+test: list=3,3,3,5,5,5,7 maxdups=2
+expect: => i=5 r=0.0 ok=true s="observations capped at duplicates: 5" errors=0 n=5 res=[3,3,5,5,7] cache=0 hits=0
+test: list=1,1,1,1,2,2 maxdups=1
+expect: => i=2 r=0.0 ok=true s="observations capped at duplicates: 2" errors=0 n=2 res=[1,2] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let md = ${maxdups};
+	var kept = 0;
+	for k in g.n {
+		let x = g.res[k];
+		var count = 0;
+		for j in kept { if g.res[j] == x { count++; } }
+		if count < md {
+			g.res[kept] = x;
+			kept++;
+		}
+	}
+	g.n = kept;
+	g.steps += g.n * kept;
+	out.i = kept;
+	out.s.clear();
+	format(out.s, "observations capped at duplicates: ", kept);
+	out
+}
+@end
+@entry 8428c6e4e47a7424
+kind: step
+verb: shift
+noun: text
+modifier: sorted
+context: stats
+phrase: shift text sorted category labels displacement {offset}
+phrase: translate text sorted categorical tags displacement {offset}
+slot: offset int
+test: text="gamma alpha beta" offset=1
+expect: => i=16 r=0.0 ok=true s=" aaaaabeghlmmpt " errors=0 n=0 res=[] cache=0 hits=0
+test: text="zebra apple mango" offset=2
+expect: => i=17 r=0.0 ok=true s="aaabeeglmnopprz  " errors=0 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let off = ${offset};
+	if out.s.len > 0 {
+		var sorted byte[..200] = [];
+		for i in out.s.len { sorted.push(out.s[i]); }
+		var i = 0;
+		while i < sorted.len {
+			var j = 0;
+			while j + 1 < sorted.len {
+				if sorted[j] > sorted[j+1] {
+					let tmp = sorted[j];
+					sorted[j] = sorted[j+1];
+					sorted[j+1] = tmp;
+				}
+				j++;
+			}
+			i++;
+		}
+		let rot = off % sorted.len;
+		var rotated byte[..200] = [];
+		for k in sorted.len {
+			let src = (k + rot) % sorted.len;
+			rotated.push(sorted[src]);
+		}
+		out.s = rotated;
+	}
+	g.steps += out.s.len * out.s.len;
+	out.i = out.s.len;
+	out
+}
+@end
+@entry 92bf6fc29468ab7c
+kind: step
+verb: dedupe
+noun: results
+modifier: with_retry
+context: stats
+phrase: dedupe results with retry distinct metric filter attempts {retries}
+phrase: purge duplicate results with retry passes {retries}
+slot: retries int
+test: list=2,2,4,4,6,6 retries=2
+expect: => i=3 r=0.0 ok=true s="deduped results count: 3" errors=0 n=3 res=[2,4,6] cache=0 hits=0
+test: list=5,5,5,10,10 retries=3
+expect: => i=2 r=0.0 ok=true s="deduped results count: 2" errors=0 n=2 res=[5,10] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let r = ${retries};
+	var round = 0;
+	while round < r {
+		var kept = 0;
+		for k in g.n {
+			let x = g.res[k];
+			var dup = false;
+			for j in kept { if g.res[j] == x { dup = true; break; } }
+			if !dup {
+				g.res[kept] = x;
+				kept++;
+			}
+		}
+		g.n = kept;
+		round++;
+	}
+	g.steps += round * g.n * g.n;
+	out.i = g.n;
+	out.s.clear();
+	format(out.s, "deduped results count: ", g.n);
+	out
+}
+@end
+@entry fb86f7917acab086
+kind: step
+verb: scale
+noun: gaps
+modifier: between
+context: stats
+phrase: scale gaps between successive observations factor {factor}
+phrase: amplify gaps between adjacent sample points factor {factor}
+slot: factor int
+test: list=2,5,10 factor=3
+expect: => i=24 r=0.0 ok=true s="sum of scaled gaps: 24" errors=0 n=2 res=[9,15] cache=0 hits=0
+test: list=10,14,20 factor=2
+expect: => i=20 r=0.0 ok=true s="sum of scaled gaps: 20" errors=0 n=2 res=[8,12] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let f = ${factor};
+	if g.n <= 1 { return out; }
+	var sum = 0;
+	var i = 0;
+	let count = g.n - 1;
+	while i < count {
+		let diff = (g.res[i+1] - g.res[i]) * f;
+		g.res[i] = diff;
+		sum += diff;
+		i++;
+	}
+	g.n = count;
+	g.steps += count;
+	out.i = sum;
+	out.s.clear();
+	format(out.s, "sum of scaled gaps: ", sum);
+	out
+}
+@end
+@entry 18f7199277cbdfd2
+kind: step
+verb: apply
+noun: series
+modifier: recursively
+context: stats
+phrase: apply series recursively cumulative variance depth {depth}
+phrase: execute series recursively moving variance rounds {depth}
+slot: depth int
+test: list=4,8,12 depth=2
+expect: => i=0 r=0.0 ok=true s="recursive series rounds: 2" errors=0 n=1 res=[0] cache=0 hits=0
+test: list=10,20,30,40 depth=3
+expect: => i=0 r=0.0 ok=true s="recursive series rounds: 3" errors=0 n=1 res=[0] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let d = ${depth};
+	var round = 0;
+	while round < d && g.n > 1 {
+		var i = 0;
+		while i + 1 < g.n {
+			g.res[i] = g.res[i+1] - g.res[i];
+			i++;
+		}
+		g.n--;
+		round++;
+	}
+	g.steps += round * g.n;
+	out.i = if g.n > 0 { g.res[0] } else { 0 };
+	out.s.clear();
+	format(out.s, "recursive series rounds: ", round);
+	out
+}
+@end
+@entry 8164594b237568b2
+kind: step
+verb: split
+noun: limit
+modifier: with_cache
+context: stats
+phrase: split limit with cache partitioned variance threshold {threshold}
+phrase: divide limit with cache frequency bins threshold {threshold}
+slot: threshold int
+test: list=12,45,28,60 threshold=30
+expect: => i=2 r=0.0 ok=true s="split below threshold: 2" errors=0 n=4 res=[12,45,28,60] cache=2 hits=0
+test: list=5,15,25,35 threshold=20
+expect: => i=2 r=0.0 ok=true s="split below threshold: 2" errors=0 n=4 res=[5,15,25,35] cache=2 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let t = ${threshold};
+	var below = 0;
+	var above = 0;
+	for k in g.n {
+		if g.res[k] < t { below++; } else { above++; }
+	}
+	gold_cache_put(g, t, below);
+	gold_cache_put(g, t + 1, above);
+	g.steps += g.n;
+	out.i = below;
+	out.s.clear();
+	format(out.s, "split below threshold: ", below);
+	out
+}
+@end
+@entry 41892961f03e96e1
+kind: step
+verb: search
+noun: series
+modifier: recursively
+context: stats
+phrase: search series recursively distribution quantile target {target}
+phrase: locate series recursively percentile target {target}
+slot: target int
+test: list=10,25,40,65 target=25
+expect: => i=1 r=0.0 ok=true s="target located at index: 1" errors=0 n=4 res=[10,25,40,65] cache=0 hits=0
+test: list=2,8,18,32 target=15
+expect: => i=-1 r=0.0 ok=true s="target not found in series" errors=0 n=4 res=[2,8,18,32] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let tgt = ${target};
+	var low = 0;
+	var high = g.n - 1;
+	var found = -1;
+	while low <= high {
+		let mid = (low + high) / 2;
+		if g.res[mid] == tgt {
+			found = mid;
+			break;
+		} else if g.res[mid] < tgt {
+			low = mid + 1;
+		} else {
+			high = mid - 1;
+		}
+	}
+	g.steps += g.n;
+	out.i = found;
+	out.s.clear();
+	if found >= 0 {
+		format(out.s, "target located at index: ", found);
+	} else {
+		format(out.s, "target not found in series");
+	}
+	out
+}
+@end
+@entry a7e4ef5b20ec3a7b
+kind: step
+verb: group
+noun: minimum
+modifier: first
+context: stats
+phrase: group minimum first cluster observations size {bucket}
+phrase: partition minimum first distribution samples size {bucket}
+slot: bucket int
+test: list=9,4,15,2,8,1 bucket=3
+expect: => i=1 r=0.0 ok=true s="group minimum found: 1" errors=0 n=7 res=[9,4,15,2,8,1,1] cache=0 hits=0
+test: list=20,5,12,3 bucket=2
+expect: => i=3 r=0.0 ok=true s="group minimum found: 3" errors=0 n=5 res=[20,5,12,3,3] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let b = ${bucket};
+	if b < 1 || g.n == 0 { return out; }
+	var mins int[64] = [0; 64];
+	var mc = 0;
+	var i = 0;
+	while i < g.n && mc < 64 {
+		var m = g.res[i];
+		var j = 1;
+		while j < b && i + j < g.n {
+			if g.res[i+j] < m { m = g.res[i+j]; }
+			j++;
+		}
+		mins[mc] = m;
+		mc++;
+		i += b;
+	}
+	var global_min = mins[0];
+	for k in mc { if mins[k] < global_min { global_min = mins[k]; } }
+	gold_push(g, global_min);
+	g.steps += g.n;
+	out.i = global_min;
+	out.s.clear();
+	format(out.s, "group minimum found: ", global_min);
+	out
+}
+@end
+@entry dfa31f0a7e33e18e
+kind: step
+verb: drop
+noun: threshold
+modifier: recursively
+context: stats
+phrase: drop threshold recursively statistical outlier ceiling {cutoff}
+phrase: prune threshold recursively distribution extremes ceiling {cutoff}
+slot: cutoff int
+test: list=5,10,50,12,60 cutoff=25
+expect: => i=2 r=0.0 ok=true s="outliers dropped: 2" errors=0 n=3 res=[5,10,12] cache=0 hits=0
+test: list=100,20,30,80 cutoff=40
+expect: => i=2 r=0.0 ok=true s="outliers dropped: 2" errors=0 n=2 res=[20,30] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let cut = ${cutoff};
+	var kept = 0;
+	var dropped = 0;
+	for k in g.n {
+		if g.res[k] <= cut {
+			g.res[kept] = g.res[k];
+			kept++;
+		} else {
+			dropped++;
+		}
+	}
+	g.n = kept;
+	g.steps += g.n;
+	out.i = dropped;
+	out.s.clear();
+	format(out.s, "outliers dropped: ", dropped);
+	out
+}
+@end
+@entry d7eb4bbccd3fb725
+kind: step
+verb: scale
+noun: tally
+modifier: times
+context: stats
+phrase: scale tally times frequency histogram factor {factor}
+phrase: amplify tally times bin counts factor {factor}
+slot: factor int
+test: list=3,3,5,7,7,7 factor=4
+expect: => i=128 r=0.0 ok=true s="scaled tally sum: 128" errors=0 n=6 res=[12,12,20,28,28,28] cache=0 hits=0
+test: list=2,4,4,6 factor=5
+expect: => i=80 r=0.0 ok=true s="scaled tally sum: 80" errors=0 n=4 res=[10,20,20,30] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	let f = ${factor};
+	var total = 0;
+	for k in g.n {
+		let scaled = g.res[k] * f;
+		g.res[k] = scaled;
+		total += scaled;
+	}
+	g.steps += g.n;
+	out.i = total;
+	out.s.clear();
+	format(out.s, "scaled tally sum: ", total);
+	out
+}
+@end
+@entry ece5fd64ffbea37f
+kind: step
+verb: target
+noun: constraint
+modifier: ik
+context: char
+phrase: add an ik solver on the last bone toward {x} {y} {z}
+phrase: constrain the last bone to reach {x} {y} {z}
+slot: x real
+slot: y real
+slot: z real
+test: x=1.0 y=0.0 z=1.0 doc="hip bone 0,0,1 0,0,1.4"
+expect: => i=2 r=0.0 ok=true s="ik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: reach2 ik hip 1,0,1
+test: x=0.5 y=-1.0 z=1.2 doc="body capsule 0,0,.5 0,0,1.3 r.35|armL bone .3,0,1.3 .8,0,1"
+expect: => i=3 r=0.0 ok=true s="ik" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: body capsule 0,0,.5 0,0,1.3 r.35
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: reach3 ik armL 0.5,-1,1.2
+test: x=1.0 y=1.0 z=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	gold_dnews(g, "reach", "", o);
+	o.append(" ik ");
+	o.append(last);
+	o.append(" ");
+	gold_fnum(o, ${x});
+	o.append(",");
+	gold_fnum(o, ${y});
+	o.append(",");
+	gold_fnum(o, ${z});
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "ik");
+	out
+}
+@end
+@entry 6ab3145cc8cfb001
+kind: step
+verb: fade
+noun: constraint
+modifier: influence
+context: char
+phrase: fade out the last constraint over {c} seconds
+phrase: damp the last constraint influence to zero across {c} seconds
+slot: c real
+test: c=1.0 doc="hip bone 0,0,1 0,0,1.4|reach ik hip 1,0,1"
+expect: => i=3 r=0.0 ok=true s="inf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: hip bone 0,0,1 0,0,1.4
+expect: => doc: reach ik hip 1,0,1
+expect: => doc: reach.inf anim 0:1 1:0
+test: c=2.5 doc="armL bone .3,0,1.3 .8,0,1|aim trackto armL 0,-1,1"
+expect: => i=3 r=0.0 ok=true s="inf" errors=0 n=0 res=[] cache=0 hits=0
+expect: => doc: armL bone .3,0,1.3 .8,0,1
+expect: => doc: aim trackto armL 0,-1,1
+expect: => doc: aim.inf anim 0:1 2.5:0
+test: c=1.0
+expect: => i=0 r=0.0 ok=false s="" errors=1 n=0 res=[] cache=0 hits=0
+code:
+fn ${ID}(g Gold&, v Val) Val {
+	var out = v;
+	var o byte[>..] = [];
+	var last byte[>..] = [];
+	if !gold_dlast(g, last) { out.ok = false; return out; }
+	o.append(last);
+	o.append(".inf anim ");
+	o.append("0");
+	o.append(":");
+	o.append("1");
+	o.append(" ");
+	gold_fnum(o, ${c});
+	o.append(":");
+	o.append("0");
+	gold_doc(g, o);
+	out.i = g.dn;
+	out.s.clear();
+	format(out.s, "inf");
+	out
+}
+@end
+@entry 4300093d168f8ef5
+kind: pred
+verb: collect
+noun: limit
+modifier: at_least
+context: transform
+phrase: collect limit reaching at least {bound}
+phrase: verify gathered limit satisfies at least {bound}
+slot: bound int
+test: arg=25,12 bound=20
+expect: true
+expect: false
+test: arg=5 bound=10
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let b = ${bound};
+	n >= b
+}
+@end
+@entry f6eaa1c968994870
+kind: fn
+verb: dedupe
+noun: step
+modifier: at_most
+context: transform
+phrase: dedupe step adjacent digits at most {limit}
+phrase: remove duplicate step digits ceiling {limit}
+slot: limit int
+test: arg=112233,4455 limit=500
+expect: 123
+expect: 45
+test: arg=998877 limit=800
+expect: 800
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var digits = [0; 32];
+	var len = 0;
+	while x > 0 {
+		digits[len] = x % 10;
+		len++;
+		x /= 10;
+	}
+	var res = 0;
+	var last = -1;
+	var i = len - 1;
+	while i >= 0 {
+		let d = digits[i];
+		if d != last {
+			res = res * 10 + d;
+			last = d;
+		}
+		i--;
+	}
+	if res > lim { lim } else { res }
+}
+@end
+@entry 1b53fc1239471213
+kind: fn
+verb: repeat
+noun: gaps
+modifier: up_to
+context: transform
+phrase: repeat gaps expansion up to bound {limit}
+phrase: scale digit gaps up to ceiling {limit}
+slot: limit int
+test: arg=183,924 limit=50
+expect: 12
+expect: 9
+test: arg=512 limit=20
+expect: 5
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var sum_gaps = 0;
+	var prev = x % 10;
+	x /= 10;
+	while x > 0 {
+		let cur = x % 10;
+		var diff = cur - prev;
+		if diff < 0 { diff = -diff; }
+		sum_gaps += diff;
+		prev = cur;
+		x /= 10;
+	}
+	if sum_gaps > lim { lim } else { sum_gaps }
+}
+@end
+@entry 8c537c22476d5223
+kind: fn
+verb: rank
+noun: words
+modifier: in_reverse
+context: transform
+phrase: rank words in reverse numerical order
+phrase: compute reverse ranking of digits value
+test: arg=4821,1593
+expect: 5178
+expect: 8406
+test: arg=735
+expect: 264
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	var rank = 0;
+	var mult = 1;
+	while x > 0 {
+		let d = x % 10;
+		rank += (9 - d) * mult;
+		mult *= 10;
+		x /= 10;
+	}
+	rank
+}
+@end
+@entry f66de4886a772249
+kind: pred
+verb: repeat
+noun: tally
+modifier: between
+context: transform
+phrase: repeat tally bit count between lower {low} upper {high}
+phrase: verify bit tally between range lower {low} upper {high}
+slot: low int
+slot: high int
+test: arg=15,8 low=3 high=5
+expect: true
+expect: false
+test: arg=31 low=2 high=4
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let l = ${low};
+	let h = ${high};
+	var x = n;
+	var count = 0;
+	while x > 0 {
+		if x % 2 != 0 { count++; }
+		x /= 2;
+	}
+	count >= l && count <= h
+}
+@end
+@entry 0c3840a3804cb5e7
+kind: fn
+verb: cache
+noun: item
+modifier: unique
+context: transform
+phrase: cache item unique representation hash
+phrase: compute unique signature of item digits
+test: arg=123,456
+expect: 5987
+expect: 8966
+test: arg=789
+expect: 1938
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	var h = 17;
+	while x > 0 {
+		let d = x % 10;
+		h = (h * 31 + d + 7) % 10007;
+		x /= 10;
+	}
+	h
+}
+@end
+@entry fb1b86bfd26be46a
+kind: pred
+verb: filter
+noun: evens
+modifier: up_to
+context: transform
+phrase: filter evens numerical value up to ceiling {ceiling}
+phrase: verify even number bounded up to ceiling {ceiling}
+slot: ceiling int
+test: arg=14,25 ceiling=20
+expect: true
+expect: false
+test: arg=8 ceiling=6
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let c = ${ceiling};
+	n % 2 == 0 && n <= c
+}
+@end
+@entry 3991ccfcb0bf5997
+kind: pred
+verb: retry
+noun: duplicates
+modifier: any
+context: transform
+phrase: retry duplicates scan for any repeated digit
+phrase: detect any duplicate digits in value
+test: arg=12342,12345
+expect: true
+expect: false
+test: arg=7899
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var x = n;
+	var seen = [false; 10];
+	while x > 0 {
+		let d = x % 10;
+		if seen[d] { return true; }
+		seen[d] = true;
+		x /= 10;
+	}
+	false
+}
+@end
+@entry 7e33ffcdb00d9696
+kind: fn
+verb: repeat
+noun: sequence
+modifier: recursively
+context: transform
+phrase: repeat sequence recursively digital root sum
+phrase: compute digital root repeatedly across sequence
+test: arg=9875,1234
+expect: 2
+expect: 1
+test: arg=999
+expect: 9
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	while x >= 10 {
+		var sum = 0;
+		var temp = x;
+		while temp > 0 {
+			sum += temp % 10;
+			temp /= 10;
+		}
+		x = sum;
+	}
+	x
+}
+@end
+@entry 802b261962a1e24d
+kind: fn
+verb: rank
+noun: pairs
+modifier: nested
+context: transform
+phrase: rank pairs nested sum bounded by {limit}
+phrase: compute nested digit pairs score ceiling {limit}
+slot: limit int
+test: arg=1234,5678 limit=50
+expect: 20
+expect: 50
+test: arg=9182 limit=30
+expect: 30
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var score = 0;
+	while x >= 10 {
+		let p1 = x % 10;
+		let p2 = (x / 10) % 10;
+		score += p1 * p2;
+		x /= 10;
+	}
+	if score > lim { lim } else { score }
+}
+@end
+@entry 1379986663f37224
+kind: fn
+verb: retry
+noun: counter
+modifier: pairwise
+context: transform
+phrase: retry counter pairwise differences scale {mult}
+phrase: sum pairwise difference steps scaled by {mult}
+slot: mult int
+test: arg=159,842 mult=3
+expect: 24
+expect: 18
+test: arg=951 mult=2
+expect: 16
+code:
+fn ${ID}(n int) int {
+	let m = ${mult};
+	var x = n;
+	var diff_sum = 0;
+	while x >= 10 {
+		let a = x % 10;
+		let b = (x / 10) % 10;
+		var d = a - b;
+		if d < 0 { d = -d; }
+		diff_sum += d * m;
+		x /= 10;
+	}
+	diff_sum
+}
+@end
+@entry 74674eb0c2a2dec5
+kind: fn
+verb: fold
+noun: tally
+modifier: at_least
+context: transform
+phrase: fold tally until reaching at least {target}
+phrase: accumulate tally steps reaching at least {target}
+slot: target int
+test: arg=4,15 target=10
+expect: 12
+expect: 15
+test: arg=2 target=8
+expect: 12
+code:
+fn ${ID}(n int) int {
+	let tgt = ${target};
+	var sum = 0;
+	var k = 1;
+	while sum < tgt && k <= 100 {
+		sum += n * k;
+		k++;
+	}
+	sum
+}
+@end
+@entry a4ac1aeb13ff50dd
+kind: fn
+verb: group
+noun: runs
+modifier: until
+context: transform
+phrase: group runs count until boundary {limit}
+phrase: count monotonic run changes until {limit}
+slot: limit int
+test: arg=1122334,123456 limit=10
+expect: 4
+expect: 6
+test: arg=999887 limit=5
+expect: 3
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var runs = 0;
+	var last = -1;
+	while x > 0 {
+		let d = x % 10;
+		if d != last {
+			runs++;
+			last = d;
+		}
+		x /= 10;
+	}
+	if runs > lim { lim } else { runs }
+}
+@end
+@entry 514e9b6afe2a5279
+kind: fn
+verb: run
+noun: values
+modifier: unique
+context: transform
+phrase: run values unique distinct digits count
+phrase: tally unique digit count in values
+test: arg=112233,12345
+expect: 3
+expect: 5
+test: arg=90909
+expect: 2
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	var seen = [false; 10];
+	var count = 0;
+	while x > 0 {
+		let d = x % 10;
+		if !seen[d] {
+			seen[d] = true;
+			count++;
+		}
+		x /= 10;
+	}
+	count
+}
+@end
+@entry d5aac3b52a19f606
+kind: fn
+verb: search
+noun: subfunction
+modifier: nested
+context: transform
+phrase: search subfunction nested iterations to {target}
+phrase: apply nested collatz steps towards {target}
+slot: target int
+test: arg=6,15 target=1
+expect: 8
+expect: 17
+test: arg=12 target=4
+expect: 7
+code:
+fn ${ID}(n int) int {
+	let tgt = ${target};
+	var cur = n;
+	var steps = 0;
+	while cur != tgt && steps < 50 {
+		if cur % 2 == 0 {
+			cur /= 2;
+		} else {
+			cur = cur * 3 + 1;
+		}
+		steps++;
+	}
+	steps
+}
+@end
+@entry 8d76e8d802693f62
+kind: pred
+verb: compare
+noun: duplicates
+modifier: while
+context: transform
+phrase: compare duplicates count while exceeding {cutoff}
+phrase: check duplicate digit instances above {cutoff}
+slot: cutoff int
+test: arg=11223,12345 cutoff=0
+expect: true
+expect: false
+test: arg=445 cutoff=0
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let cut = ${cutoff};
+	var x = n;
+	var freq = [0; 10];
+	var dups = 0;
+	while x > 0 {
+		let d = x % 10;
+		freq[d]++;
+		if freq[d] == 2 { dups++; }
+		x /= 10;
+	}
+	dups > cut
+}
+@end
+@entry cc8c2b2370bdd131
+kind: fn
+verb: swap
+noun: gaps
+modifier: with_retry
+context: transform
+phrase: swap gaps with retry boundary allowance {bound}
+phrase: reverse adjacent digit pairs under {bound}
+slot: bound int
+test: arg=123456,876543 bound=500000
+expect: 214365
+expect: 500000
+test: arg=4567 bound=6000
+expect: 5476
+code:
+fn ${ID}(n int) int {
+	let b = ${bound};
+	var x = n;
+	var digits = [0; 32];
+	var len = 0;
+	while x > 0 {
+		digits[len] = x % 10;
+		len++;
+		x /= 10;
+	}
+	var i = 0;
+	while i + 1 < len {
+		let tmp = digits[i];
+		digits[i] = digits[i + 1];
+		digits[i + 1] = tmp;
+		i += 2;
+	}
+	var res = 0;
+	var k = len - 1;
+	while k >= 0 {
+		res = res * 10 + digits[k];
+		k--;
+	}
+	if res > b { b } else { res }
+}
+@end
+@entry 1277115861ca464a
+kind: fn
+verb: fill
+noun: squares
+modifier: sorted
+context: transform
+phrase: fill squares sorted cumulative sum limit {limit}
+phrase: accumulate sorted square integers up to {limit}
+slot: limit int
+test: arg=5,3 limit=40
+expect: 40
+expect: 14
+test: arg=6 limit=50
+expect: 50
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var sum = 0;
+	var k = 1;
+	while k <= n {
+		sum += k * k;
+		k++;
+	}
+	if sum > lim { lim } else { sum }
+}
+@end
+@entry 8726b9cf38ed27eb
+kind: pred
+verb: find
+noun: errors
+modifier: at_least
+context: transform
+phrase: find errors count at least {threshold}
+phrase: verify check bit parity errors reach at least {threshold}
+slot: threshold int
+test: arg=15,8 threshold=3
+expect: true
+expect: false
+test: arg=7 threshold=4
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let th = ${threshold};
+	var x = n;
+	var errs = 0;
+	while x > 0 {
+		if x % 2 == 1 { errs++; }
+		x /= 2;
+	}
+	errs >= th
+}
+@end
+@entry dd22a86fd62b710a
+kind: fn
+verb: map
+noun: vowels
+modifier: between
+context: transform
+phrase: map vowels numerical symbols between bounds {modulo}
+phrase: transform vowel code digits modulo {modulo}
+slot: modulo int
+test: arg=15935,2468 modulo=7
+expect: 36432
+expect: 0
+test: arg=357 modulo=5
+expect: 401
+code:
+fn ${ID}(n int) int {
+	let m = ${modulo};
+	if m <= 0 { return n; }
+	var x = n;
+	var sum = 0;
+	while x > 0 {
+		let d = x % 10;
+		if d == 1 || d == 3 || d == 5 || d == 7 || d == 9 {
+			sum = (sum * 10 + (d * 2) % m);
+		}
+		x /= 10;
+	}
+	sum
+}
+@end
+@entry 707fc3b676e72385
+kind: fn
+verb: trace
+noun: subfunction
+modifier: safely
+context: transform
+phrase: trace subfunction safely without exceeding {limit}
+phrase: evaluate safe subfunction trajectory ceiling {limit}
+slot: limit int
+test: arg=12,25 limit=50
+expect: 21
+expect: 41
+test: arg=40 limit=60
+expect: 60
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var cur = n;
+	if cur < 0 { cur = -cur; }
+	cur = (cur * 3 + 7) / 2;
+	if cur > lim { lim } else { cur }
+}
+@end
+@entry 9242ca153eb1af3c
+kind: fn
+verb: fold
+noun: threshold
+modifier: every_other
+context: transform
+phrase: fold threshold every other element offset {target}
+phrase: sum alternate digits exceeding threshold {target}
+slot: target int
+test: arg=928374,152637 target=5
+expect: 0
+expect: 18
+test: arg=8484 target=6
+expect: 0
+code:
+fn ${ID}(n int) int {
+	let tgt = ${target};
+	var x = n;
+	var idx = 0;
+	var sum = 0;
+	while x > 0 {
+		let d = x % 10;
+		if idx % 2 == 0 && d >= tgt {
+			sum += d;
+		}
+		idx++;
+		x /= 10;
+	}
+	sum
+}
+@end
+@entry 06293541f96ca7b3
+kind: fn
+verb: clamp
+noun: items
+modifier: first
+context: transform
+phrase: clamp items below first ceiling {ceiling}
+phrase: restrict items exceeding first limit {ceiling}
+slot: ceiling int
+test: arg=120,45 ceiling=100
+expect: 100
+expect: 45
+test: arg=15 ceiling=50
+expect: 15
+code:
+fn ${ID}(n int) int {
+	let c = ${ceiling};
+	if n > c {
+		c
+	} else if n < 0 {
+		0
+	} else {
+		n
+	}
+}
+@end
+@entry c79bd065bdc40f8c
+kind: fn
+verb: fold
+noun: spaces
+modifier: up_to
+context: transform
+phrase: fold spaces empty runs up to width {width}
+phrase: compress trailing blank spaces up to {width}
+slot: width int
+test: arg=12000,500 width=2
+expect: 120
+expect: 5
+test: arg=70000 width=3
+expect: 70
+code:
+fn ${ID}(n int) int {
+	let w = ${width};
+	var x = n;
+	var zeros = 0;
+	while x > 0 && x % 10 == 0 && zeros < w {
+		zeros++;
+		x /= 10;
+	}
+	x
+}
+@end
+@entry d81ca0dbf862c63c
+kind: fn
+verb: shift
+noun: items
+modifier: pairwise
+context: transform
+phrase: shift items pairwise cyclic displacement {offset}
+phrase: rotate items pairwise nibbles by {offset}
+slot: offset int
+test: arg=1234,5678 offset=1
+expect: 1254
+expect: 5698
+test: arg=9876 offset=2
+expect: 9889
+code:
+fn ${ID}(n int) int {
+	let off = ${offset};
+	var x = n;
+	var d1 = x % 10;
+	var d2 = (x / 10) % 10;
+	var rest = x / 100;
+	let nd1 = (d1 + off) % 10;
+	let nd2 = (d2 + off) % 10;
+	rest * 100 + nd1 * 10 + nd2
+}
+@end
+@entry ef3dbd3eda20189d
+kind: pred
+verb: sort
+noun: errors
+modifier: any
+context: transform
+phrase: sort errors any inversion order violation check
+phrase: detect any inversion errors in digits sequence
+test: arg=1324,1234
+expect: true
+expect: false
+test: arg=5432
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var x = n;
+	var prev = 10;
+	while x > 0 {
+		let d = x % 10;
+		if d > prev { return true; }
+		prev = d;
+		x /= 10;
+	}
+	false
+}
+@end
+@entry 921295fe4a605827
+kind: fn
+verb: sum
+noun: histogram
+modifier: first
+context: transform
+phrase: sum histogram first digit frequencies ceiling {cap}
+phrase: tally low digit frequencies bounded by {cap}
+slot: cap int
+test: arg=121234,9876 cap=3
+expect: 5
+expect: 0
+test: arg=22233 cap=4
+expect: 5
+code:
+fn ${ID}(n int) int {
+	let c = ${cap};
+	var x = n;
+	var count = 0;
+	while x > 0 {
+		let d = x % 10;
+		if d <= c { count++; }
+		x /= 10;
+	}
+	count
+}
+@end
+@entry 425028a9b19ba74a
+kind: fn
+verb: find
+noun: values
+modifier: times
+context: transform
+phrase: find values times matching multiplier {factor}
+phrase: scale matching digit positions by {factor}
+slot: factor int
+test: arg=2324,5657 factor=3
+expect: 6972
+expect: 16971
+test: arg=1212 factor=5
+expect: 6060
+code:
+fn ${ID}(n int) int {
+	let f = ${factor};
+	var x = n;
+	var sum = 0;
+	var mult = 1;
+	while x > 0 {
+		let d = x % 10;
+		sum += d * f * mult;
+		mult *= 10;
+		x /= 10;
+	}
+	sum
+}
+@end
+@entry d7fa18b9ff85307b
+kind: fn
+verb: split
+noun: range
+modifier: in_place
+context: transform
+phrase: split range in place bisecting span {span}
+phrase: bisect range in place using span {span}
+slot: span int
+test: arg=150,75 span=20
+expect: 20
+expect: 20
+test: arg=200 span=30
+expect: 30
+code:
+fn ${ID}(n int) int {
+	let s = ${span};
+	if s <= 0 { return n; }
+	let mid = n / 2;
+	if mid > s { s } else { mid }
+}
+@end
+@entry 599aff464e17be17
+kind: pred
+verb: scan
+noun: prefix
+modifier: all
+context: transform
+phrase: scan prefix all bits parity check
+phrase: verify prefix all digits satisfy bound {bound}
+slot: bound int
+test: arg=246,247 bound=6
+expect: true
+expect: false
+test: arg=135 bound=4
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let b = ${bound};
+	var x = n;
+	while x > 0 {
+		let d = x % 10;
+		if d > b { return false; }
+		x /= 10;
+	}
+	true
+}
+@end
+@entry dda57b6116d2726d
+kind: fn
+verb: normalize
+noun: primes
+modifier: running
+context: transform
+phrase: normalize primes running factors reduction
+phrase: divide running prime factors down to remainder
+test: arg=84,45
+expect: 7
+expect: 1
+test: arg=60
+expect: 1
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	while x > 0 && x % 2 == 0 { x /= 2; }
+	while x > 0 && x % 3 == 0 { x /= 3; }
+	while x > 0 && x % 5 == 0 { x /= 5; }
+	x
+}
+@end
+@entry ee986d2b463f0da5
+kind: pred
+verb: compare
+noun: odds
+modifier: sorted
+context: transform
+phrase: compare odds sorted ascending check sequence
+phrase: verify odd digits sorted ascending in value
+test: arg=1357,1537
+expect: true
+expect: false
+test: arg=359
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var x = n;
+	var last_odd = 10;
+	while x > 0 {
+		let d = x % 10;
+		if d % 2 != 0 {
+			if d > last_odd { return false; }
+			last_odd = d;
+		}
+		x /= 10;
+	}
+	true
+}
+@end
+@entry 1a19f834c9e8e9d1
+kind: fn
+verb: scan
+noun: items
+modifier: first
+context: transform
+phrase: scan items first matching digit position {digit}
+phrase: locate first item position matching {digit}
+slot: digit int
+test: arg=4829,3571 digit=8
+expect: 2
+expect: -1
+test: arg=12345 digit=3
+expect: 2
+code:
+fn ${ID}(n int) int {
+	let tgt = ${digit};
+	var x = n;
+	var pos = 0;
+	var found = -1;
+	while x > 0 {
+		let d = x % 10;
+		if d == tgt { found = pos; }
+		pos++;
+		x /= 10;
+	}
+	found
+}
+@end
+@entry f03c340dda570e08
+kind: fn
+verb: fold
+noun: total
+modifier: while
+context: transform
+phrase: fold total while value remains above {cutoff}
+phrase: reduce total while item exceeds {cutoff}
+slot: cutoff int
+test: arg=80,25 cutoff=10
+expect: 0
+expect: 7
+test: arg=100 cutoff=15
+expect: 5
+code:
+fn ${ID}(n int) int {
+	let cut = ${cutoff};
+	var cur = n;
+	var total = 0;
+	while cur > cut {
+		total += cur % 10;
+		cur /= 2;
+	}
+	total
+}
+@end
+@entry 52c60d1e16044276
+kind: fn
+verb: merge
+noun: runs
+modifier: with_retry
+context: transform
+phrase: merge runs with retry tolerance limit {tolerance}
+phrase: condense runs with retry margin {tolerance}
+slot: tolerance int
+test: arg=112233,445566 tolerance=2
+expect: 6
+expect: 6
+test: arg=9988 tolerance=1
+expect: 4
+code:
+fn ${ID}(n int) int {
+	let tol = ${tolerance};
+	var x = n;
+	var sum = 0;
+	var cur_run = 0;
+	var last = -1;
+	while x > 0 {
+		let d = x % 10;
+		if d == last {
+			cur_run++;
+		} else {
+			if cur_run >= tol { sum += cur_run; }
+			cur_run = 1;
+			last = d;
+		}
+		x /= 10;
+	}
+	if cur_run >= tol { sum += cur_run; }
+	sum
+}
+@end
+@entry a1ee538152e703dd
+kind: fn
+verb: shift
+noun: window
+modifier: at_most
+context: transform
+phrase: shift window at most cyclic bits {offset}
+phrase: translate window at most offset bound {offset}
+slot: offset int
+test: arg=12345,67890 offset=2
+expect: 45123
+expect: 90678
+test: arg=54321 offset=3
+expect: 321054
+code:
+fn ${ID}(n int) int {
+	let off = ${offset};
+	var x = n;
+	var mod = 1;
+	var i = 0;
+	while i < off {
+		mod *= 10;
+		i++;
+	}
+	let tail = x % mod;
+	let head = x / mod;
+	head + tail * 1000
+}
+@end
+@entry 1940a3072ec6b7f6
+kind: fn
+verb: keep
+noun: value
+modifier: each
+context: transform
+phrase: keep value each modulo remainder {base}
+phrase: retain value digits modulo {base}
+slot: base int
+test: arg=147258,36912 base=3
+expect: 0
+expect: 369
+test: arg=9876 base=2
+expect: 86
+code:
+fn ${ID}(n int) int {
+	let b = ${base};
+	if b <= 0 { return n; }
+	var x = n;
+	var res = 0;
+	var mult = 1;
+	while x > 0 {
+		let d = x % 10;
+		if d % b == 0 {
+			res += d * mult;
+			mult *= 10;
+		}
+		x /= 10;
+	}
+	res
+}
+@end
+@entry 4258106551253396
+kind: pred
+verb: trace
+noun: items
+modifier: at_least
+context: transform
+phrase: trace items at least threshold boundary {threshold}
+phrase: verify all items at least minimum floor {threshold}
+slot: threshold int
+test: arg=5678,2345 threshold=4
+expect: true
+expect: false
+test: arg=6789 threshold=6
+expect: true
+code:
+fn ${ID}(n int) bool {
+	let th = ${threshold};
+	var x = n;
+	while x > 0 {
+		let d = x % 10;
+		if d < th { return false; }
+		x /= 10;
+	}
+	true
+}
+@end
+@entry cb3546d8223d3d3b
+kind: fn
+verb: drop
+noun: steps
+modifier: safely
+context: transform
+phrase: drop steps safely without underflow margin {margin}
+phrase: prune steps safely retaining floor {margin}
+slot: margin int
+test: arg=125,48 margin=20
+expect: 105
+expect: 28
+test: arg=80 margin=30
+expect: 50
+code:
+fn ${ID}(n int) int {
+	let m = ${margin};
+	var x = n;
+	if x > m {
+		x - m
+	} else {
+		0
+	}
+}
+@end
+@entry 191122167463d05d
+kind: fn
+verb: dedupe
+noun: errors
+modifier: last
+context: transform
+phrase: dedupe errors last retained bit mask
+phrase: extract last unique error indicator bit
+test: arg=105,72
+expect: 6
+expect: 6
+test: arg=240
+expect: 7
+code:
+fn ${ID}(n int) int {
+	var x = n;
+	var last_bit = 0;
+	var pos = 0;
+	while x > 0 {
+		if x % 2 == 1 { last_bit = pos; }
+		pos++;
+		x /= 2;
+	}
+	last_bit
+}
+@end
+@entry 4d5273150d78f019
+kind: fn
+verb: clamp
+noun: results
+modifier: sorted
+context: transform
+phrase: clamp results sorted monotone boundary {ceiling}
+phrase: restrict results sorted ceiling upper bound {ceiling}
+slot: ceiling int
+test: arg=150,75 ceiling=100
+expect: 100
+expect: 75
+test: arg=85 ceiling=90
+expect: 85
+code:
+fn ${ID}(n int) int {
+	let c = ${ceiling};
+	var x = n;
+	if x > c { c } else if x < 0 { 0 } else { x }
+}
+@end
+@entry 07373497c5e69ef0
+kind: fn
+verb: fill
+noun: spaces
+modifier: first
+context: transform
+phrase: fill spaces first offset padding {padding}
+phrase: pad initial space magnitude by {padding}
+slot: padding int
+test: arg=45,120 padding=1000
+expect: 1045
+expect: 1120
+test: arg=78 padding=500
+expect: 578
+code:
+fn ${ID}(n int) int {
+	let p = ${padding};
+	n + p
+}
+@end
+@entry 8440717fa87a4181
+kind: fn
+verb: repeat
+noun: squares
+modifier: nested
+context: transform
+phrase: repeat squares nested digital sum rounds {rounds}
+phrase: compute repeated squares of digits rounds {rounds}
+slot: rounds int
+test: arg=12,23 rounds=2
+expect: 25
+expect: 10
+test: arg=34 rounds=1
+expect: 25
+code:
+fn ${ID}(n int) int {
+	let r = ${rounds};
+	var x = n;
+	var step = 0;
+	while step < r && x > 0 {
+		var sum = 0;
+		var temp = x;
+		while temp > 0 {
+			let d = temp % 10;
+			sum += d * d;
+			temp /= 10;
+		}
+		x = sum;
+		step++;
+	}
+	x
+}
+@end
+@entry 902dc52119141522
+kind: pred
+verb: apply
+noun: letters
+modifier: sorted
+context: transform
+phrase: apply letters sorted ascending validation
+phrase: check letters base encoding sorted ascending
+test: arg=1258,1528
+expect: true
+expect: false
+test: arg=3479
+expect: true
+code:
+fn ${ID}(n int) bool {
+	var x = n;
+	var last = 10;
+	while x > 0 {
+		let d = x % 10;
+		if d > last { return false; }
+		last = d;
+		x /= 10;
+	}
+	true
+}
+@end
+@entry 1a65d17d9a2ff275
+kind: pred
+verb: search
+noun: checkpoint
+modifier: running
+context: transform
+phrase: search checkpoint running cadence multiple {step}
+phrase: check running checkpoint alignment with {step}
+slot: step int
+test: arg=36,25 step=6
+expect: true
+expect: false
+test: arg=14 step=5
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let s = ${step};
+	if s <= 0 { return false; }
+	n % s == 0
+}
+@end
+@entry 746769a618ae596c
+kind: pred
+verb: check
+noun: words
+modifier: none
+context: transform
+phrase: check words none matching forbidden divisor {divisor}
+phrase: ensure words none divisible by {divisor}
+slot: divisor int
+test: arg=17,21 divisor=7
+expect: true
+expect: false
+test: arg=35 divisor=7
+expect: false
+code:
+fn ${ID}(n int) bool {
+	let d = ${divisor};
+	if d <= 0 { return true; }
+	n % d != 0
+}
+@end
+@entry 2dc3058b5f2ef98d
+kind: fn
+verb: reverse
+noun: range
+modifier: at_most
+context: transform
+phrase: reverse range digits capped at most {limit}
+phrase: invert range digits bounded at most {limit}
+slot: limit int
+test: arg=1234,4321 limit=2000
+expect: 2000
+expect: 1234
+test: arg=567 limit=900
+expect: 765
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var rev = 0;
+	while x > 0 {
+		rev = rev * 10 + (x % 10);
+		x /= 10;
+	}
+	if rev > lim { lim } else { rev }
+}
+@end
+@entry 59e8459f60248353
+kind: fn
+verb: apply
+noun: item
+modifier: all
+context: transform
+phrase: apply item all elements scale {factor}
+phrase: transform item all factors by {factor}
+slot: factor int
+test: arg=7,12 factor=5
+expect: 35
+expect: 15
+test: arg=9 factor=3
+expect: 27
+code:
+fn ${ID}(n int) int {
+	let f = ${factor};
+	var x = n;
+	var acc = 0;
+	while x > 0 {
+		acc += (x % 10) * f;
+		x /= 10;
+	}
+	acc
+}
+@end
+@entry e14bcff26deb0502
+kind: fn
+verb: split
+noun: values
+modifier: in_place
+context: transform
+phrase: split values in place modulo {base}
+phrase: partition values in place using {base}
+slot: base int
+test: arg=147,82 base=10
+expect: 1407
+expect: 802
+test: arg=59 base=16
+expect: 311
+code:
+fn ${ID}(n int) int {
+	let b = ${base};
+	if b <= 0 { return n; }
+	let high = n / b;
+	let low = n % b;
+	high * 100 + low
+}
+@end
+@entry 4396be38cf4a4c12
+kind: fn
+verb: count
+noun: tally
+modifier: until
+context: transform
+phrase: count tally reductions until below {limit}
+phrase: compute tally steps until under {limit}
+slot: limit int
+test: arg=64,27 limit=5
+expect: 4
+expect: 100
+test: arg=100 limit=10
+expect: 19
+code:
+fn ${ID}(n int) int {
+	let lim = ${limit};
+	var x = n;
+	var steps = 0;
+	while x > lim && steps < 100 {
+		if x % 2 == 0 {
+			x /= 2;
+		} else {
+			x = x * 3 + 1;
+		}
+		steps++;
+	}
+	steps
+}
+@end

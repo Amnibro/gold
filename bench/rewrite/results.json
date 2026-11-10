@@ -10,21 +10,36 @@
   "match": 687,
   "check_orig": "724662200",
   "check_helium": "724634000",
-  "time": {
-   "orig": 1.1321,
-   "helium": 1.2423
+  "check_helium_x": "724634000",
+  "check_rust_native_x": "724662200",
+  "extra": {
+   "reps": 200,
+   "labels": {
+    "rust_native": "the original built for this CPU (rustc -C target-cpu=native)"
+   },
+   "he": {
+    "rust_native": "helium"
+   },
+   "time": {
+    "helium": 1.1396,
+    "rust_native": 1.1553
+   }
   },
-  "speedup": 0.91,
+  "time": {
+   "orig": 1.1358,
+   "helium": 1.1522
+  },
+  "speedup": 0.99,
   "reps": 200,
   "tokens": {
    "orig": 95993,
-   "gold": 45948,
-   "helium": 103573
+   "gold": 41255,
+   "helium": 108640
   },
   "lines": {
    "orig": 3112,
-   "gold": 1033,
-   "helium": 3826
+   "gold": 1156,
+   "helium": 4233
   }
  },
  "price": {
@@ -38,20 +53,20 @@
   "check_orig": "939080",
   "check_helium": "939080",
   "time": {
-   "orig": 0.3254,
-   "helium": 0.2632
+   "orig": 0.2687,
+   "helium": 0.1148
   },
-  "speedup": 1.24,
+  "speedup": 2.34,
   "reps": 40,
   "tokens": {
    "orig": 5376,
-   "gold": 3576,
-   "helium": 10445
+   "gold": 3040,
+   "helium": 9919
   },
   "lines": {
    "orig": 248,
-   "gold": 80,
-   "helium": 532
+   "gold": 107,
+   "helium": 592
   }
  },
  "type": {
@@ -65,20 +80,20 @@
   "check_orig": "23379000",
   "check_helium": "23379000",
   "time": {
-   "orig": 1.1682,
-   "helium": 0.824
+   "orig": 1.0723,
+   "helium": 0.7903
   },
-  "speedup": 1.42,
+  "speedup": 1.36,
   "reps": 300,
   "tokens": {
    "orig": 3618,
-   "gold": 1974,
-   "helium": 2889
+   "gold": 1507,
+   "helium": 2688
   },
   "lines": {
    "orig": 239,
-   "gold": 39,
-   "helium": 178
+   "gold": 35,
+   "helium": 141
   }
  },
  "mail": {
@@ -93,20 +108,20 @@
   "check_orig": "7302120",
   "check_helium": "7294560",
   "time": {
-   "orig": 0.7551,
-   "helium": 0.2617
+   "orig": 0.7628,
+   "helium": 0.2082
   },
-  "speedup": 2.89,
+  "speedup": 3.66,
   "reps": 40,
   "tokens": {
    "orig": 6053,
-   "gold": 4276,
-   "helium": 17574
+   "gold": 3369,
+   "helium": 11249
   },
   "lines": {
    "orig": 322,
-   "gold": 126,
-   "helium": 1206
+   "gold": 109,
+   "helium": 787
   }
  },
  "crypt": {
@@ -114,29 +129,64 @@
   "product": "Amni-Crypt",
   "module": "Reffelt-Shadow block cipher layer (encrypt, decrypt, shadow walk)",
   "orig_lang": "Python (numpy)",
-  "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too.",
+  "note": "Amni-Crypt ships a hand-tuned C kernel (SIMD tables, 803 lines) for this layer; it is timed too, built three ways, on the whole job and on the cipher alone (KERNEL=1: cases decoded first, only encrypt, decrypt and shadow walk timed).",
   "cases": 80,
   "exact": 80,
   "match": 80,
   "check_orig": "1222797",
   "check_helium": "1222797",
-  "check_c": "1222797",
-  "time": {
-   "orig": 5.9571,
-   "helium": 0.0074,
-   "c": 0.0069
+  "check_helium_x": "122279700",
+  "check_helium_1_x": "913025100",
+  "check_c_x": "122279700",
+  "check_c_native_x": "122279700",
+  "check_c_clang_x": "122279700",
+  "check_k_c_x": "913025100",
+  "check_k_c_native_x": "913025100",
+  "check_k_c_clang_x": "913025100",
+  "extra": {
+   "reps": 300,
+   "labels": {
+    "c": "the app's hand-tuned C kernel, built as the app builds it (gcc -O3)",
+    "c_native": "the same C kernel built for this CPU (gcc -O3 -march=native)",
+    "c_clang": "the same C kernel built for this CPU (clang -O3 -march=native)",
+    "k_c": "cipher only, no text handling: the app's C kernel built as the app builds it (gcc -O3)",
+    "k_c_native": "cipher only, no text handling: the same C kernel built for this CPU (gcc -O3 -march=native)",
+    "k_c_clang": "cipher only, no text handling: the same C kernel built for this CPU (clang -O3 -march=native)"
+   },
+   "he": {
+    "c": "helium",
+    "c_native": "helium",
+    "c_clang": "helium",
+    "k_c": "helium_1",
+    "k_c_native": "helium_1",
+    "k_c_clang": "helium_1"
+   },
+   "time": {
+    "helium": 0.1427,
+    "helium_1": 0.1319,
+    "c": 0.4998,
+    "c_native": 0.499,
+    "c_clang": 0.1627,
+    "k_c": 0.1466,
+    "k_c_native": 0.144,
+    "k_c_clang": 0.1235
+   }
   },
-  "speedup": 805.01,
+  "time": {
+   "orig": 6.0879,
+   "helium": 0.0036
+  },
+  "speedup": 1691.08,
   "reps": 3,
   "tokens": {
    "orig": 6155,
-   "gold": 1491,
-   "helium": 3311
+   "gold": 1287,
+   "helium": 3019
   },
   "lines": {
    "orig": 280,
-   "gold": 30,
-   "helium": 209
+   "gold": 27,
+   "helium": 191
   }
  },
  "cad": {
@@ -150,20 +200,20 @@
   "check_orig": "3832500",
   "check_helium": "4063500",
   "time": {
-   "orig": 3.9335,
-   "helium": 0.1602
+   "orig": 3.9704,
+   "helium": 0.0688
   },
-  "speedup": 24.55,
+  "speedup": 57.71,
   "reps": 300,
   "tokens": {
    "orig": 1148,
-   "gold": 991,
-   "helium": 2347
+   "gold": 924,
+   "helium": 2014
   },
   "lines": {
    "orig": 34,
-   "gold": 33,
-   "helium": 131
+   "gold": 34,
+   "helium": 99
   }
  }
 }

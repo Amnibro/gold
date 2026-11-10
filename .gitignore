@@ -16,4 +16,5 @@ bench/rewrite/*/ref/out/
 bench/rewrite/*/ref/*.jar
 bench/rewrite/*/he.out
 bench/rewrite/*/bad.txt
-bench/rewrite/crypt/c/ref_c
+bench/rewrite/crypt/c/ref_c*
+bench/rewrite/*/ref/target-native/
