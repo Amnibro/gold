@@ -74,3 +74,8 @@ gfx/bc.amni	graphics	Decodes BC1, BC3, BC4, BC5, and BC7 block-compressed textur
 gfx/ktx2.amni	graphics	Parses KTX2 texture files, validating headers and reading dimensions, color space, and mip levels for block-compressed or raw images.
 gfx/meshlet.amni	graphics	Builds meshlets from triangle meshes by welding vertices and grouping triangles into clusters and hierarchy levels for efficient rendering.
 gfx/cloth.amni	physics	Simulates cloth as a mesh of particles with gravity, drag, and collisions so fabric drapes and moves realistically.
+net/quic.he	network	Implements the QUIC transport protocol, letting a program open encrypted, multiplexed streams over UDP connections with loss recovery and congestion control.
+net/quic_wire.he	network	Lets a program encode, decode, encrypt, and protect QUIC packets, including headers, variable-length integers, and key derivation.
+net/quic_ep.he	network	Lets a program run a QUIC endpoint over UDP, accepting or dialing multiple encrypted client and server connections on one socket.
+libm.amni	logic	Provides low-level math library routines such as sine, cosine, scaling, and argument reduction for floating-point calculations in programs.
+gfx/hair.amni	graphics	Renders simulated, physically shaded hair strands on 3D models using GPU compute, with grooming, lighting, shadows, and strand physics controls.

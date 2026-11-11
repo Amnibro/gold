@@ -863,3 +863,489 @@ gfx/scene3d.amni	fn sss_target() gfx::Texture	Subsurface Scattering	int	Returns 
 gfx/scene3d.amni	fn sss_plain() gfx::Texture	Subsurface Scattering	int	Returns the texture holding the unblurred irradiance for subsurface scattering.
 gfx/scene3d.amni	fn sss_pass()	Subsurface Scattering	int	Runs the subsurface scattering pass, resizing targets, building sample taps and collecting skin profiles when enabled.
 gfx/shapes.amni	fn sheet(n int, o float3, u float3, v float3, m gltf::Material) int	Mesh Building	pub	Builds an n-by-n grid quad patch from origin o spanning edge vectors u and v, with material m, returning the new asset id.
+gfx/envmap.amni	var clear gfx::Texture;	Sky Generation	int	Cube texture used as a cleared placeholder for the environment map when no sky clouds are active.
+gfx/envmap.amni	var clear_on bool = false;	Sky Generation	int	Flag set when the sky has clouds, marking the cleared placeholder texture as in use.
+gfx/envmap.amni	var noise gfx::Texture;	Sky Generation	int	Cached 80-cube 3D noise texture lazily built and sampled by the sky shader for cloud shapes.
+gfx/envmap.amni	var smp_noise gfx::Sampler;	Sky Generation	int	Repeat-wrapping linear sampler used to read the cloud noise texture.
+gfx/envmap.amni	fn noise_l(lat const byte[:], x int, y int, z int) real	Sky Generation	int	Returns a lattice noise value in 0 to 1 from a byte lattice, wrapping coordinates at 80.
+gfx/envmap.amni	fn noise_m(a real, b real, t real) real	Sky Generation	int	Returns a smoothstep-eased interpolation between two values by a fraction from 0 to 1.
+gfx/envmap.amni	fn noise_o(lat const byte[:], st int, sh int, i int, j int, k int, bil bool) real	Sky Generation	int	Returns trilinearly interpolated lattice noise at a given cell stride and shift, optionally folded into a billowy ridge shape.
+gfx/envmap.amni	fn noise_tex() gfx::Texture	Sky Generation	int	Returns the shared 3D cloud noise texture, generating and uploading it on first use.
+gfx/envmap.amni	fn sky_faces(t gfx::Texture, ms gfx::Texture, to_sun float3, power f32, haze f32, clouds f32, wind_x f32, wind_z f32)	Sky Generation	int	Renders the six faces of a sky cubemap with sun, haze, clouds and wind using the given multiple-scattering texture.
+gfx/scene3d.amni	struct Clouds	Clouds	pub	Settings for the volumetric cloud layer, including coverage, altitude, thickness, density, wind drift, ray steps, sun lighting, cloud shadows and render resolution scale.
+gfx/scene3d.amni	struct CloudU	Clouds	int	Uniform block passed to the cloud shader holding camera, sun, wind, environment and ambient data.
+gfx/scene3d.amni	struct CloudShadowU	Clouds	int	Uniform block passed to the cloud shadow shader holding the shadow area, sun direction, slab and wind data.
+gfx/scene3d.amni	var clouds Clouds = Clouds { on: false };	Clouds	pub	Global cloud settings the caller edits between frames, off by default.
+gfx/scene3d.amni	var cloud_tex gfx::Texture;	Clouds	int	Texture holding the rendered cloud layer for the frame.
+gfx/scene3d.amni	var cloud_shadow_tex gfx::Texture;	Clouds	int	Texture holding the cloud shadow map projected onto the scene.
+gfx/scene3d.amni	var cloud_shadow_n = 0;	Clouds	int	Internal count tracking the cloud shadow state.
+gfx/scene3d.amni	var cloud_res f32 = 0.0;	Clouds	int	Internal cache of the cloud render resolution scale currently allocated.
+gfx/scene3d.amni	var cloud_cu float4;	Clouds	int	Internal first cloud coordinate vector used when sampling cloud shadows.
+gfx/scene3d.amni	var cloud_cv float4;	Clouds	int	Internal second cloud coordinate vector used when sampling cloud shadows.
+gfx/scene3d.amni	var pipe_clouds gfx::Pipeline;	Clouds	int	Render pipeline that draws the cloud layer.
+gfx/scene3d.amni	var pipe_cloud_shadow gfx::Pipeline;	Clouds	int	Render pipeline that renders the cloud shadow map.
+gfx/scene3d.amni	fn clouds_live() bool	Clouds	int	Returns whether cloud rendering is active this frame, requiring clouds enabled, nonzero cover and no capture in progress.
+gfx/scene3d.amni	fn cloud_shadow_on() bool	Clouds	int	Returns whether cloud shadows are active, requiring live clouds and a shadow strength above zero.
+gfx/scene3d.amni	fn cloud_target() gfx::Texture	Clouds	int	Returns the render target texture holding the rendered clouds, for use by other passes of the renderer.
+gfx/scene3d.amni	fn cloud_shadow_target() gfx::Texture	Clouds	int	Returns the render target texture holding the cloud shadow map, which is empty until shadows have been drawn.
+gfx/scene3d.amni	fn cloud_view(c float4, m gfx::mat4) float4	Clouds	int	Transforms a cloud slab vector by a matrix, adding the matrix translation scaled by the vector's w component.
+gfx/scene3d.amni	fn cloud_pass()	Clouds	int	Renders the cloud shadow map, centered on the camera, and the clouds themselves; does nothing when clouds are not live.
+gfx/scene3d.amni	let MAX_FOG_VOLUMES = 8;	Fog	pub	Constant giving the maximum number of fog volumes that can be active in the scene at once.
+gfx/scene3d.amni	struct FogVolume	Fog	pub	A box or ellipsoid-shaped region of fog with its own position, size, density, color and edge softness.
+gfx/scene3d.amni	var fog_lights f32 = 1.0;	Fog	pub	Scale for how strongly local lights scatter through the fog, where 1.0 is the default.
+gfx/scene3d.amni	var fog_noise f32 = 0.0;	Fog	pub	Strength of the noise that varies fog density, where 0.0 disables the noise.
+gfx/scene3d.amni	var fog_noise_size f32 = 20.0;	Fog	pub	World-space size of the fog noise pattern, used when noise strength is above zero.
+gfx/scene3d.amni	var fog_wind float3 = float3 { 0.0, 0.0, 0.0 };	Fog	pub	World-space wind vector that scrolls the fog noise over time.
+gfx/scene3d.amni	var fog_volumes FogVolume[>..] = [];	Fog	pub	List of fog volumes the caller edits to place local fog in the scene.
+gfx/scene3d.amni	struct Sea	Sea	pub	Settings for the sea surface renderer, controlling reflections, ray march steps, underwater view, light shafts and scatter color.
+gfx/scene3d.amni	struct SeaU	Sea	int	Raw uniform block passed to the sea shader with camera, sun, cascade, absorption and wave data.
+gfx/scene3d.amni	var pipe_sea gfx::Pipeline;	Sea	int	GPU pipeline that draws the sea surface.
+gfx/scene3d.amni	var water_prev f32 = 0.0;	Sea	int	Previous frame's water value kept for motion vectors.
+gfx/scene3d.amni	var sea Sea = Sea { .. };	Sea	pub	Global sea settings the caller edits between frames.
+gfx/scene3d.amni	var sea_on = false;	Sea	int	Internal flag recording whether the sea is active this frame.
+gfx/scene3d.amni	var sea_level f32 = 0.0;	Sea	int	Internal water surface height used for the current frame.
+gfx/scene3d.amni	var sea_lo float3 = float3 { 0.0, 0.0, 0.0 };	Sea	int	Internal lower corner of the sea's bounding box.
+gfx/scene3d.amni	var sea_hi float3 = float3 { 0.0, 0.0, 0.0 };	Sea	int	Internal upper corner of the sea's bounding box.
+gfx/scene3d.amni	var sea_waves float4 = float4 { 0.0, 0.0, 0.0, 0.0 };	Sea	int	Internal wave parameters packed for the sea shader.
+gfx/scene3d.amni	var sea_absorb float3 = float3 { 0.0, 0.0, 0.0 };	Sea	int	Internal per-channel light absorption of the water, passed to shaders.
+gfx/scene3d.amni	var sea_scatter float3 = float3 { 0.0, 0.0, 0.0 };	Sea	int	Internal water scatter color passed to shaders.
+gfx/scene3d.amni	fn sea_wet() bool	Sea	int	Returns whether the camera is currently below the sea surface and inside its horizontal bounds.
+gfx/scene3d.amni	fn sea_pass()	Sea	int	Renders the underwater sea effect pass using scene depth and shadows, then swaps the HDR and effect buffers; skips when no sea is visible.
+gfx/shapes.amni	fn water_material(swell f32) gltf::Material	Materials	pub	Builds a transparent, refractive water material whose surface swell strength is set by the given value.
+gfx/shapes.amni	fn sea(half f32, n int) int	Primitive Shapes	pub	Creates a flat water sheet of half-size extent, subdivided into n cells per side, with swelling waves, returning its asset id.
+crypto/ecc.he	der_uint(v const byte[:]) byte[>..]	ECDSA Signatures	int	Encodes a big-endian unsigned integer as a DER INTEGER, trimming leading zeros and adding a zero byte when the high bit is set.
+crypto/ecc.he	ecdsa_sign_der(id int, kind int, priv const byte[:], msg const byte[:]) byte[>..], bool	ECDSA Signatures	pub	Signs a message with a private key and returns the signature as DER-encoded ASN.1 SEQUENCE bytes; false means signing failed.
+crypto/x509.he	der_tlv(tag int, body const byte[:]) byte[>..]	Certificate Building	int	Encodes a DER tag-length-value element from a tag and body, using the shortest length form up to three length bytes.
+crypto/x509.he	x509_date(t int) byte[>..]	Certificate Building	int	Encodes a Unix timestamp in seconds as a DER UTCTime or GeneralizedTime value, choosing by year.
+crypto/x509.he	x509_self_signed(name const byte[:], priv const byte[:], from int, days int) byte[>..], bool	Certificate Building	pub	Builds a self-signed P-256 X.509 certificate for a name or IPv4 address, valid for the given days; false on failure.
+crypto/x509.he	pkcs8_ec(priv const byte[:]) byte[>..], bool	Key Encoding	pub	Encodes a P-256 or P-384 private key as PKCS#8 DER, choosing the curve by key length; false on failure.
+crypto/x509.he	pkcs8_ec_parse(d const byte[:]) byte[>..], int	Key Encoding	pub	Parses PKCS#8 or SEC1 EC private key DER, returning the raw key bytes and curve id, or 0 if invalid.
+net/quic.he	QUIC_HANDSHAKE := 0	Connection State	pub	Constant for a connection still performing its handshake before application data can flow.
+net/quic.he	QUIC_OPEN := 1	Connection State	pub	Constant for a connection whose handshake finished and which can carry stream data.
+net/quic.he	QUIC_CLOSING := 2	Connection State	pub	Constant for a connection that sent a close and is waiting out its closing period.
+net/quic.he	QUIC_DRAINING := 3	Connection State	pub	Constant for a connection that received a close from the peer and is draining.
+net/quic.he	QUIC_CLOSED := 4	Connection State	pub	Constant for a connection that is fully closed and can be discarded.
+net/quic.he	QMAXD := 1200	Connection State	int	Maximum datagram size in bytes used when building outgoing packets and sizing congestion window steps.
+net/quic.he	struct QStream { id int	Streams	int	Per-stream state holding send and receive buffers, acknowledged ranges, flow control limits and reset flags.
+net/quic.he	struct QSent { pn int	Loss Recovery	int	Record of a sent packet holding its number, send time, size and the frames it carried.
+net/quic.he	struct QSpace { rx QKeys	Loss Recovery	int	Per-encryption-level packet space holding keys, receive ranges, sent packets and acknowledgment timing state.
+net/quic.he	struct Quic { srv bool	Connection State	pub	Connection object holding all state for one QUIC endpoint, passed to the other functions in this module.
+net/quic.he	qk_set(d QKeys&, s const QKeys&)	Loss Recovery	int	Copies all key material from one packet protection key set into another.
+net/quic.he	rs_add(r int[>..]&, lo int, hi int)	Streams	int	Adds a half-open range of integers to a sorted range list, merging overlaps.
+net/quic.he	rs_has(r int[>..]&, v int) bool	Streams	int	Returns whether a value falls inside any range of a sorted range list.
+net/quic.he	rs_gap(r int[>..]&, lo int, hi int) int, int	Streams	int	Finds the first uncovered gap within a span of a range list, returning the span end pair when none.
+net/quic.he	rs_shift(r int[>..]&)	Streams	int	Removes the first range from a range list.
+net/quic.he	qs_new(id int, smax int, rwin int) QStream	Streams	int	Creates a stream with the given id, send limit and receive window.
+net/quic.he	qs_write(s QStream&, d const byte[:])	Streams	int	Appends data to a stream's send buffer, compacting consumed bytes when the buffer grows large.
+net/quic.he	qs_acked(s QStream&, off int, n int, fin bool)	Streams	int	Records that a stream byte range was acknowledged and advances the send buffer past contiguous acknowledged data.
+net/quic.he	qs_recv(s QStream&, off int, d const byte[:])	Streams	int	Stores received stream data at its offset, ignoring bytes already consumed and tracking which ranges arrived.
+net/quic.he	qs_avail(s const QStream&) int	Streams	int	Returns the number of contiguous received bytes ready to be read from a stream.
+net/quic.he	qs_take(s QStream&, out byte[>..]&) int	Streams	int	Moves contiguous received bytes from a stream into an output buffer and returns the count.
+net/quic.he	q_pto(q const Quic&, s int) real	Loss Recovery	int	Returns the probe timeout in seconds for a packet space, including peer ack delay for the application level.
+net/quic.he	q_end(q Quic&, app bool, code int, why const byte[:])	Connection State	int	Starts closing the connection with an error code and reason unless it is already closing.
+net/quic.he	q_drop(q Quic&, s int)	Loss Recovery	int	Discards the keys and sent packet tracking for a packet space, releasing its in-flight bytes.
+net/quic.he	q_new(srv bool, now real) Quic	Connection State	int	Creates a connection with default parameters, a random connection id and transport settings for a client or server.
+net/quic.he	quic_client(host const byte[:], alpn const byte[:], pin const byte[:], now real) Quic	Connection State	pub	Creates a client connection to a host with the given protocol name and pinned certificate value.
+net/quic.he	quic_server(cert const byte[:], key const byte[:], alpn const byte[:], now real) Quic	Connection State	pub	Creates a server connection using the given certificate, private key and protocol name.
+net/quic.he	q_pull(q Quic&)	Connection State	int	Moves handshake output and derived keys from the TLS engine into the QUIC layer and validates peer parameters.
+net/quic.he	q_tls(q Quic&)	Connection State	int	Creates and starts the TLS engine for the connection using its transport parameters.
+net/quic.he	q_find(q const Quic&, id int) int	Streams	int	Returns the index of the stream with the given id, or -1 if not found.
+net/quic.he	q_stream(q Quic&, id int) int	Streams	int	Finds or creates a peer-initiated stream by id, closing the connection on illegal or over-limit ids.
+net/quic.he	quic_open(q Quic&, bidi bool) int	Streams	pub	Opens a new locally initiated bidirectional or unidirectional stream and returns its id, or -1 if unavailable.
+net/quic.he	q_credit(q Quic&)	Streams	int	Raises the connection receive limit and schedules an update once enough data has been read.
+net/quic.he	q_done(q Quic&, i int)	Streams	int	Frees a stream's bookkeeping and grants the peer more stream credit once both directions are finished.
+net/quic.he	q_sdata(q Quic&, i int, off int, d const byte[:], fin bool)	Streams	int	Handles received stream data, enforcing final size and flow control limits and storing the bytes.
+net/quic.he	q_requeue(q Quic&, s int, i int)	Loss Recovery	int	Requeues the frames of a lost sent packet for retransmission.
+net/quic.he	q_compact(q Quic&, s int)	Loss Recovery	int	Removes acknowledged or lost entries from a packet space's sent list.
+net/quic.he	q_lost(q Quic&, s int)	Loss Recovery	int	Declares packets lost by time or packet threshold, requeues them and reduces the congestion window.
+net/quic.he	q_ack(q Quic&, s int, f const QFrame&)	Loss Recovery	int	Processes an acknowledgment frame, freeing sent packets, updating round trip estimates and growing the congestion window.
+net/quic.he	q_frame(q Quic&, s int, f const QFrame&)	Connection State	int	Handles one decoded frame according to its type, updating connection and stream state.
+net/quic.he	q_open(q Quic&, s int, p const byte[:], pno int) QOpen	Connection State	int	Decrypts a packet in a space, trying the next key phase when needed.
+net/quic.he	quic_rekey(q Quic&) bool	Connection State	pub	Rotates the application keys to the next key phase, returning false if the handshake is not confirmed or the connection is not open.
+net/quic.he	q_packet(q Quic&, p const byte[:], dlen int) int	Connection State	int	Parses, decrypts and processes one packet from a datagram and returns the number of bytes consumed.
+net/quic.he	quic_recv(q Quic&, d const byte[:], now real)	Connection State	pub	Processes a received UDP datagram at the given time, handling each coalesced packet in it.
+net/quic.he	q_ackf(q Quic&, s int, b byte[>..]&)	Loss Recovery	int	Builds an acknowledgment frame for a packet space from its received ranges.
+net/quic.he	q_emit(q Quic&, i int, b byte[>..]&, room int, rec QSent&)	Streams	int	Writes stream or crypto data frames into a packet buffer, preferring retransmissions, and records them as sent.
+net/quic.he	q_ctl(b byte[>..]&, ty int, x int, y int, z int)	Connection State	int	Encodes a simple control frame with up to three integer fields into a buffer.
+net/quic.he	q_note(rec QSent&, a int, x int, y int)	Loss Recovery	int	Records a non-stream control frame entry in a sent packet's frame list.
+net/quic.he	q_app(q Quic&, b byte[>..]&, room int, rec QSent&)	Connection State	int	Writes pending control frames and stream data for the application level into a packet payload.
+net/quic.he	q_frames(q Quic&, s int, room int, rec QSent&) byte[>..]	Connection State	int	Builds the frame payload for one packet space, including acknowledgments, data and probes, or empty if nothing to send.
+net/quic.he	q_closef(q Quic&, s int) byte[>..]	Connection State	int	Builds a connection close frame payload for a packet space.
+net/quic.he	q_min(a real, b real) real	Loss Recovery	int	Returns the smaller of two times, treating zero as unset.
+net/quic.he	q_timer(q const Quic&) real, int, bool	Loss Recovery	int	Computes the next loss or probe timer deadline, its packet space and whether it is a loss timer.
+net/quic.he	q_timers(q Quic&)	Loss Recovery	int	Applies expired idle, closing, loss and probe timers to the connection.
+net/quic.he	quic_timeout(q const Quic&) real	Connection State	pub	Returns the time of the next event the connection needs handled, or 0.0 if closed.
+net/quic.he	quic_send(q Quic&, out byte[>..]&, now real) bool	Connection State	pub	Builds the next outgoing UDP datagram into the output buffer, returning false if there is nothing to send.
+net/quic.he	quic_state(q const Quic&) int	Connection State	pub	Returns the connection's current state value.
+net/quic.he	quic_close(q Quic&, code int, why const byte[:])	Connection State	pub	Closes the connection with an application error code and reason sent to the peer.
+net/quic.he	quic_write(q Quic&, id int, d const byte[:]) bool	Streams	pub	Appends data to a stream's send buffer, returning false if the stream is unknown, finished, reset or the connection is closing.
+net/quic.he	quic_fin(q Quic&, id int) bool	Streams	pub	Marks the end of a stream's send side, returning false if the stream is unknown or reset.
+net/quic.he	quic_read(q Quic&, id int, out byte[>..]&) int	Streams	pub	Reads available stream data into an output buffer and returns the byte count, or -1 if the stream is unknown.
+net/quic.he	quic_stream(q const Quic&, id int) int	Streams	pub	Returns a bit flag set describing a stream's readable, finished, reset, stop-requested and acknowledged status, or -1 if unknown.
+net/quic.he	quic_unsent(q const Quic&, id int) int	Streams	pub	Returns the number of written stream bytes not yet acknowledged by the peer.
+net/quic.he	quic_reset(q Quic&, id int, code int)	Streams	pub	Abruptly ends a stream's send side with an error code.
+net/quic.he	quic_stop(q Quic&, id int, code int)	Streams	pub	Asks the peer to stop sending on a stream with an error code.
+net/quic.he	quic_accept(q Quic&) int	Streams	pub	Returns the next peer-initiated stream id not yet accepted, or -1 if none is pending.
+net/quic_wire.he	QF_NV := "0022321022222222121112112100210"	Frame Encoding	int	Lookup string giving how many variable-length integer fields each QUIC frame type carries, indexed by frame type.
+net/quic_wire.he	struct QKeys { alg int	Packet Keys	pub	Holds the cipher algorithm, hash, secret, key, IV, and header-protection key for one QUIC encryption level.
+net/quic_wire.he	struct QOpen { ok bool	Packet Protection	pub	Result of opening a protected packet, with success flag, packet number, first header byte, and decrypted payload.
+net/quic_wire.he	struct QHdr { ok bool	Headers	pub	Parsed QUIC packet header with validity flag, form, type, version, connection IDs, token, packet number offset, and end offset.
+net/quic_wire.he	struct QFrame { ty int	Frame Encoding	pub	A QUIC frame with its type, numeric fields, fin flag, payload data, token bytes, and ranges.
+net/quic_wire.he	struct QRd { o int	Frame Encoding	int	Read cursor holding the current offset and a flag set when a variable-length read fails.
+net/quic_wire.he	struct QParams { v int[>..]	Transport Parameters	pub	QUIC transport parameter set with integer values, a bitmask of received IDs, and connection ID fields.
+net/quic_wire.he	qv_len(v int) int	Frame Encoding	pub	Returns the number of bytes needed to encode a value as a QUIC variable-length integer.
+net/quic_wire.he	qv_put(b byte[>..]&, v int)	Frame Encoding	pub	Appends a value to a byte list as a QUIC variable-length integer.
+net/quic_wire.he	qv_get(b const byte[:], o int) int, int	Frame Encoding	pub	Decodes a variable-length integer at an offset, returning the value and next offset, or -1 and the same offset on failure.
+net/quic_wire.he	qr(p const byte[:], r QRd&) int	Frame Encoding	int	Reads a variable-length integer at the cursor and advances it, setting the bad flag and returning 0 on failure.
+net/quic_wire.he	qk_from(suite int, sec const byte[:]) QKeys	Packet Keys	pub	Returns packet keys derived from a TLS traffic secret according to the given cipher suite.
+net/quic_wire.he	qk_initial(dcid const byte[:], server bool) QKeys	Packet Keys	pub	Returns the initial packet keys derived from the destination connection ID for the client or server side.
+net/quic_wire.he	qk_update(k const QKeys&) QKeys	Packet Keys	pub	Returns the next-generation keys for a key update, keeping the same header-protection key.
+net/quic_wire.he	qp_mask(k const QKeys&, s const byte[:]) byte[>..]	Packet Protection	int	Returns the header-protection mask computed from a ciphertext sample using the key's cipher.
+net/quic_wire.he	qp_nonce(k const QKeys&, pn int) byte[>..]	Packet Protection	int	Returns the per-packet AEAD nonce by XORing the packet number into the key's IV.
+net/quic_wire.he	qp_pn(largest int, tr int, bits int) int	Packet Protection	int	Returns the full packet number reconstructed from truncated bits and the largest number received so far.
+net/quic_wire.he	qp_seal(k const QKeys&, hdr const byte[:], pnl int, pn int, body const byte[:]) byte[>..]	Packet Protection	pub	Returns an encrypted packet with header protection applied, or an empty result if sealing fails or the packet is too short.
+net/quic_wire.he	qp_open(k const QKeys&, p const byte[:], pno int, largest int) QOpen	Packet Protection	pub	Returns the result of removing header protection and decrypting a packet, with ok false when authentication fails.
+net/quic_wire.he	qh_pn(h byte[>..]&, pnl int, pn int)	Headers	int	Appends the truncated packet number bytes to a header being built.
+net/quic_wire.he	qh_long(ty int, dcid const byte[:], scid const byte[:], token const byte[:], pnl int, pn int, plen int) byte[>..]	Headers	pub	Returns a long-form QUIC header for the given packet type, connection IDs, token, packet number, and payload length.
+net/quic_wire.he	qh_short(dcid const byte[:], phase int, pnl int, pn int) byte[>..]	Headers	pub	Returns a short-form QUIC header with the destination connection ID, key phase, and packet number.
+net/quic_wire.he	qh_parse(p const byte[:], cidl int) QHdr	Headers	pub	Returns a parsed header from a packet, with ok false when the packet is malformed or truncated.
+net/quic_wire.he	qf_put(b byte[>..]&, f const QFrame&)	Frame Encoding	pub	Appends the wire encoding of a QUIC frame to a byte list.
+net/quic_wire.he	qf_get(p const byte[:], o0 int) QFrame, int	Frame Encoding	pub	Decodes a QUIC frame at an offset, returning the frame and next offset, or -1 offset on malformed input.
+net/quic_wire.he	qtp_new() QParams	Transport Parameters	pub	Returns transport parameters initialized with default values.
+net/quic_wire.he	qtp_bytes(b byte[>..]&, id int, v const byte[:])	Transport Parameters	int	Appends one transport parameter with its ID and length-prefixed raw value to a byte list.
+net/quic_wire.he	qtp_put(p const QParams&, server bool) byte[>..]	Transport Parameters	pub	Returns the encoded transport parameters, including the original destination connection ID only when encoding for a server.
+net/quic_wire.he	qtp_get(d const byte[:], server bool) QParams, bool	Transport Parameters	pub	Decodes transport parameters, returning them with a flag that is false when data is invalid or violates limits.
+net/tcp.he	tcp_nodelay(fd int)	Connections	int	Enables TCP_NODELAY on a socket descriptor so small writes are sent immediately; only called internally when opening connections.
+net/tls.he	tl_fail(t Tls&, why const byte[:], alert int = 40) int	Connection State	int	Records a fatal handshake error, sends an alert when possible, closes the socket, and returns TLS_ERR.
+net/tls.he	hs_run(t Tls&) int	Handshake Internals	int	Processes buffered handshake messages in order until data is incomplete or an error occurs, returning the resulting state.
+net/tls.he	suite13(t Tls&, cs int)	Handshake Internals	int	Sets the session's cipher suite, hash, AEAD algorithm and key length from a TLS 1.3 suite code.
+net/tls.he	hs_keys(t Tls&, sh const byte[:])	Handshake Internals	int	Derives handshake traffic secrets from the shared secret and the transcript hash so far.
+net/tls.he	ap_keys(t Tls&) byte[>..], byte[>..]	Handshake Internals	int	Derives client and server application traffic secrets, returning them in that order.
+net/tls.he	cv_msg(th const byte[:]) byte[>..]	Handshake Internals	int	Builds the signed content for a server CertificateVerify message from the transcript hash.
+net/tls.he	send_hs(t Tls&, ty int, body const byte[:])	Handshake Internals	int	Wraps a handshake body in a message header, adds it to the transcript and queues it for sending.
+net/tls.he	hello(t Tls&, rnd const byte[:], sid const byte[:], cs int, ks const byte[:])	Handshake Internals	int	Builds and sends a server ServerHello with the given random, session id, cipher suite and key share.
+net/tls.he	on_ch(t Tls&, b const byte[:], raw const byte[:]) int	Handshake Internals	int	Handles a received ClientHello on the server, negotiating parameters and sending the server's handshake flight.
+net/tls.he	tls_feed(t Tls&, level int, d const byte[:]) int	Data Transfer	pub	Feeds handshake bytes received at the given encryption level into a QUIC session and returns its state.
+net/tls.he	tls_accept(fd int, cert const byte[:], key const byte[:], alpn const byte[:]) Tls	Connection State	pub	Creates a server-side session on an accepted socket using the given certificate, private key and ALPN protocol.
+net/tls.he	tls_quic(server bool, host const byte[:], alpn const byte[:], tp const byte[:], cert const byte[:], key const byte[:]) Tls	Connection State	pub	Creates a QUIC-mode session, as client or server, carrying transport parameters, with no socket of its own.
+net/tls.he	tls_start(t Tls&)	Connection State	pub	Starts the handshake of a QUIC client session by sending its ClientHello.
+net/quic_ep.he	struct QEp { fd int	QUIC Endpoint	pub	Holds a UDP socket and the set of QUIC connections, with optional server credentials, served on one port.
+net/quic_ep.he	qe_bind(a Addr) QEp	QUIC Endpoint	pub	Returns a QUIC endpoint whose UDP socket is bound to the given address.
+net/quic_ep.he	qe_serve(e QEp&, cert const byte[:], key const byte[:], alpn const byte[:]) bool	QUIC Endpoint	pub	Enables server mode with a certificate, key and ALPN; returns false unless the key is a P-256 EC key.
+net/quic_ep.he	qe_slot(e QEp&, to Addr) int	Connection Handling	int	Returns the index of a free connection slot for the peer address, growing the table if needed.
+net/quic_ep.he	qe_dial(e QEp&, to Addr, host const byte[:], alpn const byte[:], pin const byte[:]) int	Connection Handling	pub	Starts a client connection to an address with host, ALPN and pin, returning its connection slot index.
+net/quic_ep.he	qe_free(e QEp&, i int)	Connection Handling	pub	Releases the connection slot at the given index, ignoring indexes that are out of range or already empty.
+net/quic_ep.he	qe_find(e QEp&, id const byte[:]) int	Connection Handling	int	Returns the slot index of the connection matching a connection ID, or -1 if none matches.
+net/quic_ep.he	qe_vn(e QEp&, d const byte[:], dl int, sl int, to Addr)	Packet Processing	int	Sends a version negotiation packet to the peer in reply to an unsupported QUIC version.
+net/quic_ep.he	qe_first(d const byte[:], dl int) bool	Packet Processing	int	Returns whether a datagram is a valid client Initial packet that can be opened with its initial keys.
+net/quic_ep.he	qe_route(e QEp&, d const byte[:], from Addr, now real)	Packet Processing	int	Routes a received datagram to its connection, creating a server connection for a valid new Initial packet.
+net/quic_ep.he	qe_timeout(e QEp&) real	Packet Processing	int	Returns the earliest nonzero connection timeout across all connections, or 0.0 if none is pending.
+net/quic_ep.he	qe_flush(e QEp&, now real)	Packet Processing	pub	Sends all pending outgoing packets for every connection and frees closed connections that were already handed out.
+net/quic_ep.he	qe_poll(e QEp&, ms int) int	Packet Processing	pub	Waits up to the given milliseconds for datagrams, routes them, flushes output, and returns how many were received.
+net/quic_ep.he	qe_next(e QEp&) int	Connection Handling	pub	Returns the index of the next newly opened connection not yet handed out, or -1 if none.
+net/quic_ep.he	qe_port(e QEp&) int	QUIC Endpoint	pub	Returns the local UDP port the endpoint socket is bound to.
+net/quic_ep.he	qe_same(e QEp&, a Addr) int	Connection Handling	pub	Returns how many active connections have the same IP address as the given address.
+net/quic_ep.he	qe_close(e QEp&)	QUIC Endpoint	pub	Closes the endpoint's UDP socket and marks it as closed.
+net/quic.he	struct QRec { pn int	Loss Recovery	int	Record of a sent packet kept for loss detection, holding its packet number, send time, size, and offset and count of its frame data.
+libm.amni	struct Ipio2Row	Argument Reduction	int	Row type holding one 24-bit chunk of the table of 2/pi bits used for argument reduction.
+libm.amni	fn ipio2_table() Ipio2Row[66]	Argument Reduction	int	Returns the 66-entry table of 2/pi bit chunks used by large-argument reduction.
+libm.amni	var IPIO2 Ipio2Row[>..];	Argument Reduction	int	Lazily filled cache of the 2/pi table rows, populated on first access.
+libm.amni	fn ipio2_at(i int) int	Argument Reduction	int	Returns the 24-bit 2/pi chunk at index i, filling the table cache on first use.
+libm.amni	let PIO2 real[8] = [1.57079625129699707031e+00, 7.54978941586159635335e-08, 5.39030252995776476554e-15, 3.28200341580791294123e-22, 1.27065575308067607349e-29, 1.22933308981111328932e-36, 2.73370053816464559624e-44, 2.16	Argument Reduction	int	Table of eight pi/2 pieces in decreasing magnitude used to rebuild the reduced remainder.
+libm.amni	fn scalbn(x real, n int) real	Argument Reduction	int	Returns x multiplied by 2 raised to the power n, built from exponent bits.
+libm.amni	fn k_sinf(x real) f32	Trigonometry	int	Computes sine of a small reduced argument as a polynomial approximation, returning f32.
+libm.amni	fn k_cosf(x real) f32	Trigonometry	int	Computes cosine of a small reduced argument as a polynomial approximation, returning f32.
+libm.amni	let TWO24 real = 16777216.0;	Argument Reduction	int	Constant 2 to the 24th power, used to split values into 24-bit chunks.
+libm.amni	let TWON24 real = 5.9604644775390625e-08;	Argument Reduction	int	Constant 2 to the power of negative 24, used to split values into 24-bit chunks.
+libm.amni	fn rem_pio2_large(x real, e0 int) int, real	Argument Reduction	int	Reduces a scaled large argument modulo pi/2, returning the quadrant count modulo 8 and the remainder.
+libm.amni	let INV_PIO2 real = 6.36619772367581382433e-01;	Argument Reduction	int	Constant equal to 2/pi, used to estimate the quadrant of an argument.
+libm.amni	let PIO2_1 real = 1.57079631090164184570e+00;	Argument Reduction	int	Leading part of pi/2 used to subtract multiples of pi/2 with extra precision.
+libm.amni	let PIO2_1T real = 1.58932547735281966916e-08;	Argument Reduction	int	Trailing correction to pi/2 paired with the leading part for precise reduction.
+libm.amni	let TOINT real = 6755399441055744.0;	Argument Reduction	int	Rounding constant added and subtracted to round a real value to the nearest integer.
+libm.amni	fn rem_pio2f(x f32) int, real	Argument Reduction	int	Reduces an f32 modulo pi/2, returning the quadrant count and the remainder; non-finite input gives a NaN remainder.
+libm.amni	let ATAN_HI f32[4] = [4.6364760399e-01, 7.8539812565e-01, 9.8279368877e-01, 1.5707962513e+00];	Trigonometry	int	High parts of the arctangent reference values at 0.5, 1.0, 1.5 and infinity.
+libm.amni	let ATAN_LO f32[4] = [5.0121582440e-09, 3.7748947079e-08, 3.4473217170e-08, 7.5497894159e-08];	Trigonometry	int	Low correction parts paired with the high arctangent reference values.
+libm.amni	let A_T f32[5] = [3.3333328366e-01, -1.9999158382e-01, 1.4253635705e-01, -1.0648017377e-01, 6.1687607318e-02];	Trigonometry	int	Polynomial coefficients used to approximate arctangent on a reduced argument.
+libm.amni	fn atanf(x0 f32) f32	Trigonometry	pub	Returns the arctangent of an f32 in radians, passing NaN through unchanged.
+libm.amni	let PIF f32 = 3.1415927410e+00;	Trigonometry	int	Single-precision value of pi used by the two-argument arctangent.
+libm.amni	let PI_LO f32 = -8.7422776573e-08;	Trigonometry	int	Low-order correction to the single-precision value of pi.
+libm.amni	fn atan2f(y f32, x f32) f32	Trigonometry	pub	Returns the angle in radians of the point (x, y) using both signs to pick the quadrant.
+libm.amni	let FRAC_PI_2 real = 1.5707963267948966;	Trigonometry	int	Constant pi/2 as a double-precision real.
+libm.amni	let P1 real = 1.0 * FRAC_PI_2;	Trigonometry	int	Constant equal to one times pi/2, used as a shift in sine and cosine.
+libm.amni	let P2 real = 2.0 * FRAC_PI_2;	Trigonometry	int	Constant equal to two times pi/2, used as a shift in sine and cosine.
+libm.amni	let P3 real = 3.0 * FRAC_PI_2;	Trigonometry	int	Constant equal to three times pi/2, used as a shift in sine and cosine.
+libm.amni	let P4 real = 4.0 * FRAC_PI_2;	Trigonometry	int	Constant equal to four times pi/2, used as a shift in sine and cosine.
+libm.amni	fn sinf(x f32) f32	Trigonometry	pub	Returns the sine of an f32 angle given in radians.
+libm.amni	fn cosf(x f32) f32	Trigonometry	pub	Returns the cosine of an f32 angle given in radians.
+libm.amni	fn sincosf(x f32) f32, f32	Trigonometry	pub	Returns the sine and cosine of an f32 angle in radians as a pair.
+libm.amni	fn hypotf(x0 f32, y0 f32) f32	Trigonometry	pub	Returns the length of the hypotenuse for two f32 legs, scaling to avoid overflow and underflow.
+net/sock.he	SHUT_RD := 0	Sockets	pub	Constant selecting the receive direction when shutting down a socket, so further reads are disallowed.
+net/sock.he	SHUT_WR := 1	Sockets	pub	Constant selecting the send direction when shutting down a socket, so further writes are disallowed.
+net/sock.he	SHUT_RDWR := 2	Sockets	pub	Constant selecting both directions when shutting down a socket, disallowing further reads and writes.
+net/sock.he	shutdown(h int, how int) int	Sockets	pub	Shuts down reading, writing, or both on a socket handle, returning 0 on success or a negative error code.
+std.he	extern match32_at(s const byte[:], i int, w int) int	Byte Sets	int	Thin C binding that returns a match result for a 32-byte-wide comparison at index i of a byte slice, used by this module's own byte set code.
+gfx/scene3d.amni	let VSM_LEVELS = 12;	Virtual Shadow Maps	int	Constant for the number of clip levels in the virtual shadow map, each covering twice the range of the previous.
+gfx/scene3d.amni	let VSM_PAGE = 128;	Virtual Shadow Maps	int	Constant for the side length in texels of one virtual shadow page.
+gfx/scene3d.amni	let VSM_GRID = 64;	Virtual Shadow Maps	int	Constant for the number of pages per side in each level's grid of the virtual shadow map.
+gfx/scene3d.amni	let VSM_HEAD = 24;	Virtual Shadow Maps	int	Constant for the number of header entries at the start of the virtual shadow page table.
+gfx/scene3d.amni	var vsm_face int[24] = [0, 2, 6, 4, 1, 3, 7, 5, 0, 1, 5, 4, 2, 3, 7, 6, 0, 1, 3, 2, 4, 5, 7, 6];	Virtual Shadow Maps	int	Table of corner indices defining the six faces of a box, four corners per face.
+gfx/scene3d.amni	var vsm_atlas gfx::Texture;	Virtual Shadow Maps	int	Depth texture array atlas holding the rendered virtual shadow pages.
+gfx/scene3d.amni	var vsm_side = 0;	Virtual Shadow Maps	int	Current side length in texels of the atlas, or zero before it is created.
+gfx/scene3d.amni	var vsm_table gfx::Buffer;	Virtual Shadow Maps	int	GPU buffer holding the page table that shaders read to locate shadow pages.
+gfx/scene3d.amni	var pipe_vsm_clear gfx::Pipeline;	Virtual Shadow Maps	int	Pipeline that clears the depth of a shadow page before it is redrawn.
+gfx/scene3d.amni	var vsm_tab i32[>..] = [];	Virtual Shadow Maps	int	CPU copy of the page table, with per-level origins followed by page slot entries.
+gfx/scene3d.amni	var vsm_mark byte[>..] = [];	Virtual Shadow Maps	int	Per-frame grid of flags marking which pages the visible geometry needs.
+gfx/scene3d.amni	var vsm_at int[>..] = [];	Virtual Shadow Maps	int	Map from grid cell to the atlas slot currently holding it, or minus one.
+gfx/scene3d.amni	var vsm_key int[>..] = [];	Virtual Shadow Maps	int	Packed level and page coordinates identifying what each atlas slot holds, or minus one when free.
+gfx/scene3d.amni	var vsm_hash int[>..] = [];	Virtual Shadow Maps	int	Content hashes of what each atlas slot last rendered, used to detect stale pages.
+gfx/scene3d.amni	var vsm_seen int[>..] = [];	Virtual Shadow Maps	int	Frame number when each atlas slot was last needed, protecting in-use slots from reuse.
+gfx/scene3d.amni	var vsm_org int[>..] = [];	Virtual Shadow Maps	int	Page grid origin for each level, stored as an x and y pair.
+gfx/scene3d.amni	var vsm_r real[>..] = [];	Virtual Shadow Maps	int	Rotation rows of the sun's light-space basis used to project world positions.
+gfx/scene3d.amni	var vsm_pa real[>..] = [];	Virtual Shadow Maps	int	Scratch polygon buffer of clipped vertices, used as input while marking pages.
+gfx/scene3d.amni	var vsm_pb real[>..] = [];	Virtual Shadow Maps	int	Scratch polygon buffer receiving the output of each clipping step.
+gfx/scene3d.amni	var vsm_bc real[>..] = [];	Virtual Shadow Maps	int	Scratch buffer of world-space corners for the current batch bounding box.
+gfx/scene3d.amni	var vsm_sc real[>..] = [];	Virtual Shadow Maps	int	Scratch buffer of world-space corners for a slice of the view frustum.
+gfx/scene3d.amni	var vsm_bp real[>..] = [];	Virtual Shadow Maps	int	Scratch buffer of plane equations for the current batch bounding box.
+gfx/scene3d.amni	var vsm_sp real[>..] = [];	Virtual Shadow Maps	int	Scratch buffer of plane equations for a slice of the view frustum.
+gfx/scene3d.amni	var vsm_cr real[>..] = [];	Virtual Shadow Maps	int	Light-space two-dimensional bounds of each shadow-casting batch, used to find batches overlapping a page.
+gfx/scene3d.amni	var vsm_ch int[>..] = [];	Virtual Shadow Maps	int	Content hash of each shadow-casting batch, combined to detect page changes.
+gfx/scene3d.amni	var vsm_cb int[>..] = [];	Virtual Shadow Maps	int	Index into the batch list for each shadow-casting batch.
+gfx/scene3d.amni	var vsm_todo int[>..] = [];	Virtual Shadow Maps	int	List of atlas slots whose pages must be redrawn this frame.
+gfx/scene3d.amni	var vsm_t0 real = 0.0005;	Virtual Shadow Maps	int	Texel size of the finest level in world units, taken from the sun settings.
+gfx/scene3d.amni	var vsm_zc real = 0.0;	Virtual Shadow Maps	int	Eye depth along the sun direction, snapped to a 256-unit step, used to detect camera movement.
+gfx/scene3d.amni	var vsm_dir float3;	Virtual Shadow Maps	int	Sun direction used to build the current pages, compared each frame to detect changes.
+gfx/scene3d.amni	var vsm_hand = 0;	Virtual Shadow Maps	int	Rotating cursor for finding a free atlas slot to evict.
+gfx/scene3d.amni	var vsm_frame = 0;	Virtual Shadow Maps	int	Frame counter for page usage tracking, incremented each time the virtual shadow update runs.
+gfx/scene3d.amni	var vsm_drawn = 0;	Virtual Shadow Maps	int	Number of pages redrawn in the most recent frame.
+gfx/scene3d.amni	var vsm_live = 0;	Virtual Shadow Maps	int	Number of pages in use by the most recent frame.
+gfx/scene3d.amni	var vsm_missed = 0;	Virtual Shadow Maps	int	Number of needed pages that could not get a slot in the most recent frame.
+gfx/scene3d.amni	var vsm_wide real = 0.0;	Virtual Shadow Maps	int	Extra margin in light-space units from the sun's angular size, widening page marking to cover penumbrae.
+gfx/scene3d.amni	var vsm_blank = false;	Virtual Shadow Maps	int	Test flag that skips marking visible pages so no pages are requested.
+gfx/scene3d.amni	var vsm_fresh = true;	Virtual Shadow Maps	int	Flag that is true until the atlas depth has been cleared for the first time.
+gfx/scene3d.amni	var inst_rev = 0;	Virtual Shadow Maps	int	Revision counter of instance data, mixed into batch hashes to detect changed instances.
+gfx/scene3d.amni	fn vsm_planes(c real[>..]&, o real[>..]&)	Virtual Shadow Maps	int	Builds six inward-facing plane equations from eight box corners and writes them to the output buffer.
+gfx/scene3d.amni	fn vsm_cut(pl real[>..]&)	Virtual Shadow Maps	int	Clips the current polygon against six planes, leaving the result in the polygon scratch buffer.
+gfx/scene3d.amni	fn vsm_paint(k int)	Virtual Shadow Maps	int	Marks every page cell at one level that the current polygon touches, including a margin.
+gfx/scene3d.amni	fn vsm_faces(c real[>..]&, pl real[>..]&, k int)	Virtual Shadow Maps	int	Marks pages at a level touched by the faces of one box clipped against another's planes.
+gfx/scene3d.amni	fn vsm_mix(h int, x int) int	Virtual Shadow Maps	int	Combines a running hash with an integer value and returns the new hash.
+gfx/scene3d.amni	fn vsm_box(b Batch, o real[>..]&)	Virtual Shadow Maps	int	Writes the eight world-space bounding box corners of a batch into the output buffer.
+gfx/scene3d.amni	fn vsm_batch_hash(b Batch) int	Virtual Shadow Maps	int	Returns a hash of a batch's geometry, transform, and instance state that changes when its shadow must be redrawn.
+gfx/scene3d.amni	fn vsm_reset()	Virtual Shadow Maps	int	Empties the page-slot assignments and hashes so every page will be redrawn.
+gfx/scene3d.amni	fn vsm_setup()	Virtual Shadow Maps	int	Prepares virtual shadow map state for the frame, recreating the atlas and recomputing level origins when needed.
+gfx/scene3d.amni	fn vsm_level(d real, s real) int	Virtual Shadow Maps	int	Returns the clip level for a distance and scale, clamped to the valid range.
+gfx/scene3d.amni	fn vsm_cell(sl int) int, int, int, int	Virtual Shadow Maps	int	Returns the level, page coordinates and grid cell index for an atlas slot, with cell minus one when off-grid.
+gfx/scene3d.amni	fn vsm_hit(c int, x0 real, y0 real, x1 real, y1 real) bool	Virtual Shadow Maps	int	Returns whether a batch's light-space bounds overlap the given rectangle.
+gfx/scene3d.amni	fn vsm_marks()	Virtual Shadow Maps	int	Marks all pages needed by visible batches by intersecting their bounds with each view frustum slice.
+gfx/scene3d.amni	fn vsm_update()	Virtual Shadow Maps	int	Updates page assignments, then redraws pages that are new or whose contents changed into the atlas.
+gfx/scene3d.amni	fn vsm_stats() int, int, int	Virtual Shadow Maps	pub	Returns the pages redrawn, pages in use and pages that could not be placed last frame.
+gfx/scene3d.amni	fn vsm_test_blank(on bool)	Virtual Shadow Maps	pub	Sets a test flag that skips marking visible pages so no pages are requested.
+gfx/hair.amni	struct HairU	Hair Rendering	int	Uniform block passed to the hair compute and composite shaders, holding matrices, camera, lighting, and strand look parameters.
+gfx/hair.amni	struct Look	Hair Look	pub	Appearance settings for a groom, such as color, roughness, width, density, scatter, exposure, and ambient lighting.
+gfx/hair.amni	struct Physics	Strand Physics	pub	Simulation settings for a groom, including gravity, stiffness along the strand, damping, and gap limits for collision.
+gfx/hair.amni	struct Groom	Hair Rendering	pub	A loaded hair instance holding its look, physics, placement, strand counts, and GPU buffers.
+gfx/hair.amni	let SIM = 120;	Strand Physics	int	Number of float4 slots reserved per groom in the simulation parameter array.
+gfx/hair.amni	let PARTS = 8;	Strand Physics	int	Maximum number of body parts per groom used as collision solids.
+gfx/hair.amni	let BONES = 64;	Hair Rendering	int	Maximum number of skinning bones a groom can use.
+gfx/hair.amni	let LIGHT = 512;	Hair Rendering	int	Resolution in pixels of the square light-space buffers used for hair shadowing.
+gfx/hair.amni	var grooms Groom[>..] = [];	Hair Rendering	int	Global list of all loaded grooms, indexed by groom handle.
+gfx/hair.amni	var simv float4[>..] = [];	Strand Physics	int	Global array of simulation parameters packed per groom for upload to the GPU.
+gfx/hair.amni	var part_node int[>..] = [];	Strand Physics	int	Per-groom node indices of the body parts used as collision solids.
+gfx/hair.amni	var part_ib gfx::mat4[>..] = [];	Strand Physics	int	Per-groom inverse bind matrices for the collision body parts.
+gfx/hair.amni	var bone_node int[>..] = [];	Hair Rendering	int	Per-groom scene node indices for skinning bones.
+gfx/hair.amni	var bone_rest gfx::mat4[>..] = [];	Hair Rendering	int	Per-groom inverse rest-pose matrices for skinning bones.
+gfx/hair.amni	var mats gfx::mat4[>..] = [];	Hair Rendering	int	Per-groom bone skinning matrices uploaded to the GPU each frame.
+gfx/hair.amni	var probe_v f32[>..] = [];	Strand Physics	int	Per-groom storage for diagnostic values returned by the probe function.
+gfx/hair.amni	var w = 0;	Hair Rendering	int	Current width in pixels of the hair render buffers.
+gfx/hair.amni	var h = 0;	Hair Rendering	int	Current height in pixels of the hair render buffers.
+gfx/hair.amni	var made = false;	Hair Rendering	int	Flag recording whether the shared pipelines have been created.
+gfx/hair.amni	var front gfx::Buffer = default<gfx::Buffer>();	Hair Rendering	int	Screen-sized buffer holding the nearest hair depth per pixel.
+gfx/hair.amni	var acc gfx::Buffer = default<gfx::Buffer>();	Hair Rendering	int	Screen-sized buffer accumulating hair shading per pixel.
+gfx/hair.amni	var hairt gfx::Texture = default<gfx::Texture>();	Hair Rendering	int	Texture holding the resolved hair image composited over the scene.
+gfx/hair.amni	var smp gfx::Sampler = default<gfx::Sampler>();	Hair Rendering	int	Nearest-neighbor clamped sampler used when reading depth and shadow textures.
+gfx/hair.amni	var comp gfx::Pipeline = default<gfx::Pipeline>();	Hair Rendering	int	Pipeline that composites the resolved hair texture onto the HDR target.
+gfx/hair.amni	var clear_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that clears the hair depth and accumulation buffers.
+gfx/hair.amni	var raster_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that rasterizes hair strand segments.
+gfx/hair.amni	var resolve_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that resolves accumulated hair samples into the hair texture.
+gfx/hair.amni	var skin_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that skins strand points by bone matrices.
+gfx/hair.amni	var sim_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that simulates strand physics.
+gfx/hair.amni	var sdf_p gfx::ComputePipeline = default<gfx::ComputePipeline>();	Hair Rendering	int	Compute pipeline that builds signed distance fields of collision bodies.
+gfx/hair.amni	fn mel_of(c float3, bn f32) float2	Hair Rendering	int	Returns eumelanin and pheomelanin amounts approximating a given hair color and spread value.
+gfx/hair.amni	fn ready()	Hair Rendering	int	Creates the shared pipelines and sampler once, doing nothing on later calls.
+gfx/hair.amni	fn size(nw int, nh int)	Hair Rendering	int	Resizes the screen-sized hair buffers and texture, releasing any previous ones.
+gfx/hair.amni	fn f32_at(data const byte[:], at int) f32	Hair Rendering	int	Returns the 32-bit float stored at a byte offset in the data.
+gfx/hair.amni	fn load(data const byte[:], strands int) int	Hair Rendering	pub	Creates a groom from hair data bytes and a strand count, returning its handle or -1 if invalid.
+gfx/hair.amni	fn load_file(path const byte[:], strands int) int	Hair Rendering	pub	Creates a groom from a hair data file, returning its handle or -1 if reading or parsing fails.
+gfx/hair.amni	fn unload(g int)	Hair Rendering	pub	Releases a groom's GPU buffers and disables it, ignoring invalid or already unloaded handles.
+gfx/hair.amni	fn follow(g int, item int, anchor int)	Hair Rendering	pub	Attaches a groom to a scene item and optional anchor node so it tracks the animated model.
+gfx/hair.amni	fn place(g int, m gfx::mat4)	Hair Rendering	pub	Sets a groom's model transform matrix.
+gfx/hair.amni	fn bone(g int, i int) int	Hair Rendering	int	Returns the scene node index of a groom's skinning bone.
+gfx/hair.amni	fn pose(g int, i int, m gfx::mat4)	Hair Rendering	int	Sets a groom's skinning matrix for a bone, ignoring out-of-range indices.
+gfx/hair.amni	fn probe(g int, k int) f32	Strand Physics	pub	Requests diagnostic simulation statistics and returns the stored value at index k, or 0 if out of range.
+gfx/hair.amni	fn skin_joint(sk int, node int) int	Hair Rendering	int	Returns the index of a node within a skin's joint list, or -1 if absent.
+gfx/hair.amni	fn tri_owner(v0 int, v1 int, v2 int) int	Strand Physics	int	Returns the joint with the largest total weight across a triangle's vertices, or -1 if none.
+gfx/hair.amni	fn tri_box_hit(tl const float4[:], k int, lo float3, hi float3) bool	Strand Physics	int	Returns whether a triangle's bounds, expanded by a margin, overlap the given box.
+gfx/hair.amni	fn find_cards(asset int, name const byte[:]) int	Hair Rendering	int	Returns the node of a named mesh made of valid hair card strips, or -1 if none.
+gfx/hair.amni	fn card_data(asset int, n int, anchor int, data byte[>..]&) bool	Hair Rendering	int	Converts a hair card mesh into groom data bytes, returning false if the node has no mesh.
+gfx/hair.amni	fn body(g int, asset int, skin_name const byte[:], joints const byte[:][:], solids const byte[:][:])	Strand Physics	pub	Builds collision solids for a groom from named joints and meshes of a skinned model.
+gfx/hair.amni	fn bake(g int, parts int, all const float4[:], lo const float3[:], hi const float3[:])	Strand Physics	int	Packs collision triangles and grid parameters per body part and allocates distance field buffers for a groom.
+gfx/hair.amni	fn cards(asset int, mesh const byte[:], anchor const byte[:], strands int) int	Hair Rendering	pub	Creates a groom from a named hair card mesh in a model, returning its handle or -1 on failure.
+gfx/hair.amni	fn live(g int) bool	Hair Rendering	int	Returns whether a groom is loaded and visible.
+gfx/hair.amni	fn put(at int, m gfx::mat4)	Strand Physics	int	Writes a matrix into four consecutive simulation parameter slots.
+gfx/hair.amni	fn uniforms_of(g int) HairU	Hair Rendering	int	Builds the shader uniform block for a groom from its look, camera, sun, and lights.
+gfx/hair.amni	fn wipe(u0 HairU, a gfx::Buffer, b gfx::Buffer, mode int, n int)	Hair Rendering	int	Clears a pair of hair buffers on the GPU using a given mode and element count.
+gfx/hair.amni	fn raster(g int, u0 HairU, mode int)	Hair Rendering	int	Dispatches the strand rasterization pass for a groom in a given mode, camera or light view.
+gfx/hair.amni	fn track(g int)	Hair Rendering	int	Updates a groom's model transform and bone matrices from its followed scene item's animation.
+gfx/hair.amni	var raw byte[>..] = [];	Strand Physics	int	Scratch byte array that receives simulation statistics read back from the GPU.
+gfx/hair.amni	var us HairU[>..] = [];	Hair Rendering	int	Scratch array of per-groom uniform blocks built each frame.
+gfx/hair.amni	fn simulate(g int, dt f32)	Strand Physics	int	Runs one physics step for a groom, including skinning, collision field baking, and optional statistics readback.
+gfx/hair.amni	fn draw(dt f32)	Hair Rendering	pub	Simulates and renders all visible grooms over the scene for a frame, taking the time step in seconds.
+gfx/hair.amni	struct Style	Hair Styling	pub	Parameters for generating strands procedurally, such as steps, length, variation, width, droop, curl, and clumps.
+gfx/hair.amni	var rs = 7;	Hair Styling	int	Seed state of the random number generator used for strand generation.
+gfx/hair.amni	fn rnd() f32	Hair Styling	int	Returns the next pseudo-random float in the range from 0 up to but excluding 1.
+gfx/hair.amni	fn fur() Style	Hair Styling	pub	Returns a Style preset for short, fine fur strands.
+gfx/hair.amni	fn roots(pos const float3[:], nrm const float3[:], idx const int[:], lo float3, hi float3, count int, seed int, rp float3[>..]&, rn float3[>..]&) int	Hair Styling	pub	Samples random root positions and normals over area-weighted mesh triangles inside a box, returning the count or 0 if none qualify.
+gfx/hair.amni	fn mesh_soup(node int, pos float3[>..]&, nrm float3[>..]&, idx int[>..]&)	Hair Styling	pub	Appends a mesh node's vertex positions, normals, and indices to the given arrays.
+gfx/hair.amni	fn mesh_roots(node int, lo float3, hi float3, count int, seed int, rp float3[>..]&, rn float3[>..]&) int	Hair Styling	pub	Samples random strand roots and normals on a mesh node within a box, returning the count or 0 if none qualify.
+gfx/hair.amni	fn solid(g int, node int)	Strand Physics	pub	Marks a mesh node as a collision solid for a groom and bakes its distance field.
+gfx/hair.amni	fn groom(rp const float3[:], rn const float3[:], st Style, data byte[>..]&)	Hair Styling	pub	Generates strand data bytes from root positions, normals, and a Style.
+gfx/hair.amni	fn card_mesh(data const byte[:], m gltf::Material) int	Hair Styling	pub	Builds a hair-card mesh from packed strand data and a material, returning the new mesh id, or -1 if the data is invalid.
+gfx/hair.amni	fn points(g int, out byte[>..]&)	Hair Rendering	pub	Reads a groom's simulated strand points back from the GPU into a byte buffer, 48 bytes per point; leaves it untouched if the groom is invalid or off.
+gfx/scene3d.amni	var depth_wanted = false;	Debug Views	int	Flag set when a pass needs the depth buffer kept available for later stages, used only by the renderer's internal frame logic.
+gfx/envmap.amni	var irr_samples int = 2048;	Environment Lighting	pub	Number of samples used when prefiltering the diffuse irradiance cubemap from an environment map; higher values give smoother results but take longer.
+gfx/hair.amni	var grooms Groom[>..];	Strand Physics	int	Module-level list of hair groom records, one per loaded groom.
+gfx/hair.amni	var simv float4[>..];	Strand Physics	int	Packed simulation constants buffer on the CPU side, SIM float4 slots per groom.
+gfx/hair.amni	var part_node int[>..];	Strand Physics	int	Per-groom list of scene node indices for collision body parts.
+gfx/hair.amni	var part_ib gfx::mat4[>..];	Strand Physics	int	Per-groom inverse bind matrices for collision body parts.
+gfx/hair.amni	var bone_node int[>..];	Hair Styling	int	Per-groom list of scene node indices for bones driving the hair.
+gfx/hair.amni	var bone_rest gfx::mat4[>..];	Hair Styling	int	Per-groom inverse world matrices of bone nodes captured at rest pose.
+gfx/hair.amni	var mats gfx::mat4[>..];	Hair Styling	int	Per-groom current bone skinning matrices uploaded to the GPU each frame.
+gfx/hair.amni	var probe_v f32[>..];	Strand Physics	int	Per-groom debug probe values read back from the simulation statistics.
+gfx/hair.amni	var w int = 0;	Hair Rendering	int	Current width in pixels of the hair render buffers.
+gfx/hair.amni	var h int = 0;	Hair Rendering	int	Current height in pixels of the hair render buffers.
+gfx/hair.amni	var made bool = false;	Hair Rendering	int	Flag recording whether the GPU pipelines have been created.
+gfx/hair.amni	var front gfx::Buffer;	Hair Rendering	int	GPU buffer holding the nearest-depth value per screen pixel for hair rasterization.
+gfx/hair.amni	var acc gfx::Buffer;	Hair Rendering	int	GPU buffer accumulating hair fragment colors per screen pixel.
+gfx/hair.amni	var hairt gfx::Texture;	Hair Rendering	int	Texture holding the resolved hair image before compositing onto the scene.
+gfx/hair.amni	var smp gfx::Sampler;	Hair Rendering	int	Nearest-filter clamped sampler used when compute passes read textures.
+gfx/hair.amni	var comp gfx::Pipeline;	Hair Rendering	int	Pipeline that composites the resolved hair texture onto the HDR scene target.
+gfx/hair.amni	var clear_p gfx::ComputePipeline;	Hair Rendering	int	Compute pipeline that clears the hair depth and accumulation buffers.
+gfx/hair.amni	var raster_p gfx::ComputePipeline;	Hair Rendering	int	Compute pipeline that rasterizes hair strand segments into the buffers.
+gfx/hair.amni	var resolve_p gfx::ComputePipeline;	Hair Rendering	int	Compute pipeline that resolves accumulated hair fragments into the final texture.
+gfx/hair.amni	var skin_p gfx::ComputePipeline;	Hair Styling	int	Compute pipeline that skins hair strand points to follow bone motion.
+gfx/hair.amni	var sim_p gfx::ComputePipeline;	Strand Physics	int	Compute pipeline that simulates hair strand dynamics each frame.
+gfx/hair.amni	var sdf_p gfx::ComputePipeline;	Strand Physics	int	Compute pipeline that bakes the collision distance field from body triangles.
+gfx/hair.amni	var raw byte[>..];	Strand Physics	int	Scratch byte buffer for reading back simulation statistics from the GPU.
+gfx/hair.amni	var us HairU[>..];	Hair Rendering	int	Per-groom uniform blocks computed for the current frame's draw.
+gfx/hair.amni	let RW = gfx::BUFFER_COMPUTE_READ | gfx::BUFFER_COMPUTE_WRITE;	Hair Rendering	int	Buffer usage flags allowing compute shaders to read and write.
+gfx/hair.amni	let RD = gfx::BUFFER_COMPUTE_READ;	Hair Rendering	int	Buffer usage flags allowing compute shaders to only read.
+gfx/hair.amni	fn ident() gfx::mat4	Hair Styling	int	Returns an identity 4x4 matrix.
+gfx/hair.amni	fn u32_at(data const byte[:], x int) int	Hair Styling	int	Reads a little-endian 32-bit unsigned integer from groom data at a byte offset.
+gfx/hair.amni	fn f32_at(data const byte[:], x int) f32	Hair Styling	int	Reads a 32-bit float from groom data at a byte offset.
+gfx/hair.amni	fn point_at(data const byte[:], i int) float3	Hair Styling	int	Returns the position of a strand point from groom data by point index.
+gfx/hair.amni	fn bone_count(data const byte[:], e int) int	Hair Styling	int	Returns the bone count stored in groom data, or zero if the format has no bones.
+gfx/hair.amni	fn valid(data const byte[:]) bool	Hair Styling	int	Checks whether groom data has a valid header, sizes and bone count, returning false if not.
+gfx/hair.amni	fn ok_g(g int) bool	Hair Styling	int	Checks whether a groom handle refers to a loaded, active groom.
+gfx/hair.amni	fn card_prim(n int) int	Hair Styling	int	Returns the first primitive index of a mesh node, or -1 if there is none.
+gfx/hair.amni	fn cpos(v int) float3	Hair Styling	int	Returns the position of a card mesh vertex.
+gfx/hair.amni	fn cred(v int) f32	Hair Styling	int	Returns the red vertex color channel of a card vertex, used as occlusion.
+gfx/hair.amni	fn cuv(v int) f32	Hair Styling	int	Returns the vertical texture coordinate of a card vertex.
+gfx/hair.amni	fn ccen(vf int, k int) float3	Hair Styling	int	Returns the center point between a card's left and right vertices at a row.
+gfx/hair.amni	fn card_bones(sk int, hj int, vf int, vc int, bl int[>..]&)	Hair Styling	int	Collects the skin joints influencing a card mesh, excluding the anchor joint, up to 64.
+gfx/hair.amni	fn card_ranges(vf int, pairs int, out int[>..]&)	Hair Styling	int	Finds the vertex row ranges where each card strand starts and ends, based on texture coordinate resets.
+gfx/hair.amni	fn put_f32(data byte[>..]&, v f32)	Hair Styling	int	Appends a 32-bit float to a byte buffer.
+gfx/hair.amni	fn put_i32(data byte[>..]&, v int)	Hair Styling	int	Appends a 32-bit integer to a byte buffer.
+gfx/hair.amni	fn card_point(vf int, a int, e int, k int, data byte[>..]&)	Hair Styling	int	Appends one strand point converted from a card row to a byte buffer.
+gfx/hair.amni	fn pair_bones(vf int, k int, bl const int[:]) int, int, f32, f32	Hair Styling	int	Returns the two strongest bone indices and their weights for a card row.
+gfx/hair.amni	fn put_skin(data byte[>..]&, vf int, k int, bl const int[:])	Hair Styling	int	Appends skinning bone indices and weights for a card row to a byte buffer.
+gfx/hair.amni	fn listed(names const byte[][:], s const byte[:]) bool	Strand Physics	int	Checks whether a name appears in a list of names.
+gfx/hair.amni	fn box_add(lo float3[:], hi float3[:], i int, p float3)	Strand Physics	int	Grows a bounding box to include a point at a given index.
+gfx/hair.amni	fn body(g int, asset int, skin_name const byte[:], joints const byte[][:], solids const byte[][:])	Strand Physics	pub	Sets up body collision for a groom from a skinned mesh, joint names and solid mesh names.
+gfx/hair.amni	fn bake_part(g int, p int, all const float4[:], lo float3, hi float3, tris float4[>..]&, cells int) int	Strand Physics	int	Bakes one body part's collision triangles and distance field grid layout, returning the updated cell count.
+gfx/hair.amni	fn put_uniform(u HairU)	Hair Rendering	int	Uploads a uniform block to the compute stage.
+gfx/hair.amni	fn clear_pass(base HairU, mode int, a gfx::Buffer, b gfx::Buffer, n int)	Hair Rendering	int	Clears a pair of buffers with a compute pass using a mode value.
+gfx/hair.amni	fn raster_pass(g int, mode int)	Hair Rendering	int	Rasterizes a groom's strands into either the camera buffers or the light shadow buffers.
+gfx/hair.amni	fn put_mat(o int, m gfx::mat4)	Hair Styling	int	Random number generator state used for hair style generation, starting at seed 7.
+gfx/hair.amni	var rs int = 7;	Hair Styling	int	Module-level state of the pseudo-random generator that rnd uses when scattering strand roots, seeded to 7.
+gfx/hair.amni	fn roots(pos const f32[:], nrm const f32[:], idx const int[:], lo float3, hi float3, count int, seed int, rp float3[>..]&, rn float3[>..]&) int	Hair Styling	int	Samples random root positions and interpolated normals on triangles inside a bounding box, weighted by area; returns the number generated, or 0 if no triangles qualify.
+gfx/hair.amni	fn mesh_soup(node int, pos f32[>..]&, nrm f32[>..]&, idx int[>..]&)	Hair Styling	int	Flattens a glTF node's mesh primitives into combined position, normal, and index arrays; does nothing for nodes without a mesh.
+gfx/hair.amni	fn strand_k(st Style) int	Hair Styling	int	Returns the number of points per strand, clamping the style's step count between 3 and 32.
+gfx/hair.amni	fn grow(rp const float3[:], rn const float3[:], st Style, k int, pts float3[>..]&, axes float3[>..]&)	Hair Styling	int	Generates strand control points and root axes from root positions and normals, applying length variation, droop, and curl.
+gfx/hair.amni	fn clump(rp const float3[:], st Style, k int, pts float3[>..]&)	Hair Styling	int	Pulls strand points toward the nearest clump leader strand, with the pull increasing toward the strand tips; does nothing when clumping is disabled.
+gfx/hair.amni	fn strand_out(pts const float3[:], axes const float3[:], st Style, k int, fl f32[>..]&, rows i32[>..]&)	Hair Rendering	int	Appends per-point float data and segment index rows for strands, building ribbon sides and normals from tangents using the style's width.
+gfx/scene3d.amni	struct Day	Sky	pub	Describes a time of day and sky settings (hour, date, latitude, haze, clouds, moon) used to drive the sun and sky.
+gfx/scene3d.amni	var day_dir float3 = float3 { 0.0, 0.0, 0.0 };	Sky	int	Holds the sun or moon direction used for the most recent sky bake, for deciding when to rebake.
+gfx/scene3d.amni	var day_key float3 = float3 { -1.0, 0.0, 0.0 };	Sky	int	Holds the power, haze and cloud values of the last sky bake, compared to detect when a rebake is needed.
+gfx/scene3d.amni	var day_bakes = 0;	Sky	int	Counts how many sky bakes time_of_day has performed, with zero meaning none has happened yet.
+gfx/scene3d.amni	fn sun_at(hour f32, day int, latitude f32, north f32) float3	Sky	pub	Returns a unit vector toward the sun for a given hour, day of year, latitude and north offset in degrees.
+gfx/scene3d.amni	fn time_of_day(d Day) bool	Sky	pub	Sets the sun direction and color from a Day and rebakes the sky when needed, returning true if it rebaked.
+gfx/clusters.amni	let MAX_PER = 1023;	Grid Dimensions	pub	Constant giving the maximum number of lights that can be stored for a single cluster cell; extra lights are dropped.
+gfx/clusters.amni	var dropped = 0;	Light Assignment	int	Counter of light-to-cell assignments discarded because a cell was already full, updated during building.
+gfx/clusters.amni	var top = 0;	Light Assignment	int	Internal scratch variable used while assigning lights to cells, with no meaning shown outside the build.
+gfx/scene3d.amni	var test_all_lights = false;	Debug Views	int	Test flag that forces every light to be processed, bypassing the normal light culling, for verifying renderer behavior.
+gfx/scene3d.amni	var test_cluster_range f32 = 1.0;	Debug Views	int	Test scale factor for the light cluster depth range, where 1.0 is the normal setting.
+gfx/fx.amni	struct ArgsU	Mesh Particles	int	Raw uniform struct holding indirect draw arguments for the GPU pipeline, used only by this module's shaders.
+gfx/fx.amni	struct LitU	Lighting	int	Raw uniform struct holding sun direction, sun color and ambient light passed to the mesh shader.
+gfx/fx.amni	let MAXE = 32;	GPU Pipeline	int	Constant for the maximum number of emitters that can be active at once.
+gfx/fx.amni	let EVN = 2048;	GPU Pipeline	int	Constant for the number of event slots in the GPU event buffer.
+gfx/fx.amni	let EVK = 32;	GPU Pipeline	int	Constant for the number of values stored per event in the GPU event buffer.
+gfx/fx.amni	let TP = 9;	Trails	int	Constant for the number of trail points stored per particle in the trail buffer.
+gfx/fx.amni	let MV = 120000;	Mesh Particles	int	Constant for the maximum number of mesh vertex indices that can be stored across all registered meshes.
+gfx/fx.amni	let MS = 8;	Mesh Particles	int	Constant for the maximum number of meshes that can be registered for particle use.
+gfx/fx.amni	var parts gfx::Buffer; var dead gfx::Buffer; var alive gfx::Buffer; var keys gfx::Buffer; var emit_buf gfx::Buffer; var events gfx::Buffer; var trail gfx::Buffer; var mesh_buf gfx::Buffer; var mesh_idx gfx::Buffer; var a	GPU Pipeline	int	Module-level GPU buffers holding particles, free and live lists, sort keys, emitters, events, trails, meshes and draw arguments.
+gfx/fx.amni	var trail_full = false;	Trails	int	Flag set once the trail buffer has been enlarged to hold trails for every particle.
+gfx/fx.amni	var mesh_ready = false;	Mesh Particles	int	Flag set once the mesh vertex buffer has been allocated.
+gfx/fx.amni	var mesh_used = 0;	Mesh Particles	int	Count of mesh vertex indices already used by registered meshes.
+gfx/fx.amni	var mesh_first int[>..] = [];	Mesh Particles	int	List of first-vertex offsets for each registered mesh in the mesh buffer.
+gfx/fx.amni	var mesh_n int[>..] = [];	Mesh Particles	int	List of vertex counts for each registered mesh.
+gfx/fx.amni	var sun_dir float3 = float3 { 0.0, 1.0, 0.0 };	Lighting	int	Direction vector pointing toward the sun, used to light mesh particles.
+gfx/fx.amni	var sun_rgb float3 = float3 { 1.0, 1.0, 1.0 };	Lighting	int	Color of the sun light applied to mesh particles.
+gfx/fx.amni	var ambient float3 = float3 { 0.1, 0.1, 0.1 };	Lighting	int	Ambient light color applied to mesh particles.
+gfx/fx.amni	var p_clear gfx::ComputePipeline; var p_spawn gfx::ComputePipeline; var p_sim gfx::ComputePipeline; var p_sort gfx::ComputePipeline; var p_args gfx::ComputePipeline;	GPU Pipeline	int	Compute pipelines for clearing, spawning, simulating, sorting and building draw arguments.
+gfx/fx.amni	var pipe_add gfx::Pipeline; var pipe_alpha gfx::Pipeline; var pipe_trail_add gfx::Pipeline; var pipe_trail_alpha gfx::Pipeline; var pipe_mesh gfx::Pipeline;	GPU Pipeline	int	Render pipelines for additive and alpha blended particles, their trail variants and mesh particles.
+gfx/fx.amni	var gone bool[>..] = [];	Particle Emitters	int	Per-emitter flags marking slots that were removed and can be reused.
+gfx/fx.amni	var error byte[>..] = [];	Effect Scripts	int	Buffer holding the most recent effect script error message.
+gfx/fx.amni	var bad = false;	Effect Scripts	int	Flag set while parsing when a value is not a valid number.
+gfx/fx.amni	var fx_emits Emitter[>..] = [];	Effect Scripts	int	List of emitter templates from all loaded effect scripts.
+gfx/fx.amni	var fx_burst int[>..] = [];	Effect Scripts	int	List of burst counts for each emitter template in loaded effects.
+gfx/fx.amni	var fx_first int[>..] = [];	Effect Scripts	int	List of indexes of each loaded effect's first emitter template.
+gfx/fx.amni	var fx_n int[>..] = [];	Effect Scripts	int	List of emitter template counts for each loaded effect.
+gfx/fx.amni	var play_slots int[>..] = [];	Effect Scripts	int	List of emitter slots used by all playing effects.
+gfx/fx.amni	var play_first int[>..] = [];	Effect Scripts	int	List of indexes of each playing effect's first emitter slot.
+gfx/fx.amni	var play_n int[>..] = [];	Effect Scripts	int	List of emitter slot counts for each playing effect.
+gfx/fx.amni	fn remove(i int)	Particle Emitters	pub	Removes the emitter in a slot, turning it off and freeing it for reuse; out-of-range indexes are ignored.
+gfx/fx.amni	fn fail(line int, what const byte[:], word const byte[:]) int	Effect Scripts	int	Records a parse error with its line number and message in the error buffer, then returns -1.
+gfx/fx.amni	fn val(t const byte[:]) f32	Effect Scripts	int	Parses text as a number, setting the parse-failure flag when it is invalid, and returns it as a float.
+gfx/fx.amni	fn pick(v const f32[:], k int) f32	Effect Scripts	int	Returns the value at an index from a list, reusing the last value when the index is past the end and 0 when empty.
+gfx/fx.amni	fn named(text const byte[:], name const byte[:]) int	Effect Scripts	int	Returns the position of the named emitter among the emitters in an effect script, or -1 if missing.
+gfx/fx.amni	fn effect(text const byte[:]) int	Effect Scripts	pub	Parses effect script text into a reusable effect and returns its handle, or -1 on error with the message recorded.
+gfx/fx.amni	fn play(effect int, at float3) int	Effect Scripts	pub	Starts a loaded effect at a world position by creating its emitters, returning a play handle or -1 on failure.
+gfx/fx.amni	fn stop(handle int)	Effect Scripts	pub	Stops a playing effect by removing all of its emitters; invalid handles are ignored.
+gfx/fx.amni	fn mesh(pos const f32[:], nrm const f32[:], idx const int[:]) int	Mesh Particles	pub	Registers a mesh from positions, normals and indices for particle use, returning its id or -1 if full or uninitialized.
+gfx/fx.amni	fn spawn_counts(dt f32) int, float4[8]	Particle Emitters	int	Computes how many particles each emitter spawns this frame from rates and bursts, returning the total and per-emitter counts.
+gfx/scene3d.amni	var ripples f32 = 0.0;	Wind	pub	Global strength of rain ripples on wet surfaces, where 0.0 disables them.
+gfx/scene3d.amni	var puddles f32 = 0.0;	Wind	pub	Global amount of standing puddles on surfaces, where 0.0 means none.
+gfx/scene3d.amni	var puddle_size f32 = 1.7;	Wind	pub	Global size scale of puddles, defaulting to 1.7.
+gfx/scene3d.amni	fn handheld(c Camera, t f32, amount f32) Camera	Camera	pub	Returns a copy of a camera with procedural handheld shake applied, using time and amount, or the camera unchanged when amount is zero.
+gfx/scene3d.amni	var ripples f32 = 0.0;	Wetness	pub	Strength of rain ripples on wet surfaces, where 0.0 disables them.
+gfx/scene3d.amni	var puddles f32 = 0.0;	Wetness	pub	Amount of standing puddles on surfaces, where 0.0 means none.
+gfx/scene3d.amni	var puddle_size f32 = 1.7;	Wetness	pub	Size scale of puddles, defaulting to 1.7.
+gfx/scene3d.amni	fn handheld(c Camera, t f32, amount f32) Camera	Camera	pub	Returns a copy of the camera with procedural handheld shake applied, or the camera unchanged when amount is zero.
+gfx/scene3d.amni	var meshlet_grow = true;	Meshlet Culling	pub	Boolean flag controlling whether the meshlet draw budget grows automatically over time; true by default.
+gfx/scene3d.amni	var meshlet_budget_max = 250000000;	Meshlet Culling	pub	Upper limit on the meshlet budget when it grows automatically, set to 250,000,000 by default.
+gfx/scene3d.amni	var ml_tick = 0;	Meshlet Culling	int	Internal frame counter used by the meshlet culling code to track when its budget was last adjusted.
+gfx/scene3d.amni	var ml_seen = 0;	Meshlet Culling	int	Internal count of meshlets seen in the most recent frame, used to decide budget changes.
+gfx/scene3d.amni	fn meshlet_slot(pi int, m gfx::mat4, two bool, quiet bool) int	Meshlet Culling	int	Registers one draw of a primitive's meshlets for GPU culling, returning its slot index, or -1 when meshlets are off, absent, or the draw limit is reached.
+gfx/meshlet.amni	var thin_on = false;	Mesh Simplification	int	Flag enabling thin-feature detection during simplification, false by default.
+gfx/meshlet.amni	var thin_k = 1.0;	Mesh Simplification	int	Scale factor applied to thin-feature detection, defaulting to 1.0.
+gfx/meshlet.amni	var thin_isles = 0;	Mesh Simplification	int	Count of disconnected triangle islands found by the last thin-feature analysis.
+gfx/meshlet.amni	var thin_width = 0.0;	Mesh Simplification	int	Width measurement recorded by the last thin-feature analysis, in mesh units.
+gfx/meshlet.amni	var thin_long = 0.0;	Mesh Simplification	int	Length measurement recorded by the last thin-feature analysis, in mesh units.
+gfx/meshlet.amni	var tmap int[>..];	Mesh Simplification	int	Scratch map from vertex index to local slot, grown on demand by thin analysis.
+gfx/meshlet.amni	fn uf(par int[>..]&, i int) int	Mesh Simplification	int	Finds the root of an element in a union-find parent array, compressing the path along the way.
+gfx/meshlet.amni	fn thin(tris const int[:], pos f32[:], stride int, at int, cap int, out int[>..]&) real	Mesh Simplification	int	Analyzes a triangle set for thin disconnected islands, writing results to out and returning a real score, or -1 when fewer than two islands exist.
+gfx/scene3d.amni	var meshlet_thin f32 = 1.0;	Meshlet Culling	int	Tunable scale factor for thinning thin-triangle meshlets during culling, defaulting to 1.0.
+gfx/scene3d.amni	var cut_keep = true;	Texture Compression	int	Flag that enables preserving alpha-cutout coverage when building mip levels for cutout textures.
+gfx/scene3d.amni	fn cut_of(image int) f32	Texture Compression	int	Returns the alpha cutoff of the first alpha-masked material using the image, or -1 when none or disabled.
+gfx/scene3d.amni	fn cut_share(px const byte[:], cut f32) real	Texture Compression	int	Returns the fraction of pixels whose alpha is at or above the cutoff, in RGBA8 pixel data.
+gfx/scene3d.amni	fn cut_fit(px byte[>..]&, cut f32, want real)	Texture Compression	int	Rescales the alpha channel of a mip level in place so its cutoff coverage matches the wanted share.
+gfx/scene3d.amni	fn cut_chain(t gfx::Texture, image int, srgb bool, cut f32, mips int)	Texture Compression	int	Uploads successive mip levels of a cutout image, halving each and preserving alpha coverage against the cutoff.
