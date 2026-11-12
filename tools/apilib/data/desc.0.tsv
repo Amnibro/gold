@@ -1349,3 +1349,16 @@ gfx/scene3d.amni	fn cut_of(image int) f32	Texture Compression	int	Returns the al
 gfx/scene3d.amni	fn cut_share(px const byte[:], cut f32) real	Texture Compression	int	Returns the fraction of pixels whose alpha is at or above the cutoff, in RGBA8 pixel data.
 gfx/scene3d.amni	fn cut_fit(px byte[>..]&, cut f32, want real)	Texture Compression	int	Rescales the alpha channel of a mip level in place so its cutoff coverage matches the wanted share.
 gfx/scene3d.amni	fn cut_chain(t gfx::Texture, image int, srgb bool, cut f32, mips int)	Texture Compression	int	Uploads successive mip levels of a cutout image, halving each and preserving alpha coverage against the cutoff.
+gfx/hair.amni	fn light_slices(g int, n int)	Hair Rendering	int	Resizes a groom's light-space buffers to hold n slices, doing nothing if the count is unchanged.
+gfx/hair.amni	fn clear_pass(mode int, a gfx::Buffer, b gfx::Buffer, n int, base HairU)	Hair Rendering	int	Clears two compute buffers for a render pass mode, scaling the light-slice setting when the mode is above 1.
+gfx/hair.amni	fn raster_pass(g int, mode int, k int, base HairU)	Hair Rendering	int	Dispatches the strand rasterization compute pass for a groom, using light-space buffers when the mode is above 1.
+gfx/gltf.amni	fn uf_root(up int[>..]&, x int) int	Loading	int	Finds the root of an element in a union-find parent array, compressing paths along the way.
+gfx/gltf.amni	fn sph_row(i int, x real, y real, z real) real	Vertex Layout	int	Returns one coefficient of a sphere-fitting row, twice the coordinate for indices 0 to 2 and 1.0 otherwise.
+gfx/gltf.amni	fn solve4(m real[>..]&, o int) bool	Vertex Layout	int	Solves a 4x4 linear system with an appended right-hand side in place, returning false if singular.
+gfx/gltf.amni	fn dome_normals(asset int, name const byte[:]) int	Vertex Layout	pub	Computes normals for the named mesh's primitives in an asset by merging connected vertices, returning an integer count.
+gfx/hair.amni	fn ell_q(x float3, c float3, sc float3) float3	Hair Styling	int	Maps a point into ellipsoid-normalized space by subtracting the center and dividing by the per-axis scale.
+gfx/hair.amni	fn ell_back(y float3, c float3, sc float3) float3	Hair Styling	int	Maps a point from ellipsoid-normalized space back to world space by scaling per axis and adding the center.
+gfx/hair.amni	fn hq(st Style, x float3) float3	Hair Styling	int	Converts a world-space point into the head's normalized local space by dividing out head position and scale.
+gfx/hair.amni	fn hback(st Style, y float3) float3	Hair Styling	int	Converts a point from the head's normalized local space back into world space using head position and scale.
+gfx/hair.amni	fn dr_of(st Style) f32	Hair Styling	int	Returns the drape shell radius in head-local units, or 0 when the head size or drape is not positive.
+gfx/hair.amni	fn shell(st Style, x float3) float3	Hair Styling	int	Pushes a world-space point outward onto the drape shell when it lies inside it, otherwise returns it unchanged.
