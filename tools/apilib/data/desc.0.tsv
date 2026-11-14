@@ -1362,3 +1362,248 @@ gfx/hair.amni	fn hq(st Style, x float3) float3	Hair Styling	int	Converts a world
 gfx/hair.amni	fn hback(st Style, y float3) float3	Hair Styling	int	Converts a point from the head's normalized local space back into world space using head position and scale.
 gfx/hair.amni	fn dr_of(st Style) f32	Hair Styling	int	Returns the drape shell radius in head-local units, or 0 when the head size or drape is not positive.
 gfx/hair.amni	fn shell(st Style, x float3) float3	Hair Styling	int	Pushes a world-space point outward onto the drape shell when it lies inside it, otherwise returns it unchanged.
+gfx/hair.amni	fn dye_ch(c f32, dy f32, d real) f32	Hair Look	int	Computes one color channel's dye contribution as a scaled squared log of the channel value, used by this module's dye shading.
+gfx/hairdo.amni	let MW = 64;	Hairstyle Grid	int	Width of the head radius map grid in columns, used internally when measuring a head.
+gfx/hairdo.amni	let MH = 32;	Hairstyle Grid	int	Height of the head radius map grid in rows, used internally when measuring a head.
+gfx/hairdo.amni	struct Do	Hairstyles	pub	Parameter set describing one hairstyle preset, including length, curl, bangs, tie style, and strand counts.
+gfx/hairdo.amni	fn STYLES() Do[>..]	Hairstyles	pub	Returns the list of all built-in hairstyle presets.
+gfx/hairdo.amni	struct Shade	Hair Colors	pub	Hair color preset with RGB values, brightness gain, and a flag for dyed shades.
+gfx/hairdo.amni	fn SHADES() Shade[>..]	Hair Colors	pub	Returns the list of all built-in hair color presets.
+gfx/hairdo.amni	var ok bool = false;	Hairstyle Grid	int	Flag set when a head has been measured successfully and hair can be grown.
+gfx/hairdo.amni	var ctr float3 = float3 { 0.0, 0.0, 0.0 };	Hairstyle Grid	int	Center point of the measured head sphere in model space.
+gfx/hairdo.amni	var unit f32 = 0.1;	Hairstyle Grid	int	Measured head size unit used to scale all hair dimensions.
+gfx/hairdo.amni	var top f32 = 0.0;	Hairstyle Grid	int	Height of the top of the measured head.
+gfx/hairdo.amni	var map f32[>..];	Hairstyle Grid	int	Grid of head radii sampled by direction around the head center.
+gfx/hairdo.amni	var sol float3[>..];	Hairstyle Grid	int	Solid ellipsoid colliders, such as neck and shoulders, that hair is pushed out of.
+gfx/hairdo.amni	fn count() int	Hairstyles	pub	Returns the number of built-in hairstyle presets.
+gfx/hairdo.amni	fn tones() int	Hair Colors	pub	Returns the number of built-in hair color presets.
+gfx/hairdo.amni	fn name_of(i int) const byte[:]	Hairstyles	pub	Returns the name of the hairstyle at an index, or an empty string if out of range.
+gfx/hairdo.amni	fn tone_name(i int) const byte[:]	Hair Colors	pub	Returns the name of the hair color at an index, or an empty string if out of range.
+gfx/hairdo.amni	fn find(name const byte[:]) int	Hairstyles	pub	Returns the index of the hairstyle with the given name, or -1 if none matches.
+gfx/hairdo.amni	fn style(name const byte[:]) Do	Hairstyles	pub	Returns the hairstyle preset with the given name, or the first preset if not found.
+gfx/hairdo.amni	fn tone(name const byte[:]) Shade	Hair Colors	pub	Returns the hair color preset with the given name, or brown if not found.
+gfx/hairdo.amni	fn length3(v float3) f32	Hairstyle Grid	int	Returns the length of a 3D vector.
+gfx/hairdo.amni	fn unit3(v float3) float3	Hairstyle Grid	int	Returns the vector scaled to unit length.
+gfx/hairdo.amni	fn dot3(a float3, b float3) f32	Hairstyle Grid	int	Returns the dot product of two 3D vectors.
+gfx/hairdo.amni	fn cross3(a float3, b float3) float3	Hairstyle Grid	int	Returns the cross product of two 3D vectors.
+gfx/hairdo.amni	fn ss(a f32, b f32, x f32) f32	Hairstyle Grid	int	Returns a smooth Hermite interpolation of x between edges a and b, clamped to 0 through 1.
+gfx/hairdo.amni	fn mix(a f32, b f32, t f32) f32	Hairstyle Grid	int	Returns the linear interpolation between a and b by t.
+gfx/hairdo.amni	fn hsqrt(x f32) f32	Hairstyle Grid	int	Returns the square root of a single-precision value.
+gfx/hairdo.amni	fn hsin(x f32) f32	Hairstyle Grid	int	Returns the sine of a single-precision angle in radians.
+gfx/hairdo.amni	fn hcos(x f32) f32	Hairstyle Grid	int	Returns the cosine of a single-precision angle in radians.
+gfx/hairdo.amni	fn asin_r(x real) real	Hairstyle Grid	int	Returns the arcsine of a value using an arctangent formulation.
+gfx/hairdo.amni	fn hacos(x f32) f32	Hairstyle Grid	int	Returns the arccosine of a single-precision value, in radians.
+gfx/hairdo.amni	fn ceil_i(x f32) int	Hairstyle Grid	int	Returns the smallest integer not less than a single-precision value.
+gfx/hairdo.amni	fn floor_i(x f32) int	Hairstyle Grid	int	Returns the largest integer not greater than a single-precision value.
+gfx/hairdo.amni	fn radius(d float3) f32	Hairstyle Grid	int	Returns the interpolated head radius in the given direction from the head center.
+gfx/hairdo.amni	fn skin(d float3) float3	Hairstyle Grid	int	Returns the point on the head surface in the given direction.
+gfx/hairdo.amni	fn keep(p float3, gap f32) float3	Hairstyle Grid	int	Returns a point pushed outside the head and body colliders, keeping at least the given gap.
+gfx/hairdo.amni	fn line(d float3) f32	Hairstyle Grid	int	Returns the hairline height for a direction, interpolated from a fixed profile of the head.
+gfx/hairdo.amni	fn scalp(d float3) f32	Hairstyle Grid	int	Returns a 0 to 1 weight for how much a direction lies on the scalp below the hairline.
+gfx/hairdo.amni	fn under(node int, head int) bool	Hairstyle Grid	int	Returns whether a node is the head node or one of its descendants.
+gfx/hairdo.amni	fn fill_map()	Hairstyle Grid	int	Fills empty cells of the head radius map from neighbors and smooths the result.
+gfx/hairdo.amni	fn vpos(v int) float3	Hairstyle Grid	int	Returns the position of a vertex from the loaded model vertex data.
+gfx/hairdo.amni	fn measure(asset int, joint const byte[:], meshes const byte[][:]) bool	Hairstyle Grid	int	Measures the head of a model asset, building the radius map and colliders, and returns false if no head geometry is found.
+gfx/hairdo.amni	fn ball(center float3, r f32)	Hairstyle Grid	pub	Sets the head to a plain sphere of the given center and radius instead of measuring a model.
+gfx/hairdo.amni	fn hs(a int, b int, c int, s int) f32	Hairstyle Strands	int	Returns a pseudo-random value from 0 to 1 hashed from four integers.
+gfx/hairdo.amni	fn vn(p float3, s int) f32	Hairstyle Strands	int	Returns smooth 3D value noise between 0 and 1 for a point and seed.
+gfx/hairdo.amni	fn resample(path const float3[:], k int, out float3[>..]&)	Hairstyle Strands	int	Resamples a polyline path into evenly spaced points along its length.
+gfx/hairdo.amni	fn tie_dir(st Do, x f32) float3	Hairstyle Strands	int	Returns the direction from the head center toward the hair tie point for a side.
+gfx/hairdo.amni	fn tie_at(st Do, x f32) float3	Hairstyle Strands	int	Returns the hair tie position on the head for the given side.
+gfx/hairdo.amni	fn tail_line(st Do, x f32, out float3[>..]&)	Hairstyle Strands	int	Builds the centerline of a ponytail or tail hanging from the tie point.
+gfx/hairdo.amni	fn comb_dir(cm int, st Do, e float3, s f32) float3	Hairstyle Strands	int	Returns the combing direction for loose hair based on the style's comb mode.
+gfx/hairdo.amni	fn loose(st Do, d float3, fr bool, s f32, lay f32, lv f32, path float3[>..]&) f32	Hairstyle Strands	int	Builds the path of a loose strand and returns its length in head units.
+gfx/hairdo.amni	fn tied(st Do, d float3, lay f32, lv f32, ph f32, line_pts const float3[:], path float3[>..]&) f32, f32	Hairstyle Strands	int	Builds the path of a tied-back strand and returns its total length and its length up to the tie.
+gfx/hairdo.amni	fn dir_at(az f32, y f32) float3	Hairstyle Strands	int	Returns the unit direction for an azimuth angle and a height value.
+gfx/hairdo.amni	fn make_roots(st Do, out float3[>..]&)	Hairstyle Strands	int	Generates strand root directions over the scalp, scaled to the style's guide count.
+gfx/hairdo.amni	var s_axes float3[>..];	Hairstyle Strands	int	Working array of root direction axes for each strand.
+gfx/hairdo.amni	var s_root float3[>..];	Hairstyle Strands	int	Working array of root positions for each strand.
+gfx/hairdo.amni	var s_whole f32[>..];	Hairstyle Strands	int	Working array of total strand lengths.
+gfx/hairdo.amni	var s_head f32[>..];	Hairstyle Strands	int	Working array of strand lengths from root to tie point.
+gfx/hairdo.amni	var s_grp int[>..];	Hairstyle Strands	int	Working array of group ids for each strand, such as left, right, or fringe.
+gfx/hairdo.amni	var s_lay f32[>..];	Hairstyle Strands	int	Working array of random layer values for each strand.
+gfx/hairdo.amni	var s_pts float3[>..];	Hairstyle Strands	int	Working array of resampled strand points.
+gfx/hairdo.amni	fn make_strands(st Do, roots const float3[:], k int)	Hairstyle Strands	int	Builds strand paths for all roots and stores them resampled to the given point count.
+gfx/hairdo.amni	var s_lead int[>..];	Hairstyle Strands	int	Working array of the leader strand index for each strand.
+gfx/hairdo.amni	fn make_leaders(st Do)	Hairstyle Strands	int	Chooses a nearby leader strand in the same group for each strand.
+gfx/hairdo.amni	var s_out float3[>..];	Hairstyle Strands	int	Working array of final shaped strand points after waves, curls, and clumping.
+gfx/hairdo.amni	fn shape_all(st Do, k int)	Hairstyle Strands	int	Applies waves, curls, clumping, and collision to all strands.
+gfx/hairdo.amni	fn grow(st Do, seed int, data byte[>..]&) int	Hairstyle Strands	int	Generates hair strand data for a style into a byte buffer and returns the strand count, or 0 on failure.
+gfx/hairdo.amni	fn wear(item int, joint const byte[:], meshes const byte[][:], name const byte[:], shade const byte[:], seed int) int	Hairstyles	pub	Grows hair of a named style and color on a model's head joint and returns the groom handle, or -1 on failure.
+gfx/hairdo.amni	fn visible(ni int, meshes const byte[][:]) bool	Hairstyle Strands	int	Checks whether a glTF node has a mesh that is listed in the given mesh names, so it counts toward measurement.
+gfx/hairdo.amni	fn band(pts const float3[:], cx f32, ylo f32, yhi f32) bool, f32, f32, f32	Hairstyle Strands	int	Finds vertices within a vertical band, returning whether any were found plus the half-width in x and the z extent.
+gfx/hairdo.amni	var s_axis float3[>..];	Hairstyle Strands	int	Per-strand root direction axes produced when building strands from roots.
+gfx/hairdo.amni	var s_len f32[>..];	Hairstyle Strands	int	Per-strand total path lengths, measured in head units, produced when building strands.
+gfx/hairdo.amni	var s_k int = 4;	Hairstyle Strands	int	Number of points stored per strand, clamped between 4 and 32 when strands are built.
+gfx/hairdo.amni	fn make_strands(st Do, roots const float3[:])	Hairstyle Strands	int	Builds strand point paths, groups, lengths and layers for each root direction according to the hairstyle settings.
+gfx/hairdo.amni	var s_sh float3[>..];	Hairstyle Strands	int	Per-strand shaped point positions, filled by the shaping pass after strands are built.
+gfx/hairdo.amni	fn shape(st Do)	Hairstyle Strands	int	Shapes strands by applying waves, curls and clumping offsets to the base strand points using each strand's leader.
+gfx/hair.amni	let CAST = 128;	Hair Rendering	int	Constant giving the resolution in pixels of the square light-space buffers used for casting hair shadows or lighting.
+gfx/hair.amni	var kept_vp gfx::mat4[>..];	Hair Rendering	int	Module-level list of saved view-projection matrices kept for the hair light passes.
+gfx/hair.amni	var kept_x float4[>..];	Hair Rendering	int	Module-level list of saved float4 values kept alongside the stored matrices for light passes.
+gfx/hair.amni	var detail f32 = 2.0;	Hair Rendering	pub	Level-of-detail setting for camera rendering that scales how many strands are drawn; larger values draw more.
+gfx/hair.amni	var light_detail f32 = 1.0;	Hair Rendering	pub	Level-of-detail setting for light-space passes that scales how many strands are drawn; larger values draw more.
+gfx/hair.amni	var light_turns bool = true;	Hair Rendering	pub	Flag controlling whether hair light and shadow buffers are updated by rotating through lights across frames.
+gfx/hair.amni	var cast_p gfx::ComputePipeline;	Hair Rendering	int	Compute pipeline used internally for the strand casting pass.
+gfx/hair.amni	fn lod_of(g int, ppm f32, per f32) f32	Hair Rendering	int	Returns a strand level-of-detail fraction for a groom from pixels per meter and a detail factor, clamped between one strand and all.
+gfx/hair.amni	fn clear_pass(base HairU, mode int, a gfx::Buffer, b gfx::Buffer, n int, s int)	Hair Rendering	int	Dispatches a compute pass that clears the given hair buffers for a chosen mode.
+gfx/hair.amni	fn cast_pass(g int, k int, at int)	Hair Shadows	int	Dispatches the compute pass that accumulates one light slice of a groom's shadow-casting data into its light buffers.
+gfx/hair.amni	fn cast_all()	Hair Shadows	int	Gathers up to four live grooms with shadow casting enabled and uploads their light-slice matrices for the cast pass.
+gfx/scene3d.amni	let CAST_REC = 4096;	Shadows	int	Capacity constant for the cast record buffer, set to 4096 entries.
+gfx/scene3d.amni	var cast_want = 0;	Shadows	int	Module-level counter holding the number of cast records requested for the current frame.
+gfx/scene3d.amni	var cast_at = 0;	Shadows	int	Module-level counter holding the current write position within the cast records.
+gfx/scene3d.amni	var cast_room = 0;	Shadows	int	Module-level counter holding the remaining space available for cast records.
+gfx/scene3d.amni	var cast_frame = -9;	Shadows	int	Frame number when cast records were last written, initialized to a sentinel before any frame.
+gfx/scene3d.amni	var cast_gen = 0;	Shadows	int	Module-level generation counter for the cast records.
+gfx/scene3d.amni	fn cast_live() f32	Shadows	int	Returns the current cast record count as a float if written within the last frame, otherwise zero.
+gfx/scene3d.amni	var rect_detail = 3;	Area Lights	int	Test control that sets the level of detail used when evaluating rectangular area lights, intended for tests rather than normal rendering.
+json.he	struct Doc { raw bool	Document Tree	pub	Holds a parsed JSON document as a flat node list plus a byte pool for strings and keys, with a raw flag.
+std.he	P5 := [0xeef453d6923bd65a, 0x113faa2906a13b3f, 0x9558b4661b6565f8, 0x4ac7ca59a424c507, 0xbaaee17fa23ebf76, 0x5d79bcf00d2df649, 0xe95a99df8ace6f53, 0xf4d82c2c107973dc, 0x91d8a02bb6c10594, 0x79071b9b8a4be869, 0xb64ec836a47	Real Parsing	int	Lookup table of 128-bit powers of five used by the Eisel-Lemire algorithm for correctly rounded decimal-to-real conversion.
+std.he	mul128(a uint, b uint) uint, uint	Real Parsing	int	Multiplies two unsigned 64-bit values and returns the low and high halves of the 128-bit product.
+std.he	lemire(q int, w0 uint) uint, int	Real Parsing	int	Converts a decimal mantissa and power-of-ten exponent into real bits, returning a zero mantissa with exponent -1 when the fast path cannot decide.
+std.he	parse_flt_big(s byte[:]) real, bool	Real Parsing	pub	Parses a decimal, "inf" or "nan" with optional sign and exponent into a real, returning false if malformed.
+tiles/libm.he	TWO24 := 16777216.0	Scaling	int	Constant 2^24 as a real, used to split values into 24-bit chunks.
+tiles/libm.he	TWOM24 := 5.9604644775390625e-8	Scaling	int	Constant 2^-24 as a real, used to split values into 24-bit chunks.
+tiles/libm.he	pow2(e int) real	Scaling	int	Returns 2 raised to the integer power e by building the exponent bits directly.
+tiles/libm.he	TWOM120 := pow2(-120)	Scaling	int	Constant 2^-120, a tiny value used to raise the inexact flag in edge-case results.
+tiles/libm.he	hw(x real) int	Float Bits	int	Returns the high 32 bits of a real's IEEE 754 representation as an int.
+tiles/libm.he	lw(x real) int	Float Bits	int	Returns the low 32 bits of a real's IEEE 754 representation as an int.
+tiles/libm.he	hs(x real) int	Float Bits	int	Returns the high 32 bits of a real as a signed 32-bit value.
+tiles/libm.he	neg_bit(x real) bool	Float Bits	int	Returns whether the sign bit of a real is set, including for negative zero.
+tiles/libm.he	mk(h int, l int) real	Float Bits	int	Builds a real from separate high and low 32-bit words.
+tiles/libm.he	with_hi(x real, h int) real	Float Bits	int	Returns x with its high 32-bit word replaced by h.
+tiles/libm.he	with_lo0(x real) real	Float Bits	int	Returns x with its low 32-bit word cleared to zero.
+tiles/libm.he	hi_only(h int) real	Float Bits	int	Builds a real from a high word with a zero low word.
+tiles/libm.he	TWO1023 := pow2(1023)	Scaling	int	Constant 2^1023, used to scale values up in steps.
+tiles/libm.he	TWOM969 := 2.2250738585072014e-308 * 9007199254740992.0	Scaling	int	Constant 2^-969 computed as the smallest normal times 2^53, used to scale values down in steps.
+tiles/libm.he	scalbn(x real, n int) real	Scaling	pub	Returns x multiplied by 2 raised to the integer n, clamping extreme exponents.
+tiles/libm.he	rem_large(xs const real[:], e0 int) int, real, real	Range Reduction	int	Reduces a large-argument chunk array by pi/2, returning the quadrant (0-7) and a two-part remainder.
+tiles/libm.he	EPS := 2.2204460492503131e-16	Range Reduction	int	Constant machine epsilon for doubles, 2^-52.
+tiles/libm.he	TO_INT := 1.5 / EPS	Range Reduction	int	Constant magic number used to round a real to an integer through addition.
+tiles/libm.he	INV_PIO2 := 6.36619772367581382433e-01	Range Reduction	int	Constant 2/pi, used to estimate the multiple of pi/2.
+tiles/libm.he	PIO2_1 := 1.57079632673412561417e+00	Range Reduction	int	Constant leading 33 bits of pi/2 for argument reduction.
+tiles/libm.he	PIO2_1T := 6.07710050650619224932e-11	Range Reduction	int	Constant tail of pi/2 following the first 33-bit part.
+tiles/libm.he	PIO2_2 := 6.07710050630396597660e-11	Range Reduction	int	Constant second 33-bit part of pi/2 for argument reduction.
+tiles/libm.he	PIO2_2T := 2.02226624879595063154e-21	Range Reduction	int	Constant tail of pi/2 following the second 33-bit part.
+tiles/libm.he	PIO2_3 := 2.02226624871116645580e-21	Range Reduction	int	Constant third 33-bit part of pi/2 for argument reduction.
+tiles/libm.he	PIO2_3T := 8.47842766036889956997e-32	Range Reduction	int	Constant tail of pi/2 following the third 33-bit part.
+tiles/libm.he	rp_ey(y real) int	Range Reduction	int	Returns the biased exponent field of a real.
+tiles/libm.he	rp_medium(x real, ix int) int, real, real	Range Reduction	int	Reduces a medium-size argument by pi/2, returning the quadrant count and a two-part remainder.
+tiles/libm.he	rp_step(x real, k int) int, real, real	Range Reduction	int	Reduces an argument by k multiples of pi/2, returning the signed count and two-part remainder.
+tiles/libm.he	rem_pio2(x real) int, real, real	Range Reduction	int	Reduces x modulo pi/2, returning the quadrant count and a two-part remainder; NaN results for infinities.
+tiles/libm.he	S1 := -1.66666666666666324348e-01	Trigonometry	int	Constant first sine polynomial coefficient, about -1/6.
+tiles/libm.he	S2 := 8.33333333332248946124e-03	Trigonometry	int	Constant second sine polynomial coefficient.
+tiles/libm.he	S3 := -1.98412698298579493134e-04	Trigonometry	int	Constant third sine polynomial coefficient.
+tiles/libm.he	S4 := 2.75573137070700676789e-06	Trigonometry	int	Constant fourth sine polynomial coefficient.
+tiles/libm.he	S5 := -2.50507602534068634195e-08	Trigonometry	int	Constant fifth sine polynomial coefficient.
+tiles/libm.he	S6 := 1.58969099521155010221e-10	Trigonometry	int	Constant sixth sine polynomial coefficient.
+tiles/libm.he	k_sin(x real, y real, iy int) real	Trigonometry	int	Computes sine on a reduced range of about pi/4, with a tail term used when iy is nonzero.
+tiles/libm.he	C1 := 4.16666666666666019037e-02	Trigonometry	int	Constant first cosine polynomial coefficient, about 1/24.
+tiles/libm.he	C2 := -1.38888888888741095749e-03	Trigonometry	int	Constant second cosine polynomial coefficient.
+tiles/libm.he	C3 := 2.48015872894767294178e-05	Trigonometry	int	Constant third cosine polynomial coefficient.
+tiles/libm.he	C4 := -2.75573143513906633035e-07	Trigonometry	int	Constant fourth cosine polynomial coefficient.
+tiles/libm.he	C5 := 2.08757232129817482790e-09	Trigonometry	int	Constant fifth cosine polynomial coefficient.
+tiles/libm.he	C6 := -1.13596475577881948265e-11	Trigonometry	int	Constant sixth cosine polynomial coefficient.
+tiles/libm.he	k_cos(x real, y real) real	Trigonometry	int	Computes cosine on a reduced range of about pi/4 using a two-part argument.
+tiles/libm.he	PIO4 := 7.85398163397448278999e-01	Trigonometry	int	Constant pi/4 used by the tangent kernel.
+tiles/libm.he	PIO4_LO := 3.06161699786838301793e-17	Trigonometry	int	Constant low-order correction term for pi/4.
+tiles/libm.he	k_tan(x0 real, y0 real, odd int) real	Trigonometry	int	Computes tangent, or its negative reciprocal when odd is nonzero, on a reduced range.
+tiles/libm.he	sin(x real) real	Trigonometry	pub	Returns the sine of x in radians; NaN for infinite input.
+tiles/libm.he	cos(x real) real	Trigonometry	pub	Returns the cosine of x in radians; NaN for infinite input.
+tiles/libm.he	tan(x real) real	Trigonometry	pub	Returns the tangent of x in radians; NaN for infinite input.
+tiles/libm.he	atan(x0 real) real	Inverse Trigonometry	pub	Returns the arctangent of x in radians, in the range -pi/2 to pi/2.
+tiles/libm.he	A2_PI := 3.1415926535897931160E+00	Inverse Trigonometry	int	Constant pi as a double used by atan2.
+tiles/libm.he	A2_PI_LO := 1.2246467991473531772E-16	Inverse Trigonometry	int	Constant low-order correction term for pi used by atan2.
+tiles/libm.he	atan2(y real, x real) real	Inverse Trigonometry	pub	Returns the angle in radians of the point (x, y), using both signs to pick the quadrant.
+tiles/libm.he	PIO2_HI := 1.57079632679489655800e+00	Inverse Trigonometry	int	Constant high part of pi/2 used by asin and acos.
+tiles/libm.he	PIO2_LO := 6.12323399573676603587e-17	Inverse Trigonometry	int	Constant low-order correction term for pi/2.
+tiles/libm.he	PS0 := 1.66666666666666657415e-01	Inverse Trigonometry	int	Constant numerator coefficient 0 of the asin rational approximation.
+tiles/libm.he	PS1 := -3.25565818622400915405e-01	Inverse Trigonometry	int	Constant numerator coefficient 1 of the asin rational approximation.
+tiles/libm.he	PS2 := 2.01212532134862925881e-01	Inverse Trigonometry	int	Constant numerator coefficient 2 of the asin rational approximation.
+tiles/libm.he	PS3 := -4.00555345006794114027e-02	Inverse Trigonometry	int	Constant numerator coefficient 3 of the asin rational approximation.
+tiles/libm.he	PS4 := 7.91534994289814532176e-04	Inverse Trigonometry	int	Constant numerator coefficient 4 of the asin rational approximation.
+tiles/libm.he	PS5 := 3.47933107596021167570e-05	Inverse Trigonometry	int	Constant numerator coefficient 5 of the asin rational approximation.
+tiles/libm.he	QS1 := -2.40339491173441421878e+00	Inverse Trigonometry	int	Constant denominator coefficient 1 of the asin rational approximation.
+tiles/libm.he	QS2 := 2.02094576023350569471e+00	Inverse Trigonometry	int	Constant denominator coefficient 2 of the asin rational approximation.
+tiles/libm.he	QS3 := -6.88283971605453293030e-01	Inverse Trigonometry	int	Constant denominator coefficient 3 of the asin rational approximation.
+tiles/libm.he	QS4 := 7.70381505559019352791e-02	Inverse Trigonometry	int	Constant denominator coefficient 4 of the asin rational approximation.
+tiles/libm.he	ras_r(z real) real	Inverse Trigonometry	int	Evaluates the rational approximation shared by asin and acos at z.
+tiles/libm.he	asin(x real) real	Inverse Trigonometry	pub	Returns the arcsine of x in radians; NaN when the magnitude of x exceeds 1.
+tiles/libm.he	acos(x real) real	Inverse Trigonometry	pub	Returns the arccosine of x in radians; NaN when the magnitude of x exceeds 1.
+tiles/libm.he	HY_M96 := pow2(-96)	Hypotenuse	int	Constant 2^-96, used as an error margin in the fast hypot check.
+tiles/libm.he	hy_up(r real) real	Hypotenuse	int	Returns the gap from r to the next larger double.
+tiles/libm.he	hy_dn(r real) real	Hypotenuse	int	Returns the gap from r to the next smaller double.
+tiles/libm.he	hypot(x real, y real) real	Hypotenuse	pub	Returns the square root of x squared plus y squared without intermediate overflow, correctly rounded.
+tiles/libm.he	HC_M49 := pow2(-49)	Hypotenuse	int	Constant 2^-49, a relative error threshold in the exact hypot fallback.
+tiles/libm.he	HC_M99 := pow2(-99)	Hypotenuse	int	Constant 2^-99, a relative threshold for accepting a computed sign.
+tiles/libm.he	HC_M900 := pow2(-900)	Hypotenuse	int	Constant 2^-900, a minimum magnitude for trusting error sums.
+tiles/libm.he	HC_M1022 := pow2(-1022)	Hypotenuse	int	Constant 2^-1022, the smallest normal double, used to detect subnormal results.
+tiles/libm.he	HC_M374 := pow2(-374)	Hypotenuse	int	Constant 2^-374, used as the rounding step for subnormal results.
+tiles/libm.he	HC_P700 := pow2(700)	Hypotenuse	int	Constant 2^700, a scale factor for tiny inputs.
+tiles/libm.he	HC_M700 := pow2(-700)	Hypotenuse	int	Constant 2^-700, a scale factor for huge inputs.
+tiles/libm.he	hy_sq(v real) real, real	Hypotenuse	int	Squares v exactly, returning the high and low parts of the product.
+tiles/libm.he	exact_sign(terms const real[:]) int	Hypotenuse	int	Returns the exact sign (-1, 0 or 1) of the sum of the given terms.
+tiles/libm.he	fs_add(st real[:], t real)	Hypotenuse	int	Adds t to a running sum state, accumulating rounding error and absolute magnitude.
+tiles/libm.he	fs_end(s real, c real, a real, t7 real, t8 real) int	Hypotenuse	int	Finishes a running sum with two more terms, returning its sign or 2 when undecided.
+tiles/libm.he	hypot_cr(x0 real, y0 real) real	Hypotenuse	int	Computes a correctly rounded hypotenuse of x0 and y0, handling infinities, scaling and subnormals.
+tiles/libm.he	TWO53 := 9007199254740992.0	Exponentiation	int	Constant 2^53 as a real, used by the power function.
+tiles/libm.he	HUGE := 1.0e300	Exponentiation	int	Constant 1e300, used to force overflow in the power function.
+tiles/libm.he	TINY := 1.0e-300	Exponentiation	int	Constant 1e-300, used to force underflow in the power function.
+tiles/libm.he	L1 := 5.99999999999994648725e-01	Exponentiation	int	Constant first coefficient of the logarithm polynomial used by pow.
+tiles/libm.he	L2 := 4.28571428578550184252e-01	Exponentiation	int	Constant second coefficient of the logarithm polynomial used by pow.
+tiles/libm.he	L3 := 3.33333329818377432918e-01	Exponentiation	int	Constant third coefficient of the logarithm polynomial used by pow.
+tiles/libm.he	L4 := 2.72728123808534006489e-01	Logarithm Coefficients	int	Polynomial coefficient used internally by the logarithm approximation in pow; not called directly.
+tiles/libm.he	L5 := 2.30660745775561754067e-01	Logarithm Coefficients	int	Polynomial coefficient used internally by the logarithm approximation in pow; not called directly.
+tiles/libm.he	L6 := 2.06975017800338417784e-01	Logarithm Coefficients	int	Polynomial coefficient used internally by the logarithm approximation in pow; not called directly.
+tiles/libm.he	P1 := 1.66666666666666019037e-01	Exponentiation	int	Polynomial coefficient used internally by pow when computing the exponential of the reduced result.
+tiles/libm.he	P2 := -2.77777777770155933842e-03	Exponentiation	int	Polynomial coefficient used internally by pow when computing the exponential of the reduced result.
+tiles/libm.he	P3 := 6.61375632143793436117e-05	Exponentiation	int	Polynomial coefficient used internally by pow when computing the exponential of the reduced result.
+tiles/libm.he	P4 := -1.65339022054652515390e-06	Exponentiation	int	Polynomial coefficient used internally by pow when computing the exponential of the reduced result.
+tiles/libm.he	P5 := 4.13813679705723846039e-08	Exponentiation	int	Polynomial coefficient used internally by pow when computing the exponential of the reduced result.
+tiles/libm.he	PW_LG2 := 6.93147180559945286227e-01	Exponentiation	int	Constant equal to the natural logarithm of 2, used internally by pow.
+tiles/libm.he	PW_LG2_H := 6.93147182464599609375e-01	Exponentiation	int	Constant holding the high-order part of ln 2, used internally by pow for extra precision.
+tiles/libm.he	PW_LG2_L := -1.90465429995776804525e-09	Exponentiation	int	Constant holding the low-order correction of ln 2, used internally by pow for extra precision.
+tiles/libm.he	OVT := 8.0085662595372944372e-17	Exponentiation	int	Overflow threshold constant used internally by pow to detect results that exceed the largest finite value.
+tiles/libm.he	CP := 9.61796693925975554329e-01	Exponentiation	int	Constant used internally by pow in the log2 computation of the base.
+tiles/libm.he	CP_H := 9.61796700954437255859e-01	Exponentiation	int	Constant holding the high-order part of CP, used internally by pow for extra precision.
+tiles/libm.he	CP_L := -7.02846165095275826516e-09	Exponentiation	int	Constant holding the low-order correction of CP, used internally by pow for extra precision.
+tiles/libm.he	IVLN2 := 1.44269504088896338700e+00	Exponentiation	int	Constant equal to 1/ln 2, used internally by pow.
+tiles/libm.he	IVLN2_H := 1.44269502162933349609e+00	Exponentiation	int	Constant holding the high-order part of 1/ln 2, used internally by pow for extra precision.
+tiles/libm.he	IVLN2_L := 1.92596299112661746887e-08	Exponentiation	int	Constant holding the low-order correction of 1/ln 2, used internally by pow for extra precision.
+tiles/libm.he	pow(x real, y real) real	Exponentiation	pub	Returns x raised to the power y, handling special cases such as NaN, infinities, zero, and negative bases.
+tiles/libm.he	IVLN2HI := 1.44269504072144627571e+00	Logarithms	int	Constant holding the high-order part of 1/ln 2, used internally by log2 for extra precision.
+tiles/libm.he	IVLN2LO := 1.67517131648865118353e-10	Logarithms	int	Constant holding the low-order correction of 1/ln 2, used internally by log2 for extra precision.
+tiles/libm.he	IVLN10HI := 4.34294481878168880939e-01	Logarithms	int	Constant holding the high-order part of 1/ln 10, used internally by log10 for extra precision.
+tiles/libm.he	IVLN10LO := 2.50829467116452752298e-11	Logarithms	int	Constant holding the low-order correction of 1/ln 10, used internally by log10 for extra precision.
+tiles/libm.he	LOG10_2HI := 3.01029995663611771306e-01	Logarithms	int	Constant holding the high-order part of log10 of 2, used internally by log10 for extra precision.
+tiles/libm.he	LOG10_2LO := 3.69423907715893078616e-13	Logarithms	int	Constant holding the low-order correction of log10 of 2, used internally by log10 for extra precision.
+tiles/libm.he	LG1 := 6.666666666666735130e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG2 := 3.999999999940941908e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG3 := 2.857142874366239149e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG4 := 2.222219843214978396e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG5 := 1.818357216161805012e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG6 := 1.531383769920937332e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	LG7 := 1.479819860511658591e-01	Logarithms	int	Polynomial coefficient used internally by the logarithm kernel in lg_reduce.
+tiles/libm.he	lg_reduce(x0 real) bool, real, real, real, int	Logarithms	int	Reduces x to a high and low part plus exponent for log2 and log10, flagging special cases with an early result.
+tiles/libm.he	log2(x real) real	Logarithms	pub	Returns the base-2 logarithm of x, handling zero, negative, infinite, and NaN inputs.
+tiles/libm.he	log10(x real) real	Logarithms	pub	Returns the base-10 logarithm of x, handling zero, negative, infinite, and NaN inputs.
+tiles/rs.he	neg_bit(x real) bool	Float Formatting	int	Checks whether a real's sign bit is set, treating negative zero as negative; used by the formatting and signum code.
+tiles/rs.he	dig_char(c byte) byte	Float Formatting	int	Converts a digit value below 10 to its ASCII character, leaving other bytes unchanged; internal formatting helper.
+tiles/rs.he	display(out byte[>..]&, x real)	Float Formatting	pub	Appends the shortest decimal text of a real to a byte buffer, handling NaN, inf, and negative zero.
+tiles/rs.he	debug(out byte[>..]&, x real)	Float Formatting	pub	Appends a debug text of a real, always showing a decimal point and using scientific notation for very small or large values.
+tiles/rs.he	fixed(out byte[>..]&, x real, decimals int)	Float Formatting	pub	Appends a real formatted with a fixed number of decimal places, writing NaN or inf for non-finite values.
+tiles/rs.he	max(x real, y real) real	Real Math	pub	Returns the larger of two reals, returning the first when the second is NaN.
+tiles/rs.he	min(x real, y real) real	Real Math	pub	Returns the smaller of two reals, returning the first when the second is NaN.
+tiles/rs.he	clamp(x real, lo real, hi real) real	Real Math	pub	Returns a real limited to the range from lo to hi, passing NaN through unchanged.
+tiles/rs.he	signum(x real) real	Real Math	pub	Returns -1.0 for negative values including negative zero, 1.0 otherwise, and NaN for NaN.
+tiles/rs.he	sat_int(x real, lo int, hi int) int	Real Math	int	Converts a real to an int saturated to the given bounds, mapping NaN to zero.
+tiles/rs.he	to_u32(x real) int	Real Math	pub	Converts a real to an unsigned 32-bit range int, saturating at 0 and 4294967295 and mapping NaN to zero.
+tiles/rs.he	to_usize(x real) int	Real Math	pub	Converts a real to a usize-style int by saturating it to the unsigned 32-bit range.
+tiles/rs.he	to_u16(x real) int	Real Math	pub	Converts a real to an unsigned 16-bit range int, saturating at 0 and 65535 and mapping NaN to zero.
+tiles/rs.he	to_u8(x real) int	Real Math	pub	Converts a real to an unsigned 8-bit range int, saturating at 0 and 255 and mapping NaN to zero.
+tiles/rs.he	to_i32(x real) int	Real Math	pub	Converts a real to a signed 32-bit range int, saturating at its limits and mapping NaN to zero.
+tiles/rs.he	to_i64(x real) int	Real Math	pub	Converts a real to a signed 64-bit range int, saturating at its limits and mapping NaN to zero.
+tiles/rs.he	var POW10 real[..309]	Float Parsing	int	Lookup table of powers of ten from 1e0 to 1e308, filled lazily for number parsing.
+tiles/rs.he	pow10_init()	Float Parsing	int	Fills the powers-of-ten table by parsing each 1e-notation string from 1e0 to 1e308.
+tiles/rs.he	serde_f64(s const byte[:]) real, bool	Float Parsing	pub	Parses decimal or scientific text into a real, returning false as the second result on overflow.
+tiles/rs.he	utf8_lossy(out byte[>..]&, s const byte[:])	Float Parsing	pub	Appends text to a byte buffer, copying valid UTF-8 and handling invalid byte sequences lossily.

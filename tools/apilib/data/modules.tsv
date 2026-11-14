@@ -79,3 +79,6 @@ net/quic_wire.he	network	Lets a program encode, decode, encrypt, and protect QUI
 net/quic_ep.he	network	Lets a program run a QUIC endpoint over UDP, accepting or dialing multiple encrypted client and server connections on one socket.
 libm.amni	logic	Provides low-level math library routines such as sine, cosine, scaling, and argument reduction for floating-point calculations in programs.
 gfx/hair.amni	graphics	Renders simulated, physically shaded hair strands on 3D models using GPU compute, with grooming, lighting, shadows, and strand physics controls.
+gfx/hairdo.amni	graphics	Defines a library of parameterized hairstyle presets for generating strand-based 3D hair on character models, including length, curl, bangs, and ponytails.
+tiles/libm.he	logic	Provides low-level floating-point math routines such as scaling by powers of two, bit manipulation, and large-argument trigonometric range reduction.
+tiles/rs.he	data	Formats real numbers as text, producing display and debug string representations including NaN, infinity, and scientific notation handling.

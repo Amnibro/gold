@@ -46,7 +46,7 @@ fn main() {
 | `T[>..<]` | grow-shrink: stacks, queues, heaps |
 | `T[:]` | slice: a view of any array kind, never a copy |
 
-Members: `.len .cap .push(v) .append(xs) .pop() .pop_n(n) .resize(n, v) .clear() .index_of(ref)`. `push` returns a reference to the new element. Slicing `a[x..y]`, `a[..y]`, `a[^2..]` (last two). Literals: `[1, 2, 3]`, `[0; 16]`, `[]`. `var out = [];` takes its element type from the first push.
+Members: `.len .cap .push(v) .append(xs) .pop() .pop_n(n) .resize(n, v) .reserve(n) .clear() .index_of(ref)`. `push` returns a reference to the new element. Because elements never move, a growable array's `.cap` is the room it has right now: growing an empty array past `.cap` takes a bigger region, while growing a non-empty one past it stops the program (on the web, regions are smaller than on native). `.reserve(n)` on an empty array makes `.cap` at least n; a pool that must outgrow its region checks `.cap`, copies itself out, clears, reserves and copies back. A global array that is only ever filled by `clear()` followed directly by `resize(n, v)` (inline, or through a helper whose array parameter does only that) gets a region of exactly that size on the web. Slicing `a[x..y]`, `a[..y]`, `a[^2..]` (last two). Literals: `[1, 2, 3]`, `[0; 16]`, `[]`. `var out = [];` takes its element type from the first push.
 
 A string is any `byte` array: `byte[>..]` builder, `byte[]` finished, `byte[..16]` small inline, `const byte[:]` view (string literals). `'a'` is an integer. Strings compare with `==`.
 
