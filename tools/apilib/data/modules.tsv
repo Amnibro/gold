@@ -82,3 +82,15 @@ gfx/hair.amni	graphics	Renders simulated, physically shaded hair strands on 3D m
 gfx/hairdo.amni	graphics	Defines a library of parameterized hairstyle presets for generating strand-based 3D hair on character models, including length, curl, bangs, and ponytails.
 tiles/libm.he	logic	Provides low-level floating-point math routines such as scaling by powers of two, bit manipulation, and large-argument trigonometric range reduction.
 tiles/rs.he	data	Formats real numbers as text, producing display and debug string representations including NaN, infinity, and scientific notation handling.
+gfx/garment.amni	graphics	Fits parametric garment meshes onto a posed body skeleton, with cloth-ready geometry, so programs can generate clothing for characters.
+gfx/obj.amni	graphics	Loads Wavefront OBJ model files, parsing vertices, named groups, and faces into triangle lists for rendering.
+gfx/soak.amni	graphics	Lets a program simulate water wetting and flowing down a triangle mesh, tracking per-vertex wetness with welded duplicate vertices.
+gfx/locks.amni	graphics	Generates procedural hair lock meshes with forked strands, producing vertex, normal, tangent, and UV buffers for rendering around a hairstyle.
+codec_vorbis.amni	audio	Decodes Ogg Vorbis audio files into raw sample data, parsing Ogg pages and packets so programs can play compressed sound.
+gfx/codec_webp.amni	graphics	Decodes WebP image files, both lossy and lossless, into pixel data with optional alpha transparency for use in programs.
+gfx/draco.amni	graphics	Decodes Draco-compressed 3D mesh files into faces, points, and vertex attributes a program can use for rendering.
+gfx/meshopt.amni	graphics	Decodes meshoptimizer-compressed vertex, triangle, and index buffers, with optional filters, so programs can load compact 3D mesh data.
+gfx/video.amni	graphics	Encodes video frames into an H.264-style bitstream using NAL units, quantization, and entropy coding tables.
+gfx/sdf_ttf.amni	graphics	Builds signed distance field font atlases from TrueType font data so programs can render crisp scalable text.
+gfx/hwrt.he	graphics	Lets a program use Vulkan hardware ray tracing and compute pipelines on the GPU, including device setup, buffers, and dispatching shaders.
+gfx/pathtrace.he	graphics	Lets a program build a 3D scene of triangles, materials, textures, and lights, then render it with hardware path tracing.

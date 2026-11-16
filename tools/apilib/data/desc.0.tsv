@@ -1607,3 +1607,1077 @@ tiles/rs.he	var POW10 real[..309]	Float Parsing	int	Lookup table of powers of te
 tiles/rs.he	pow10_init()	Float Parsing	int	Fills the powers-of-ten table by parsing each 1e-notation string from 1e0 to 1e308.
 tiles/rs.he	serde_f64(s const byte[:]) real, bool	Float Parsing	pub	Parses decimal or scientific text into a real, returning false as the second result on overflow.
 tiles/rs.he	utf8_lossy(out byte[>..]&, s const byte[:])	Float Parsing	pub	Appends text to a byte buffer, copying valid UTF-8 and handling invalid byte sequences lossily.
+gfx/cloth.amni	var skin_on bool[>..];	Cloth Skinning	int	Per-particle flags marking which cloth particles are currently constrained to a skinned target surface.
+gfx/cloth.amni	var skin_p real[>..];	Cloth Skinning	int	Per-particle flat array of skin target positions, three reals per particle.
+gfx/cloth.amni	var skin_n real[>..];	Cloth Skinning	int	Per-particle flat array of skin target normals, three reals per particle, stored normalized.
+gfx/cloth.amni	var skin_gap real[>..];	Cloth Skinning	int	Per-particle array of the gap distance kept from the skin target surface.
+gfx/cloth.amni	fn pdist(a int, b int) real	Simulation	int	Returns the distance between two particles given by index.
+gfx/cloth.amni	fn hbits(x f32) u64	Simulation	int	Returns the raw 32-bit pattern of a float, used for hashing vertex positions.
+gfx/cloth.amni	fn hslot(x f32, y f32, z f32, mask int) int	Simulation	int	Returns a hash table slot for a position, masked to the table size.
+gfx/cloth.amni	fn skin(c int, vertex int, px real, py real, pz real, nx real, ny real, nz real, gap real)	Cloth Skinning	pub	Binds a cloth vertex to a skin position, normal and gap; zero-length normals leave the previous normal unchanged.
+gfx/cloth.amni	fn unskin(c int)	Cloth Skinning	pub	Clears skinning on every particle of the cloth so they simulate freely again.
+gfx/cloth.amni	fn solve(a int, b int, len real, soft real, h real)	Simulation	int	Applies a soft distance constraint between two particles, moving each by its inverse mass share.
+gfx/garment.amni	struct Spec	Garment Setup	pub	Tunable parameters struct for garment fitting, covering ease, hem, sleeve, collar, neck and other dimensions in meters, with a unit scale.
+gfx/garment.amni	fn spec() Spec	Garment Setup	pub	Returns a Spec populated with default garment fitting parameters.
+gfx/garment.amni	var pos f32[>..];	Garment Output	pub	Output array of garment vertex positions, three floats per vertex, produced by emit.
+gfx/garment.amni	var nrm f32[>..];	Garment Output	pub	Output array of per-vertex normals, three floats per vertex, averaged from adjacent triangles.
+gfx/garment.amni	var tan f32[>..];	Garment Output	int	Tangent array for garment vertices, declared but not filled in this source.
+gfx/garment.amni	var uv f32[>..];	Garment Output	pub	Output array of texture coordinates, two floats per vertex, for the garment mesh.
+gfx/garment.amni	var body u32[>..];	Garment Output	pub	Output triangle index list for the main garment body surface.
+gfx/garment.amni	var rib u32[>..];	Garment Output	pub	Output triangle index list for ribbed trim regions such as cuffs, hem band and collar.
+gfx/garment.amni	var part int[>..];	Garment Output	pub	Output array giving the region code of each garment vertex, such as torso, sleeve, hem or collar.
+gfx/garment.amni	var anchor f32[>..];	Garment Output	pub	Output array of each vertex's original fitted position, three floats per vertex, used as a cloth rest reference.
+gfx/garment.amni	var anchor_n f32[>..];	Garment Output	pub	Output array of each vertex's original surface normal, three floats per vertex, used as an anchor direction.
+gfx/garment.amni	var held bool[>..];	Garment Output	pub	Output flags marking vertices held fixed, such as neckline, cuff and hem band, during cloth simulation.
+gfx/garment.amni	var goal f32[>..];	Garment Output	pub	Output array of target positions, three floats per vertex, toward which held vertices are pulled.
+gfx/garment.amni	var S Spec = Spec { .. };	Garment Setup	pub	Active Spec instance whose values drive all garment fitting steps.
+gfx/garment.amni	var jt real[>..];	Skeleton Fitting	int	Flat array of body joint positions, three values per joint, used by fitting.
+gfx/garment.amni	var sn real[>..];	Skeleton Fitting	int	Working array of body surface normals per vertex, computed during classification.
+gfx/garment.amni	var sp int[>..];	Skeleton Fitting	int	Per-vertex body part index, assigned by classification.
+gfx/garment.amni	var st real[>..];	Skeleton Fitting	int	Per-vertex position along the assigned body part, in meters.
+gfx/garment.amni	var wp real[>..];	Garment Cutting	int	Working array of garment vertex positions during cutting and fitting.
+gfx/garment.amni	var wa real[>..];	Garment Cutting	int	Working array of original garment vertex positions.
+gfx/garment.amni	var wn real[>..];	Garment Cutting	int	Working array of garment vertex normals.
+gfx/garment.amni	var wq int[>..];	Garment Cutting	int	Working array of per-vertex body part codes for garment vertices.
+gfx/garment.amni	var wt real[>..];	Garment Cutting	int	Working array of per-vertex position along the body part.
+gfx/garment.amni	var wh bool[>..];	Garment Cutting	int	Working array of per-vertex held flags.
+gfx/garment.amni	var wg real[>..];	Garment Cutting	int	Working array of per-vertex goal positions.
+gfx/garment.amni	var wi int[>..];	Garment Cutting	int	Working triangle index list for the garment mesh.
+gfx/garment.amni	var wr bool[>..];	Garment Cutting	int	Working per-triangle flags marking triangles that belong to the rib trim.
+gfx/garment.amni	var ws bool[>..];	Garment Cutting	int	Working per-vertex flags marking collar strip vertices.
+gfx/garment.amni	var wsu real[>..];	Garment Cutting	int	Working array of collar strip U texture coordinates.
+gfx/garment.amni	var wsv real[>..];	Garment Cutting	int	Working array of collar strip V texture coordinates.
+gfx/garment.amni	var wb int[>..];	Garment Cutting	int	Working list of boundary edge endpoint pairs of the cut garment mesh.
+gfx/garment.amni	fn len3(x real, y real, z real) real	Skeleton Fitting	int	Returns the Euclidean length of a three-component vector.
+gfx/garment.amni	fn joint(k int) real, real, real	Skeleton Fitting	int	Returns the x, y and z position of the joint with the given index.
+gfx/garment.amni	fn arm_len(side int) real	Skeleton Fitting	pub	Returns the length of one arm, shoulder to wrist, in meters; side 1 selects the first arm.
+gfx/garment.amni	fn on_part(q int, x real, y real, z real) real, real, real, real, real, real, real	Skeleton Fitting	int	Returns the closest point on a body part's skeleton, its direction and distance along the part.
+gfx/garment.amni	fn classify(P const f32[:], I const int[:])	Skeleton Fitting	int	Computes vertex normals and assigns each body mesh vertex to its nearest body part.
+gfx/garment.amni	fn neck_m(x real, y real, z real) real	Garment Cutting	int	Returns a signed margin of a point from the neckline cut, positive meaning inside the garment.
+gfx/garment.amni	fn hem_y() real	Garment Cutting	pub	Returns the hem height in skeleton units, accounting for hem offset and slack.
+gfx/garment.amni	fn sleeve_end(side int) real	Garment Cutting	pub	Returns the sleeve end distance along the arm for the given side, including sleeve slack.
+gfx/garment.amni	var shell f32[>..];	Garment Cutting	int	Working copy of the body mesh vertex positions that is cut into a garment.
+gfx/garment.amni	fn keep(v int) real, int	Garment Cutting	int	Returns a vertex's signed margin inside the garment cut and a code naming which edge limits it.
+gfx/garment.amni	fn edge_key(a int, b int) int	Garment Cutting	int	Returns a single integer key identifying an undirected edge between two vertices.
+gfx/garment.amni	fn cut(P const f32[:], I const int[:])	Garment Cutting	int	Cuts the body mesh along the neckline, hem and sleeve ends, building the working garment mesh.
+gfx/garment.amni	fn chest_y() real	Garment Cutting	int	Returns the chest joint height in skeleton units.
+gfx/garment.amni	fn edge_m(v int) real	Garment Cutting	int	Returns a vertex's distance in meters from the nearest garment edge.
+gfx/garment.amni	fn in_band(v int) bool	Garment Cutting	int	Returns whether a vertex lies within the ribbed trim band near a hem or cuff.
+gfx/garment.amni	fn sstep(e0 real, e1 real, x real) real	Garment Cutting	int	Returns a smooth Hermite interpolation between zero and one across the given edges.
+gfx/garment.amni	fn loosen()	Garment Cutting	int	Offsets garment vertices outward for ease and sets goals and held flags for trim bands.
+gfx/garment.amni	fn add_like(v int, x real, y real, z real, q int, t real, h bool, gx real, gy real, gz real) int	Garment Cutting	int	Appends a new garment vertex copying another's attributes, with given position, part, and goal.
+gfx/garment.amni	fn wdist(a int, b int) real	Garment Cutting	int	Returns the distance in meters between two working garment vertices.
+gfx/garment.amni	fn neck_band()	Garment Cutting	int	Builds a raised collar strip around the neckline loop as extra triangles.
+gfx/garment.amni	fn lip_ok(v int) bool	Garment Cutting	int	Returns whether a vertex is held and on a hem or cuff edge that gets a lip.
+gfx/garment.amni	fn lips()	Garment Cutting	int	Adds an inward-offset lip strip along the hem and cuff boundary edges.
+gfx/garment.amni	fn norm3(x real, y real, z real) real, real, real	Garment Cutting	int	Returns the input vector scaled to unit length, unchanged if near zero.
+gfx/garment.amni	fn axis_uv(q int, x real, y real, z real) real, real	Garment Cutting	int	Returns the texture coordinates of a point, wrapped around the body or arm axis.
+gfx/garment.amni	fn accum(tris const u32[:], p const f32[:], owner const int[:], sum real[:])	Garment Cutting	int	Accumulates area-weighted triangle normals into per-owner sums.
+gfx/garment.amni	fn unit_sums(sum real[:])	Garment Cutting	int	Normalizes each three-component sum in place to unit length.
+gfx/garment.amni	fn emit()	Garment Cutting	pub	Builds the final garment output arrays from the working mesh, splitting vertices by region and UV seam.
+gfx/garment.amni	fn grad3(e1x real, e1y real, e1z real, e2x real, e2y real, e2z real, nx real, ny real, nz real, a2 real, f0 real, f1 real, f2 real) real, real, real	Garment Cutting	int	Returns the gradient of a scalar over a triangle, given its edges and normal.
+gfx/garment.amni	fn relax_tris(tris const u32[:], ef int[>..]&, et int[>..]&, edu real[>..]&, edv real[>..]&)	Garment Cutting	int	Collects per-triangle edge vectors measured along the UV directions for later relaxation.
+gfx/garment.amni	fn relax_uv(rounds int)	Garment Cutting	int	Relaxes texture coordinates over a number of rounds to reduce distortion against the real edge lengths.
+gfx/garment.amni	fn split_once()	Garment Output	int	Subdivides every body and rib triangle once at edge midpoints, interpolating per-vertex attributes for the new vertices.
+gfx/garment.amni	fn refine()	Garment Output	int	Subdivides the garment mesh according to the fine setting and renormalizes vertex normals afterward.
+gfx/garment.amni	fn tan_accum(tris const u32[:], p const f32[:], uvs const f32[:], ts real[:], vs real[:])	Garment Output	int	Accumulates per-vertex tangent and bitangent sums from triangle positions and UV coordinates.
+gfx/garment.amni	fn tangents()	Garment Output	int	Computes per-vertex tangents with handedness sign from positions, normals and UVs for body and rib triangles.
+gfx/garment.amni	fn clear_all()	Garment Setup	int	Empties all module-level garment mesh, skinning and fitting buffers.
+gfx/garment.amni	fn make(P const f32[:], I const int[:], joints const f32[:], s Spec) bool	Garment Setup	pub	Builds a garment from body mesh points, indices, joint data and a spec, returning false when input is invalid or nothing is produced.
+gfx/garment.amni	fn f32_bits(v f32) int	Garment Output	int	Returns the raw 32-bit little-endian integer representation of a single-precision float.
+gfx/garment.amni	fn drape(steps int) int	Garment Output	pub	Simulates cloth draping of the generated garment for the given steps, returning the cloth index or -1 when empty.
+gfx/obj.amni	var V f32[>..];	Model Data	pub	Holds the flat list of vertex coordinates (x, y, z triplets) from the most recently loaded OBJ file.
+gfx/obj.amni	var names byte[][>..];	Groups	pub	Holds the group names found in the most recently loaded OBJ file, indexed by group id.
+gfx/obj.amni	var tris int[>..];	Model Data	pub	Holds triangles of the loaded model as four ints each: group id, then three zero-based vertex indices.
+gfx/obj.amni	fn name_count() int	Groups	pub	Returns the number of named groups currently loaded.
+gfx/obj.amni	fn find_name(name const byte[:]) int	Groups	int	Returns the index of a group name, or -1 if it is not loaded.
+gfx/obj.amni	fn add_name(name const byte[:]) int	Groups	int	Adds a group name if missing and returns its index, reusing the existing index when present.
+gfx/obj.amni	fn load(path const byte[:]) bool	Model Data	pub	Loads an OBJ file, replacing current data, and returns false if the file cannot be read.
+gfx/obj.amni	fn group(name const byte[:]) int	Groups	pub	Returns the group id for a name, or -1 if no such group exists.
+gfx/obj.amni	fn tris_of(name const byte[:], out int[>..]&)	Model Data	pub	Fills the output array with vertex indices, three per triangle, for the named group; empty if unknown.
+gfx/obj.amni	fn centroid(name const byte[:]) real, real, real	Model Data	pub	Returns the average x, y, z position of the distinct vertices used by the named group, or zeros if none.
+gfx/obj.amni	fn normals(idx const int[:], out f32[>..]&)	Model Data	pub	Computes per-vertex normals for the given triangle vertex indices into the output array, skipping triangles with out-of-range indices.
+gfx/scene3d.amni	var vtouch_lo = -1;	Geometry Upload	int	Lowest vertex index modified since the last geometry upload, or -1 when no vertices are dirty.
+gfx/scene3d.amni	var vtouch_hi = -1;	Geometry Upload	int	Highest vertex index (exclusive) modified since the last geometry upload, or -1 when no vertices are dirty.
+gfx/scene3d.amni	fn touch_verts(first int, count int)	Geometry Upload	int	Marks a range of vertices as modified so the next geometry upload refreshes only that part of the vertex buffer.
+gfx/soak.amni	var wet f32[>..];	Wetness State	int	Holds per-vertex wetness values from 0 to 1, updated by each simulation step.
+gfx/soak.amni	var open f32[>..];	Wetness State	int	Holds per-vertex exposure to rain, computed by the exposure pass and shared across welded duplicates.
+gfx/soak.amni	var rep int[>..];	Mesh Setup	int	Maps each vertex index to its welded representative vertex index.
+gfx/soak.amni	var nb_at int[>..];	Mesh Setup	int	Stores start offsets into the neighbor list for each welded vertex.
+gfx/soak.amni	var nb int[>..];	Mesh Setup	int	Lists neighbor vertex indices for each welded vertex in compressed adjacency form.
+gfx/soak.amni	var nb_w real[>..];	Mesh Setup	int	Holds flow weights for each neighbor edge, boosted for downhill directions.
+gfx/soak.amni	var ry real[>..];	Mesh Setup	int	Stores the height of each welded vertex used for slope calculations.
+gfx/soak.amni	var mw real[>..];	Wetness State	int	Holds working wetness values per welded vertex during a simulation step.
+gfx/soak.amni	var mo real[>..];	Wetness State	int	Holds per-welded-vertex rain exposure, taking the maximum across duplicates.
+gfx/soak.amni	var tri real[>..];	Rain Exposure	int	Stores occluder triangle vertices projected into rain-aligned coordinates.
+gfx/soak.amni	var bin_at int[>..];	Rain Exposure	int	Stores start offsets into the triangle bin list for each grid cell.
+gfx/soak.amni	var bins int[>..];	Rain Exposure	int	Lists occluder triangle indices grouped by the grid cells they overlap.
+gfx/soak.amni	var fw real[3];	Rain Exposure	int	Holds the unit vector pointing against the rain direction.
+gfx/soak.amni	var fa real[3];	Rain Exposure	int	Holds the first unit axis perpendicular to the rain direction.
+gfx/soak.amni	var fb real[3];	Rain Exposure	int	Holds the second unit axis perpendicular to both the rain direction and first axis.
+gfx/soak.amni	var lo_a real = 0.0;	Rain Exposure	int	Stores the minimum projected coordinate along the first axis of the rain grid.
+gfx/soak.amni	var lo_b real = 0.0;	Rain Exposure	int	Stores the minimum projected coordinate along the second axis of the rain grid.
+gfx/soak.amni	var cell real = 1.0;	Rain Exposure	int	Stores the side length of each rain grid cell.
+gfx/soak.amni	var gn int = 1;	Rain Exposure	int	Stores the number of cells per side of the rain grid.
+gfx/soak.amni	fn bits32(v f32) uint	Mesh Setup	int	Returns the raw 32-bit pattern of a float, used to hash vertex positions when welding.
+gfx/soak.amni	fn setup(P const f32[:], I const u32[:], fall real)	Mesh Setup	pub	Initializes wetness state from vertex positions and triangle indices, welding identical positions and building neighbor flow weights with the given downhill bias.
+gfx/soak.amni	fn rain_map(dir_x real, dir_y real, dir_z real, lo_x real, lo_y real, lo_z real, hi_x real, hi_y real, hi_z real, size real)	Rain Exposure	pub	Configures the rain projection grid from a rain direction, bounding box and cell size, and clears occluders.
+gfx/soak.amni	fn cell_of(a real, b real) int	Rain Exposure	int	Returns the grid cell index for projected coordinates, clamping to the grid edges.
+gfx/soak.amni	fn occlude(P const f32[:], I const u32[:])	Rain Exposure	pub	Adds the triangles of a mesh as rain occluders by projecting them into the rain grid.
+gfx/soak.amni	fn expose(P const f32[:], N const f32[:], tol real)	Rain Exposure	pub	Computes per-vertex rain exposure from normals and occluders, treating vertices shadowed by more than the tolerance as dry.
+gfx/soak.amni	fn step(dt real, rate real, dry real, wick real)	Wetness State	pub	Advances the wetness simulation by a time step, applying rain, downhill flow, wicking and drying.
+gfx/soak.amni	fn mean() real	Wetness State	pub	Returns the average wetness across all vertices, or zero when there are none.
+gfx/locks.amni	struct Spec	Lock Settings	pub	Configuration struct for lock generation, with strand subdivision, width, forking, spread, raggedness, flatness, inner layer, gap and vertex budget options.
+gfx/locks.amni	fn spec() Spec	Lock Settings	pub	Returns a Spec populated with default lock generation settings.
+gfx/locks.amni	var P f32[>..];	Mesh Buffers	int	Vertex position buffer, three floats per vertex, filled by build and read when creating the mesh.
+gfx/locks.amni	var N f32[>..];	Mesh Buffers	int	Vertex normal buffer, three floats per vertex, filled by build and consumed by mesh.
+gfx/locks.amni	var T f32[>..];	Mesh Buffers	int	Vertex tangent buffer, three floats per vertex, filled by build and consumed by mesh.
+gfx/locks.amni	var UV f32[>..];	Mesh Buffers	int	Texture coordinate buffer, two floats per vertex, filled by build and consumed by mesh.
+gfx/locks.amni	var I u32[>..];	Mesh Buffers	int	Triangle index buffer for the lock mesh, filled by build and copied by mesh.
+gfx/locks.amni	var row_v int[>..];	Mesh Buffers	int	Per-row index of the first vertex of each emitted strip row.
+gfx/locks.amni	var row_lock int[>..];	Mesh Buffers	int	Per-row lock number recording which lock each emitted row belongs to.
+gfx/locks.amni	var row_fork int[>..];	Mesh Buffers	int	Per-row fork number, with -1 for rows on the main lock body.
+gfx/locks.amni	var row_layer int[>..];	Mesh Buffers	int	Per-row layer number, where 0 is the outer layer and 1 is the inner layer.
+gfx/locks.amni	var row_guide int[>..];	Mesh Buffers	int	Per-row source guide point index, or -1 for interpolated rows.
+gfx/locks.amni	var split_row int[>..];	Mesh Buffers	int	Row indices where each lock splits into forks, with -1 when forking is disabled.
+gfx/locks.amni	var fork_row int[>..];	Mesh Buffers	int	Row indices where each fork strip begins.
+gfx/locks.amni	fn hash01(a int, b int) real	Lock Math	int	Returns a deterministic pseudo-random value in the range 0 to 1 from two integer inputs.
+gfx/locks.amni	fn smooth(a real, b real, x real) real	Lock Math	int	Returns a smoothstep value between 0 and 1 for x across the range a to b.
+gfx/locks.amni	fn profile(t real) real	Lock Math	int	Returns the width multiplier along a lock, given normalized position t from root to tip.
+gfx/locks.amni	fn f3(x real, y real, z real) float3	Lock Math	int	Creates a float3 from three real components.
+gfx/locks.amni	fn vadd(a float3, b float3) float3	Lock Math	int	Returns the component-wise sum of two float3 vectors.
+gfx/locks.amni	fn vsub(a float3, b float3) float3	Lock Math	int	Returns the component-wise difference of two float3 vectors.
+gfx/locks.amni	fn vmul(a float3, k real) float3	Lock Math	int	Returns a float3 vector scaled by a real factor.
+gfx/locks.amni	fn vdot(a float3, b float3) real	Lock Math	int	Returns the dot product of two float3 vectors.
+gfx/locks.amni	fn vcross(a float3, b float3) float3	Lock Math	int	Returns the cross product of two float3 vectors.
+gfx/locks.amni	fn vlen(a float3) real	Lock Math	int	Returns the Euclidean length of a float3 vector.
+gfx/locks.amni	fn vunit(a float3) float3	Lock Math	int	Returns a unit-length copy of a vector, or the input unchanged if its length is nearly zero.
+gfx/locks.amni	fn vlerp(a float3, b float3, f real) float3	Lock Math	int	Returns the linear interpolation between two float3 vectors by a factor.
+gfx/locks.amni	fn emit(p float3, side float3, hw real, nrm float3, tg float3, u0 real, u1 real, v real, s Spec, lock int, fork int, layer int, guide int)	Mesh Buffers	int	Appends a pair of left and right strip vertices to the buffers, linking them to the previous row when it matches.
+gfx/locks.amni	fn crom(p0 float3, p1 float3, p2 float3, p3 float3, f real) float3	Lock Math	int	Returns a Catmull-Rom spline point between p1 and p2 at parameter f.
+gfx/locks.amni	fn lerpdir(a float3, b float3, f real) float3	Lock Math	int	Returns a normalized linear interpolation between two direction vectors, or a unchanged when f is zero.
+gfx/locks.amni	fn split_at(s Spec, rr int) int	Lock Math	int	Returns the row index where a lock splits into forks, or the last row when forking is off.
+gfx/locks.amni	fn build(data const byte[:], s Spec) int	Lock Building	pub	Builds lock mesh buffers from hair data bytes and settings, returning the number of locks generated, or 0 if data is invalid.
+gfx/locks.amni	fn bt(x real) byte	Lock Math	int	Returns a byte from a real value, rounded and clamped to the range 0 to 255.
+gfx/locks.amni	fn strands(size int, seed int) int	Lock Textures	pub	Generates a procedural strand alpha texture of the given square size from a seed, returning its glTF texture index.
+gfx/locks.amni	fn material(r f32, g f32, b f32, tex int) gltf::Material	Lock Textures	pub	Returns a double-sided alpha-masked hair material with the given color and texture index.
+gfx/locks.amni	fn mesh(m gltf::Material) int	Lock Building	pub	Copies the built lock buffers into the glTF vertex and index data, returning the result of finishing the mesh with the material.
+gfx/locks.amni	var scalp_w f32[>..];	Lock Building	int	Per-vertex scalp weight buffer filled by scalp, holding one falloff value per input point.
+gfx/locks.amni	fn scalp(data const byte[:], P const f32[:], r real)	Lock Building	int	Fills the scalp weight buffer with a falloff from 1 to 0 for each point based on distance to the hairstyle's root positions within radius r.
+gfx/locks.amni	var jitter real = 0.18;	Lock Settings	pub	Amount of random per-lock brightness variation applied to vertex color in mesh, as a fraction around 1.0.
+gfx.he	is_fullscreen() bool	Window Setup	pub	Returns whether the window currently exists and is in fullscreen mode, or false if there is no window.
+codec_vorbis.amni	let INVDB f32[256] = [1.0649863e-07, 1.1341951e-07, 1.2079015e-07, 1.2863978e-07, 1.3699951e-07, 1.4590251e-07, 1.5538408e-07, 1.6548181e-07, 1.7623575e-07, 1.8768855e-07, 1.9988561e-07, 2.1287530e-07, 2.2670913e-07, 2.4	Ogg Vorbis Decoding	int	Lookup table of 256 floor amplitude multipliers, converting integer floor values to linear gain.
+codec_vorbis.amni	var why byte[>..];	Error Reporting	int	Buffer holding the text of the most recent decoding failure.
+codec_vorbis.amni	var src byte[>..];	Ogg Parsing	int	Buffer holding the raw bytes of the Ogg Vorbis file being decoded.
+codec_vorbis.amni	fn fail(reason const byte[:]) bool	Error Reporting	int	Records a failure reason in the error buffer and returns false.
+codec_vorbis.amni	fn error() const byte[:]	Error Reporting	pub	Returns the message describing the most recent decoding failure.
+codec_vorbis.amni	fn sb(at int) int	Ogg Parsing	int	Returns the source byte at the given offset as an integer.
+codec_vorbis.amni	var pkt byte[>..];	Ogg Parsing	int	Buffer holding the concatenated data of all packets extracted from Ogg pages.
+codec_vorbis.amni	var pk_at int[>..];	Ogg Parsing	int	Per-packet start offsets into the packet data buffer.
+codec_vorbis.amni	var pk_len int[>..];	Ogg Parsing	int	Per-packet byte lengths.
+codec_vorbis.amni	var pk_gran int[>..];	Ogg Parsing	int	Per-packet granule positions, or -1 when a page gives none for that packet.
+codec_vorbis.amni	var pk_last bool[>..];	Ogg Parsing	int	Per-packet flags marking packets that end the logical stream.
+codec_vorbis.amni	var cur byte[>..];	Ogg Parsing	int	Scratch buffer accumulating a packet that spans multiple lacing segments.
+codec_vorbis.amni	fn pages() bool	Ogg Parsing	int	Parses Ogg pages of the first stream into packets, returning false if none or too few headers exist.
+codec_vorbis.amni	var bp int = 0;	Bit Reading	int	Current bit position within the active packet.
+codec_vorbis.amni	var bend int = 0;	Bit Reading	int	Bit position marking the end of the active packet.
+codec_vorbis.amni	var pbase int = 0;	Bit Reading	int	Byte offset in the packet buffer where the active packet begins.
+codec_vorbis.amni	var eop bool = false;	Bit Reading	int	Flag set when a read ran past the end of the active packet.
+codec_vorbis.amni	fn bstart(k int, skip int)	Bit Reading	int	Begins bit reading on a packet, skipping the given number of leading bytes.
+codec_vorbis.amni	fn peek32() int	Bit Reading	int	Returns the next 32 bits at the current position without advancing.
+codec_vorbis.amni	fn bits(n int) int	Bit Reading	int	Reads and consumes the given number of bits, returning 0 and setting end-of-packet on overrun.
+codec_vorbis.amni	fn ilog(x int) int	Bit Reading	int	Returns the number of bits needed to represent a non-negative integer.
+codec_vorbis.amni	fn unpack(x int) real	Bit Reading	int	Converts a packed Vorbis float value into a real number.
+codec_vorbis.amni	var cb_dim int[>..];	Codebooks	int	Per-codebook vector dimensions.
+codec_vorbis.amni	var cb_n int[>..];	Codebooks	int	Per-codebook entry counts.
+codec_vorbis.amni	var cb_len int[>..];	Codebooks	int	Per-codebook start offsets into the codeword length array.
+codec_vorbis.amni	var cb_code int[>..];	Codebooks	int	Per-codebook start offsets into the codeword value array.
+codec_vorbis.amni	var cb_fast int[>..];	Codebooks	int	Per-codebook start offsets into the fast lookup table.
+codec_vorbis.amni	var cb_long int[>..];	Codebooks	int	Per-codebook start offsets into the list of long codeword entries.
+codec_vorbis.amni	var cb_nlong int[>..];	Codebooks	int	Per-codebook counts of entries with codewords longer than the fast lookup.
+codec_vorbis.amni	var cb_vq int[>..];	Codebooks	int	Per-codebook start offsets into vector quantization values, or -1 when absent.
+codec_vorbis.amni	var clen int[>..];	Codebooks	int	Codeword lengths for all codebook entries.
+codec_vorbis.amni	var ccode int[>..];	Codebooks	int	Assigned codeword values for all codebook entries.
+codec_vorbis.amni	var cfast int[>..];	Codebooks	int	Fast lookup tables mapping 10-bit prefixes to entries plus one.
+codec_vorbis.amni	var clong int[>..];	Codebooks	int	Entry indices of codewords too long for the fast lookup.
+codec_vorbis.amni	var cvq f32[>..];	Codebooks	int	Vector quantization values for all codebook entries.
+codec_vorbis.amni	fn pow_fits(r int, d int, n int) bool	Codebooks	int	Checks whether the radix raised to the dimension stays within the given limit.
+codec_vorbis.amni	fn book(b int) bool	Codebooks	int	Reads one codebook from the setup header, returning false on malformed data.
+codec_vorbis.amni	fn decode_entry(b int) int	Codebooks	int	Decodes one entry from the given codebook, returning -1 and setting end-of-packet on failure.
+codec_vorbis.amni	var fl_np int[>..];	Floors	int	Per-floor counts of partitions.
+codec_vorbis.amni	var fl_pc int[>..];	Floors	int	Per-floor start offsets into the partition class list.
+codec_vorbis.amni	var fl_mult int[>..];	Floors	int	Per-floor multiplier values.
+codec_vorbis.amni	var fl_x int[>..];	Floors	int	Per-floor start offsets into the X coordinate list.
+codec_vorbis.amni	var fl_nx int[>..];	Floors	int	Per-floor counts of X coordinates.
+codec_vorbis.amni	var fpc int[>..];	Floors	int	Partition class assignments for all floors.
+codec_vorbis.amni	var fx int[>..];	Floors	int	X coordinates for all floor points.
+codec_vorbis.amni	var fsort int[>..];	Floors	int	Indices of floor points sorted by X coordinate.
+codec_vorbis.amni	var flo int[>..];	Floors	int	Index of the nearest lower-X neighbor for each floor point.
+codec_vorbis.amni	var fhi int[>..];	Floors	int	Index of the nearest higher-X neighbor for each floor point.
+codec_vorbis.amni	var fcdim int[>..];	Floors	int	Per-class dimensions for floor partition classes.
+codec_vorbis.amni	var fcsub int[>..];	Floors	int	Per-class subclass bit counts for floor partition classes.
+codec_vorbis.amni	var fcmaster int[>..];	Floors	int	Per-class master codebook numbers for floor partition classes.
+codec_vorbis.amni	var fcbook int[>..];	Floors	int	Per-subclass codebook numbers for floor partition classes, with -1 for none.
+codec_vorbis.amni	fn floor(f int) bool	Floors	int	Reads a type 1 floor from the setup header, returning false if unsupported or malformed.
+codec_vorbis.amni	var fy int[>..];	Floors	int	Decoded Y values for each channel's floor points.
+codec_vorbis.amni	var fused bool[>..];	Floors	int	Per-channel flags marking whether a floor was successfully read for the packet.
+codec_vorbis.amni	fn floor_read(f int, ch int)	Floors	int	Reads one channel's floor Y values from the current packet.
+codec_vorbis.amni	fn render_point(x0 int, y0 int, x1 int, y1 int, x int) int	Floors	int	Returns the interpolated Y value at X on the line between two points.
+codec_vorbis.amni	fn render_line(x0 int, y0 int, x1 int, y1 int, out f32[>..]&, at int, n int)	Floors	int	Renders a line of floor amplitudes into the output buffer, clipped to the given length.
+codec_vorbis.amni	fn floor_curve(f int, ch int, n2 int, out f32[>..]&, at int)	Floors	int	Builds the floor amplitude curve for a channel into the output buffer.
+codec_vorbis.amni	var rs_type int[>..];	Residues	int	Per-residue type numbers.
+codec_vorbis.amni	var rs_begin int[>..];	Residues	int	Per-residue starting positions.
+codec_vorbis.amni	var rs_end int[>..];	Residues	int	Per-residue ending positions.
+codec_vorbis.amni	var rs_psize int[>..];	Residues	int	Per-residue partition sizes.
+codec_vorbis.amni	var rs_ncls int[>..];	Residues	int	Per-residue classification counts.
+codec_vorbis.amni	var rs_book int[>..];	Residues	int	Per-residue classification codebook numbers.
+codec_vorbis.amni	var rs_books int[>..];	Residues	int	Codebook numbers per residue class and pass, with -1 for none.
+codec_vorbis.amni	fn residue(r int) bool	Residues	int	Reads one residue configuration from the setup header, returning false on malformed data.
+codec_vorbis.amni	var chans int = 0;	Mappings and Modes	int	Number of audio channels in the stream.
+codec_vorbis.amni	var mp_sub int[>..];	Mappings and Modes	int	Per-mapping submap counts.
+codec_vorbis.amni	var mp_ncp int[>..];	Mappings and Modes	int	Per-mapping counts of channel coupling steps.
+codec_vorbis.amni	var mp_cp int[>..];	Mappings and Modes	int	Per-mapping start offsets into the coupling arrays.
+codec_vorbis.amni	var cmag int[>..];	Mappings and Modes	int	Magnitude channel indices for all coupling steps.
+codec_vorbis.amni	var cang int[>..];	Mappings and Modes	int	Angle channel indices for all coupling steps.
+codec_vorbis.amni	var mux int[>..];	Mappings and Modes	int	Per-mapping, per-channel submap assignments.
+codec_vorbis.amni	var smfloor int[>..];	Mappings and Modes	int	Floor numbers for each mapping submap.
+codec_vorbis.amni	var smres int[>..];	Mappings and Modes	int	Residue numbers for each mapping submap.
+codec_vorbis.amni	fn mapping(m int) bool	Mappings and Modes	int	Reads one channel mapping from the setup header, returning false on malformed data.
+codec_vorbis.amni	var md_block int[>..];	Mappings and Modes	int	Per-mode block size flags selecting short or long blocks.
+codec_vorbis.amni	var md_map int[>..];	Mappings and Modes	int	Per-mode mapping numbers.
+codec_vorbis.amni	fn mode(i int) bool	Mappings and Modes	int	Reads one mode from the setup header, returning false on malformed data.
+codec_vorbis.amni	var rate int = 0;	Mappings and Modes	int	Sample rate of the stream in hertz.
+codec_vorbis.amni	var bs0 int = 0;	Mappings and Modes	int	Short block size in samples.
+codec_vorbis.amni	var bs1 int = 0;	Mappings and Modes	int	Long block size in samples.
+codec_vorbis.amni	var nmodes int = 0;	Mappings and Modes	int	Number of modes defined in the setup header.
+codec_vorbis.amni	fn pb(k int, i int) int	Ogg Parsing	int	Returns the byte at the given index within the given packet as an integer.
+codec_vorbis.amni	fn vtag(k int) bool	Ogg Parsing	int	Checks whether the packet begins with the Vorbis signature after its type byte.
+codec_vorbis.amni	fn headers() bool	Ogg Parsing	pub	Parses the identification, comment and setup headers, returning false with an error set on invalid data.
+codec_vorbis.amni	var win0 f32[>..];	Windowing	int	Short-block window slope table.
+codec_vorbis.amni	var win1 f32[>..];	Windowing	int	Long-block window slope table.
+codec_vorbis.amni	fn slope(n int) f32[>..]	Windowing	int	Builds the rising half of a Vorbis power-sine window slope for the given block size.
+codec_vorbis.amni	var tab_n0 int = 0;	Windowing	int	Counts the block size for which the first cached IMDCT twiddle table set was built, or zero when unset.
+codec_vorbis.amni	var tab_n1 int = 0;	Windowing	int	Counts the block size for which the second cached IMDCT twiddle table set was built, or zero when unset.
+codec_vorbis.amni	var fc0 f32[>..];	Windowing	int	Holds cosine twiddle factors for the FFT in the first cached table slot.
+codec_vorbis.amni	var fs0 f32[>..];	Windowing	int	Holds sine twiddle factors for the FFT in the first cached table slot.
+codec_vorbis.amni	var fc1 f32[>..];	Windowing	int	Holds cosine twiddle factors for the FFT in the second cached table slot.
+codec_vorbis.amni	var fs1 f32[>..];	Windowing	int	Holds sine twiddle factors for the FFT in the second cached table slot.
+codec_vorbis.amni	var wc0 f32[>..];	Windowing	int	Holds cosine pre- and post-rotation weights for the IMDCT in the first cached table slot.
+codec_vorbis.amni	var ws0 f32[>..];	Windowing	int	Holds sine pre- and post-rotation weights for the IMDCT in the first cached table slot.
+codec_vorbis.amni	var wc1 f32[>..];	Windowing	int	Holds cosine pre- and post-rotation weights for the IMDCT in the second cached table slot.
+codec_vorbis.amni	var ws1 f32[>..];	Windowing	int	Holds sine pre- and post-rotation weights for the IMDCT in the second cached table slot.
+codec_vorbis.amni	var fre f32[>..];	Windowing	int	Holds the real scratch buffer used by the FFT inside the IMDCT.
+codec_vorbis.amni	var fim f32[>..];	Windowing	int	Holds the imaginary scratch buffer used by the FFT inside the IMDCT.
+codec_vorbis.amni	fn ftab(n int, sine bool) f32[>..]	Windowing	int	Builds a table of cosine or sine twiddle factors for an FFT of the given block size.
+codec_vorbis.amni	fn wtab(n int, sine bool) f32[>..]	Windowing	int	Builds a table of cosine or sine rotation weights for an IMDCT of the given block size.
+codec_vorbis.amni	fn tables(n int)	Windowing	int	Ensures twiddle and weight tables exist for the given block size, filling an empty cache slot.
+codec_vorbis.amni	fn fft(re f32[:], im f32[:], n int, c const f32[:], s const f32[:])	Windowing	int	Performs an in-place complex FFT of power-of-two length using the supplied twiddle tables.
+codec_vorbis.amni	fn imdct_core(x const f32[:], xat int, n int, out f32[>..]&, c const f32[:], s const f32[:], wcs const f32[:], wss const f32[:])	Windowing	int	Computes an inverse MDCT using the supplied twiddle and weight tables, writing a block of n samples to out.
+codec_vorbis.amni	fn imdct(x const f32[:], xat int, n int, out f32[>..]&)	Windowing	int	Computes an inverse MDCT of block size n from a spectrum at an offset, using cached tables.
+codec_vorbis.amni	fn imdct_into(x const f32[:], out f32[>..]&)	Windowing	int	Computes an inverse MDCT of a spectrum, producing twice as many output samples as input values.
+codec_vorbis.amni	var dnd bool[>..];	Residues	int	Holds per-channel flags marking channels whose floor is unused and whose residue is skipped.
+codec_vorbis.amni	var rv f32[>..];	Residues	int	Holds the decoded residue vectors for all channels.
+codec_vorbis.amni	var rtmp f32[>..];	Residues	int	Holds the temporary interleaved residue buffer used for type 2 residues.
+codec_vorbis.amni	var rcls int[>..];	Residues	int	Holds the residue classification values decoded for each vector and partition.
+codec_vorbis.amni	var rvec int[>..];	Residues	int	Holds the offsets of the residue vectors currently being decoded.
+codec_vorbis.amni	var to_tmp bool = false;	Residues	int	Flags whether residue values are accumulated into the temporary buffer instead of the main residue vectors.
+codec_vorbis.amni	fn tadd(i int, v f32)	Residues	int	Adds a value to the current residue target at the given index, ignoring out-of-range indices.
+codec_vorbis.amni	fn decode_part(bk int, fmt int, v int, off int, psize int) bool	Residues	int	Decodes one residue partition using a codebook and adds the vectors, returning false on failure or an unusable book.
+codec_vorbis.amni	fn res_decode(r int, fmt int, nvec int, size int)	Residues	int	Decodes the residue classes and partitions for a set of vectors across all eight passes.
+codec_vorbis.amni	fn residue_read(r int, chs const int[:], n2 int)	Residues	int	Reads the residue for the given channels, handling format types 0, 1 and 2 and skipping unused channels.
+codec_vorbis.amni	var flr f32[>..];	Ogg Vorbis Decoding	int	Holds the floor curves for all channels of the current packet.
+codec_vorbis.amni	var ibuf f32[>..];	Ogg Vorbis Decoding	int	Holds the inverse MDCT output for the channel currently being processed.
+codec_vorbis.amni	var ovl f32[>..];	Ogg Vorbis Decoding	int	Holds the overlapping second half of each channel's previous block for windowed overlap-add.
+codec_vorbis.amni	var prev int = 0;	Ogg Vorbis Decoding	int	Holds the previous block size, or zero before any block has been decoded.
+codec_vorbis.amni	fn clampf(v f32) f32	Ogg Vorbis Decoding	int	Clamps a sample value to the range from negative one to one.
+codec_vorbis.amni	fn put(out f32[>..]&, at int, v f32)	Ogg Vorbis Decoding	int	Stores a sample into the output buffer at the given index after clamping it.
+codec_vorbis.amni	fn packet(k int, out f32[>..]&) int	Ogg Vorbis Decoding	int	Decodes one audio packet into the output buffer and returns the number of frames produced, or zero if none.
+codec_vorbis.amni	fn decode(data const byte[:], pcm f32[>..]&) int, int, bool	Ogg Vorbis Decoding	pub	Decodes a whole Ogg Vorbis file into interleaved float samples, returning channel count, sample rate and success.
+codec_vorbis.amni	fn is_vorbis(b const byte[:]) bool	Ogg Vorbis Decoding	pub	Returns true when the bytes begin with an Ogg page header carrying a Vorbis identification packet.
+gfx/cloth.amni	var tie_on bool[>..];	Cloth Setup	int	Per-vertex flag array marking which particles are tied to a point by a tether.
+gfx/cloth.amni	var tie_p real[>..];	Cloth Setup	int	Per-vertex array of tether anchor positions, stored as x, y, z triples.
+gfx/cloth.amni	var tie_len real[>..];	Cloth Setup	int	Per-vertex array of maximum tether lengths for tied particles.
+gfx/cloth.amni	fn add3(arr real[>..]&, x real, y real, z real)	Simulation	int	Appends x, y and z values to a flat real array as three consecutive entries.
+gfx/cloth.amni	fn tie(c int, vertex int, x real, y real, z real, len real)	Cloth Setup	pub	Tethers a cloth vertex to a world point, limiting its distance to len, which is clamped to zero or more.
+gfx/cloth.amni	fn untie(c int)	Cloth Setup	pub	Removes the tethers from every vertex of the given cloth.
+gfx/cloth.amni	fn rule(a int, b int, rl real, soft real, h real)	Simulation	int	Moves two particles along their connecting line to satisfy a rest length with softness, scaled by inverse masses.
+gfx/codec_webp.amni	let PLANE int[120] = [24, 7, 23, 25, 40, 6, 39, 41, 22, 26, 38, 42, 56, 5, 55, 57, 21, 27, 54, 58, 37, 43, 72, 4, 71, 73, 20, 28, 53, 59, 70, 74, 36, 44, 88, 69, 75, 52, 60, 3, 87, 89, 19, 29, 86, 90, 35, 45, 68, 76, 85,	Lookup Tables	int	Table mapping short lossless distance codes to two-dimensional neighbor offsets, used when resolving backward-copy distances.
+gfx/codec_webp.amni	let COEF0 int[1056] = [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 253, 136, 254, 255, 228, 219, 12	Lookup Tables	int	Table of default initial probabilities for lossy coefficient decoding, indexed by band, context and token position.
+gfx/codec_webp.amni	let COEFU int[1056] = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 176, 246, 255, 255, 255, 255, 25	Lookup Tables	int	Table of coefficient probability update thresholds used when reading lossy frame headers.
+gfx/codec_webp.amni	let BMODEP int[900] = [231, 120, 48, 89, 115, 113, 120, 152, 112, 152, 179, 64, 126, 170, 118, 46, 70, 95, 175, 69, 143, 80, 85, 82, 72, 155, 103, 56, 58, 10, 171, 218, 189, 17, 13, 152, 114, 26, 17, 163, 44, 195, 21, 10	Lookup Tables	int	Table of fixed probabilities for decoding 4x4 intra prediction block modes in lossy frames.
+gfx/codec_webp.amni	let DCTAB int[128] = [4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 17, 18, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 25, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 	Lookup Tables	int	Table mapping a quantizer index to its DC dequantization step for lossy frames.
+gfx/codec_webp.amni	let ACTAB int[128] = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 	Lookup Tables	int	Table mapping a quantizer index to its AC dequantization step for lossy frames.
+gfx/codec_webp.amni	let PRED4 int[128] = [13398, 13671, 13944, 14217, 13398, 13671, 13944, 14217, 13398, 13671, 13944, 14217, 13398, 13671, 13944, 14217, 12548, 12548, 12548, 12548, 12306, 12306, 12306, 12306, 12579, 12579, 12579, 12579, 12	Lookup Tables	int	Table of packed values describing 4x4 intra prediction modes in lossy frames.
+gfx/codec_webp.amni	let ZIGZAG int[16] = [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15];	Lookup Tables	int	Table giving the zigzag scan order of the 16 coefficients in a transform block.
+gfx/codec_webp.amni	let BANDS int[17] = [0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0];	Lookup Tables	int	Table mapping coefficient position to its probability band for lossy token decoding.
+gfx/codec_webp.amni	let CATP int[23] = [173, 148, 140, 176, 155, 140, 135, 180, 157, 141, 134, 130, 254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129];	Lookup Tables	int	Table of probabilities for decoding the extra bits of large lossy coefficient categories.
+gfx/codec_webp.amni	let CLORDER int[19] = [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];	Lookup Tables	int	Table giving the order in which code length code lengths are stored in lossless Huffman headers.
+gfx/codec_webp.amni	var why byte[>..];	Error Reporting	int	Buffer holding the text of the most recent decoding failure message.
+gfx/codec_webp.amni	var src byte[>..];	Container Parsing	int	Buffer holding the WebP file bytes currently being parsed and decoded.
+gfx/codec_webp.amni	fn fail(reason const byte[:]) bool	Error Reporting	int	Records a failure message and returns false so callers can report errors in one step.
+gfx/codec_webp.amni	fn error() const byte[:]	Error Reporting	pub	Returns the message describing the most recent decoding failure.
+gfx/codec_webp.amni	fn sb(at int) int	Container Parsing	int	Returns the byte at the given offset of the source data as an integer.
+gfx/codec_webp.amni	fn le16(at int) int	Container Parsing	int	Reads a little-endian 16-bit unsigned value at the given offset of the source data.
+gfx/codec_webp.amni	fn le24(at int) int	Container Parsing	int	Reads a little-endian 24-bit unsigned value at the given offset of the source data.
+gfx/codec_webp.amni	fn le32(at int) int	Container Parsing	int	Reads a little-endian 32-bit unsigned value at the given offset of the source data.
+gfx/codec_webp.amni	var img_at int = 0;	Container Parsing	int	Offset of the image chunk payload within the file.
+gfx/codec_webp.amni	var img_len int = 0;	Container Parsing	int	Size in bytes of the image chunk payload.
+gfx/codec_webp.amni	var alph_at int = -1;	Container Parsing	int	Offset of the alpha chunk payload, or -1 when the file has none.
+gfx/codec_webp.amni	var alph_len int = 0;	Container Parsing	int	Size in bytes of the alpha chunk payload.
+gfx/codec_webp.amni	var width int = 0;	Container Parsing	int	Width in pixels of the parsed image.
+gfx/codec_webp.amni	var height int = 0;	Container Parsing	int	Height in pixels of the parsed image.
+gfx/codec_webp.amni	var lossless bool = false;	Container Parsing	int	Flag set when the image chunk is lossless rather than lossy.
+gfx/codec_webp.amni	var has_alpha bool = false;	Container Parsing	int	Flag set when the parsed image carries transparency data.
+gfx/codec_webp.amni	fn tag_is(at int, s const byte[:]) bool	Container Parsing	int	Returns whether the four bytes at an offset match the given chunk tag.
+gfx/codec_webp.amni	fn parse() bool	Container Parsing	int	Validates the RIFF container and image headers, returning false and recording an error if the file is unsupported or malformed.
+gfx/codec_webp.amni	var lb_pos int = 0;	Lossless Bit Reading	int	Current read position of the lossless bit reader within the source data.
+gfx/codec_webp.amni	var lb_end int = 0;	Lossless Bit Reading	int	End position of the data the lossless bit reader may consume.
+gfx/codec_webp.amni	var lb_val int = 0;	Lossless Bit Reading	int	Bit buffer holding bits fetched but not yet consumed by the lossless reader.
+gfx/codec_webp.amni	var lb_n int = 0;	Lossless Bit Reading	int	Number of valid bits currently in the lossless bit buffer.
+gfx/codec_webp.amni	var lb_over bool = false;	Lossless Bit Reading	int	Flag set when the lossless reader tried to read past the end of its data.
+gfx/codec_webp.amni	fn lbegin(at int, end int)	Lossless Bit Reading	int	Starts the lossless bit reader over the given byte range and clears its state.
+gfx/codec_webp.amni	fn lfill()	Lossless Bit Reading	int	Refills the lossless bit buffer with whole bytes while data remains.
+gfx/codec_webp.amni	fn lpeek(n int) int	Lossless Bit Reading	int	Returns the next n bits without consuming them.
+gfx/codec_webp.amni	fn lskip(n int)	Lossless Bit Reading	int	Consumes n bits, flagging overrun if too few remain.
+gfx/codec_webp.amni	fn lbits(n int) int	Lossless Bit Reading	int	Reads and consumes n bits, returning them as an integer.
+gfx/codec_webp.amni	var ht int[>..];	Huffman Coding	int	Storage for all built Huffman lookup tables used by lossless decoding.
+gfx/codec_webp.amni	var hrev int[>..];	Huffman Coding	int	Scratch array holding bit-reversed Huffman codes while a table is built.
+gfx/codec_webp.amni	fn brev(c int, l int) int	Huffman Coding	int	Reverses the low l bits of a code so it matches LSB-first reading.
+gfx/codec_webp.amni	fn hbuild(lens const int[:], n int) int	Huffman Coding	int	Builds a Huffman lookup table from code lengths, returning its offset or -1 if the lengths are invalid.
+gfx/codec_webp.amni	fn hread(t int) int	Huffman Coding	int	Decodes one symbol from the lossless bit stream using the table at the given offset.
+gfx/codec_webp.amni	var lcl int[>..];	Huffman Coding	int	Scratch array holding code lengths while a Huffman code is read.
+gfx/codec_webp.amni	fn lcode(nsym int) int	Huffman Coding	int	Reads a Huffman code for the given symbol count from the stream, returning its table offset or -1 on error.
+gfx/codec_webp.amni	var tr_type int[>..];	Lossless Decoding	int	List of transform types read from the lossless stream, in order of appearance.
+gfx/codec_webp.amni	var tr_bits int[>..];	Lossless Decoding	int	List of block size bit counts for each lossless transform.
+gfx/codec_webp.amni	var tr_w int[>..];	Lossless Decoding	int	List of image widths at which each lossless transform applies.
+gfx/codec_webp.amni	var tr_off int[>..];	Lossless Decoding	int	List of offsets into transform pixel data for each lossless transform.
+gfx/codec_webp.amni	var tr_px int[>..];	Lossless Decoding	int	Combined pixel data for all lossless transforms.
+gfx/codec_webp.amni	var scr int[>..];	Lossless Decoding	int	Scratch pixel array used while decoding transform sub-images.
+gfx/codec_webp.amni	var ent int[>..];	Lossless Decoding	int	Pixel array holding the entropy image that selects Huffman groups per block.
+gfx/codec_webp.amni	var gt int[>..];	Lossless Decoding	int	Storage for Huffman table offsets of every Huffman group.
+gfx/codec_webp.amni	var argb int[>..];	Lossless Decoding	int	Decoded lossless image pixels in packed ARGB form.
+gfx/codec_webp.amni	var tmp2 int[>..];	Lossless Decoding	int	Temporary pixel array used while undoing color-indexing transforms.
+gfx/codec_webp.amni	var cache int[>..];	Lossless Decoding	int	Color cache holding recently decoded pixels for lossless decoding.
+gfx/codec_webp.amni	fn cdiv(v int, b int) int	Lossless Decoding	int	Divides a value by 2^b, rounding up.
+gfx/codec_webp.amni	fn padd(a int, b int) int	Lossless Decoding	int	Adds two packed ARGB pixels channel by channel with wraparound.
+gfx/codec_webp.amni	recursive fn stream(w int, h int, top bool, out int[>..]&) bool	Lossless Decoding	int	Decodes one lossless image stream, including transforms at the top level, into pixels; returns false on error.
+gfx/codec_webp.amni	fn copylen(s int) int	Lossless Decoding	int	Converts a length or distance prefix symbol into its actual value, reading extra bits.
+gfx/codec_webp.amni	fn cput(out int[>..]&, pos int, px int, cbits int)	Lossless Decoding	int	Stores a pixel in the output and updates the color cache.
+gfx/codec_webp.amni	fn pixels(dw int, h int, gbase int, mbits int, ew int, cbits int, out int[>..]&) bool	Lossless Decoding	int	Decodes entropy-coded pixels, backward copies and cache references into the output; returns false on error.
+gfx/codec_webp.amni	fn clampb(v int) int	Lossless Decoding	int	Clamps a value to the range 0 to 255.
+gfx/codec_webp.amni	fn sext8(v int) int	Lossless Decoding	int	Interprets the low 8 bits of a value as a signed integer.
+gfx/codec_webp.amni	fn avg2(a int, b int) int	Lossless Decoding	int	Averages two packed ARGB pixels channel by channel.
+gfx/codec_webp.amni	fn sel(l int, t int, tl int) int	Lossless Decoding	int	Picks the left or top pixel, whichever is closer to the gradient estimate.
+gfx/codec_webp.amni	fn addsub(l int, t int, tl int) int	Lossless Decoding	int	Computes left plus top minus top-left per channel, clamped to 0 to 255.
+gfx/codec_webp.amni	fn halfadd(l int, t int, tl int) int	Lossless Decoding	int	Computes a per-channel average of left and top adjusted by half the gap to top-left.
+gfx/codec_webp.amni	fn predict(m int, l int, t int, tl int, tr int) int	Lossless Decoding	int	Returns the predicted pixel for the given predictor mode from neighboring pixels.
+gfx/codec_webp.amni	fn inverse(w int, h int, out int[>..]&) bool	Lossless Decoding	int	Undoes the lossless transforms in reverse order; returns false if the final size is wrong.
+gfx/codec_webp.amni	fn lreset()	Lossless Decoding	int	Clears the Huffman table storage before decoding a new lossless image.
+gfx/codec_webp.amni	fn vp8l(px byte[>..]&) bool	Lossless Decoding	int	Decodes the lossless image into RGBA bytes in the output buffer, returning false on error.
+gfx/codec_webp.amni	var bd_pos int[9] = [0; 9];	Lossy Range Decoding	int	Current read positions of the boolean decoders.
+gfx/codec_webp.amni	var bd_end int[9] = [0; 9];	Lossy Range Decoding	int	End positions of the data for each boolean decoder.
+gfx/codec_webp.amni	var bd_val int[9] = [0; 9];	Lossy Range Decoding	int	Value registers of the boolean decoders.
+gfx/codec_webp.amni	var bd_rng int[9] = [0; 9];	Lossy Range Decoding	int	Range registers of the boolean decoders.
+gfx/codec_webp.amni	var bd_cnt int[9] = [0; 9];	Lossy Range Decoding	int	Bit counters of the boolean decoders.
+gfx/codec_webp.amni	var bd_eof int[9] = [0; 9];	Lossy Range Decoding	int	Flags marking boolean decoders that have run past their data.
+gfx/codec_webp.amni	fn bload(r int)	Lossy Range Decoding	int	Loads the next byte into the given boolean decoder, handling end of data.
+gfx/codec_webp.amni	fn binit(r int, at int, size int)	Lossy Range Decoding	int	Initializes the given boolean decoder over a byte range.
+gfx/codec_webp.amni	fn bit(r int, p int) int	Lossy Range Decoding	int	Decodes one boolean from the given decoder using probability p out of 256.
+gfx/codec_webp.amni	fn bsign(r int, v int) int	Lossy Range Decoding	int	Decodes a sign bit at even probability and returns the value negated if set.
+gfx/codec_webp.amni	fn bval(r int, n int) int	Lossy Range Decoding	int	Reads an n-bit unsigned value from the given boolean decoder.
+gfx/codec_webp.amni	fn bsval(r int, n int) int	Lossy Range Decoding	int	Reads an n-bit magnitude followed by a sign bit and returns the signed value.
+gfx/codec_webp.amni	var mb_w int = 0;	Lossy Frame Setup	int	Width of the lossy frame in 16-pixel macroblocks.
+gfx/codec_webp.amni	var mb_h int = 0;	Lossy Frame Setup	int	Height of the lossy frame in 16-pixel macroblocks.
+gfx/codec_webp.amni	var seg_on bool = false;	Lossy Frame Setup	int	Flag set when segmentation is enabled for the lossy frame.
+gfx/codec_webp.amni	var seg_map bool = false;	Lossy Frame Setup	int	Flag set when the frame carries a per-macroblock segment map.
+gfx/codec_webp.amni	var abs_d bool = true;	Lossy Frame Setup	int	Flag selecting whether segment values are absolute or deltas, defaulting to absolute.
+gfx/codec_webp.amni	var seg_q int[4] = [0; 4];	Lossy Frame Setup	int	Per-segment quantizer values read from the frame header, used when segmentation is enabled.
+gfx/codec_webp.amni	var seg_f int[4] = [0; 4];	Lossy Frame Setup	int	Per-segment loop filter levels read from the frame header, used when segmentation is enabled.
+gfx/codec_webp.amni	var seg_p int[3] = [255; 3];	Lossy Frame Setup	int	Probabilities for decoding each macroblock's segment index, defaulting to 255 when not sent.
+gfx/codec_webp.amni	var fl_simple bool = false;	Lossy Frame Setup	int	Flag set when the frame header selects the simple loop filter instead of the normal one.
+gfx/codec_webp.amni	var fl_level int = 0;	Lossy Frame Setup	int	Base loop filter strength read from the frame header, where 0 disables filtering.
+gfx/codec_webp.amni	var fl_sharp int = 0;	Lossy Frame Setup	int	Loop filter sharpness value read from the frame header.
+gfx/codec_webp.amni	var fl_deltas bool = false;	Lossy Frame Setup	int	Flag set when the header enables reference and mode based loop filter level adjustments.
+gfx/codec_webp.amni	var ref_d int[4] = [0; 4];	Lossy Frame Setup	int	Loop filter level adjustments indexed by reference frame, read from the frame header.
+gfx/codec_webp.amni	var mode_d int[4] = [0; 4];	Lossy Frame Setup	int	Loop filter level adjustments indexed by prediction mode, read from the frame header.
+gfx/codec_webp.amni	var ftype int = 0;	Lossy Frame Setup	int	Selected loop filter type: 0 for none, 1 for simple, 2 for normal.
+gfx/codec_webp.amni	var nparts int = 1;	Lossy Frame Setup	int	Number of token partitions in the current lossy frame.
+gfx/codec_webp.amni	var dq int[24] = [0; 24];	Lossy Frame Setup	int	Dequantization factors, six per segment, covering luma, second-order and chroma coefficients.
+gfx/codec_webp.amni	var cprob int[1056] = [0; 1056];	Lossy Frame Setup	int	Working table of coefficient token probabilities, initialized from defaults and updated by the frame header.
+gfx/codec_webp.amni	var skip_on bool = false;	Lossy Frame Setup	int	Flag set when macroblocks may carry a skip-residual bit.
+gfx/codec_webp.amni	var skip_p int = 0;	Lossy Frame Setup	int	Probability used to decode each macroblock's skip bit.
+gfx/codec_webp.amni	fn clampm(v int, m int) int	Lossy Frame Setup	int	Clamps a value into the range zero through the given maximum and returns it.
+gfx/codec_webp.amni	fn vp8_head() bool	Lossy Frame Setup	int	Parses the lossy frame header, sets up partitions, quantizers and probabilities, and returns false on malformed data.
+gfx/codec_webp.amni	var mr_seg int[>..];	Lossy Frame Setup	int	Per-macroblock segment indices for the current macroblock row.
+gfx/codec_webp.amni	var mr_skip int[>..];	Lossy Frame Setup	int	Per-macroblock skip flags for the current macroblock row.
+gfx/codec_webp.amni	var mr_i4 int[>..];	Lossy Frame Setup	int	Per-macroblock flags marking 4x4 subblock prediction for the current row.
+gfx/codec_webp.amni	var mr_ym int[>..];	Lossy Frame Setup	int	Per-macroblock 16x16 luma prediction modes for the current row.
+gfx/codec_webp.amni	var mr_cm int[>..];	Lossy Frame Setup	int	Per-macroblock chroma prediction modes for the current row.
+gfx/codec_webp.amni	var mr_sub int[>..];	Lossy Frame Setup	int	Per-subblock luma prediction modes for the current macroblock row.
+gfx/codec_webp.amni	var top_m int[>..];	Lossy Frame Setup	int	Subblock modes of the row above, used as context when decoding modes.
+gfx/codec_webp.amni	var left_m int[4] = [0; 4];	Lossy Frame Setup	int	Subblock modes of the macroblock to the left, used as context when decoding modes.
+gfx/codec_webp.amni	fn tree4(base int) int	Lossy Frame Setup	int	Decodes one 4x4 subblock prediction mode using the probabilities at the given base offset.
+gfx/codec_webp.amni	fn modes_row() bool	Lossy Frame Setup	int	Decodes segment, skip and prediction modes for one macroblock row, returning false if data is truncated.
+gfx/codec_webp.amni	var co int[>..];	Lossy Range Decoding	int	Buffer of decoded and dequantized transform coefficients for the macroblocks being processed.
+gfx/codec_webp.amni	fn wrap16(v int) int	Lossy Range Decoding	int	Wraps a value into the signed 16-bit range.
+gfx/codec_webp.amni	fn large(r int, p int) int	Lossy Range Decoding	int	Decodes the magnitude of a coefficient token larger than one.
+gfx/codec_webp.amni	fn coeffs(r int, ty int, ctx int, dqdc int, dqac int, first int, at int) int	Lossy Range Decoding	int	Decodes one block's coefficients into the buffer and returns the position after the last one decoded.
+gfx/codec_webp.amni	var nz_top int[>..];	Lossy Range Decoding	int	Per-macroblock nonzero flags for blocks along the top edge, used as token context.
+gfx/codec_webp.amni	var dnz_top int[>..];	Lossy Range Decoding	int	Per-macroblock top nonzero flags for the second-order luma block.
+gfx/codec_webp.amni	var nz_left int = 0;	Lossy Range Decoding	int	Nonzero flags for blocks along the left edge, used as token context.
+gfx/codec_webp.amni	var dnz_left int = 0;	Lossy Range Decoding	int	Left nonzero flag for the second-order luma block.
+gfx/codec_webp.amni	var mr_code int[>..];	Lossy Range Decoding	int	Per-block residual codes for the current row, selecting no transform, DC only, or full inverse transform.
+gfx/codec_webp.amni	var mr_has int[>..];	Lossy Range Decoding	int	Per-macroblock flags marking whether any nonzero residual was decoded in the current row.
+gfx/codec_webp.amni	fn setb(v int, i int, f int) int	Lossy Range Decoding	int	Returns a bit mask with the bit at the given index set to the given flag.
+gfx/codec_webp.amni	fn codeof(nz int, dc int) int	Lossy Range Decoding	int	Returns a residual code from the nonzero count and DC value of a block.
+gfx/codec_webp.amni	fn wht(sc int, base int)	Lossy Range Decoding	int	Applies the inverse Walsh-Hadamard transform, spreading second-order values into each luma block's DC coefficient.
+gfx/codec_webp.amni	fn resid(mx int, tp int) bool	Lossy Range Decoding	int	Decodes all residual coefficients for one macroblock, returning false if token data is truncated.
+gfx/codec_webp.amni	var wk int[832] = [0; 832];	Lossy Reconstruction	int	Working buffer holding the macroblock being predicted and reconstructed, with border pixels.
+gfx/codec_webp.amni	var top_y int[>..];	Lossy Reconstruction	int	Bottom luma pixel row of the macroblock row above, used for prediction.
+gfx/codec_webp.amni	var top_u int[>..];	Lossy Reconstruction	int	Bottom U chroma pixel row of the macroblock row above, used for prediction.
+gfx/codec_webp.amni	var top_v int[>..];	Lossy Reconstruction	int	Bottom V chroma pixel row of the macroblock row above, used for prediction.
+gfx/codec_webp.amni	var pl byte[>..];	Lossy Reconstruction	int	Planar output buffer holding the Y, U and V planes of the decoded frame.
+gfx/codec_webp.amni	var ysz int = 0;	Lossy Reconstruction	int	Size in bytes of the luma plane.
+gfx/codec_webp.amni	var usz int = 0;	Lossy Reconstruction	int	Size in bytes of each chroma plane.
+gfx/codec_webp.amni	fn recon_row(my int)	Lossy Reconstruction	int	Predicts and reconstructs every macroblock in one row and writes the results into the planes.
+gfx/codec_webp.amni	fn pred_big(o int, s int, mode int, tp bool, lf bool)	Lossy Reconstruction	int	Fills a 16x16 or 8x8 block using DC, TrueMotion, vertical or horizontal prediction.
+gfx/codec_webp.amni	fn nb(o int, n int) int	Lossy Reconstruction	int	Returns the neighboring edge pixel with the given index around a 4x4 block.
+gfx/codec_webp.amni	fn pred4(o int, mode int)	Lossy Reconstruction	int	Fills a 4x4 luma subblock using the given intra prediction mode.
+gfx/codec_webp.amni	fn m1(a int) int	Lossy Reconstruction	int	Multiplies a value by roughly 1.306 as used in the inverse transform.
+gfx/codec_webp.amni	fn m2(a int) int	Lossy Reconstruction	int	Multiplies a value by roughly 0.541 as used in the inverse transform.
+gfx/codec_webp.amni	fn wadd(p int, v int)	Lossy Reconstruction	int	Adds a residual to a working-buffer pixel, clamping to the byte range.
+gfx/codec_webp.amni	fn idct(cb int, o int)	Lossy Reconstruction	int	Applies the full 4x4 inverse DCT and adds the result to the predicted block.
+gfx/codec_webp.amni	fn dcadd(cb int, o int)	Lossy Reconstruction	int	Adds a DC-only residual to every pixel of a 4x4 block.
+gfx/codec_webp.amni	fn dotrans(code int, cb int, o int)	Lossy Reconstruction	int	Applies the transform chosen by the residual code to a 4x4 block.
+gfx/codec_webp.amni	fn uvtrans(cd int, cb int, o int)	Lossy Reconstruction	int	Applies residual transforms to the four 4x4 blocks of one chroma plane in a macroblock.
+gfx/codec_webp.amni	var f_seg int[>..];	Loop Filtering	int	Per-macroblock segment indices saved for the whole frame for loop filtering.
+gfx/codec_webp.amni	var f_i4 int[>..];	Loop Filtering	int	Per-macroblock 4x4 prediction flags saved for the whole frame for loop filtering.
+gfx/codec_webp.amni	var f_has int[>..];	Loop Filtering	int	Per-macroblock residual presence flags saved for the whole frame for loop filtering.
+gfx/codec_webp.amni	var fs_lim int[8] = [0; 8];	Loop Filtering	int	Edge limit thresholds indexed by segment and prediction type.
+gfx/codec_webp.amni	var fs_il int[8] = [0; 8];	Loop Filtering	int	Interior limit thresholds indexed by segment and prediction type.
+gfx/codec_webp.amni	var fs_hev int[8] = [0; 8];	Loop Filtering	int	High edge variance thresholds indexed by segment and prediction type.
+gfx/codec_webp.amni	fn s1(v int) int	Loop Filtering	int	Clamps a value to the signed 8-bit range.
+gfx/codec_webp.amni	fn s2(v int) int	Loop Filtering	int	Clamps a value to the range -16 through 15.
+gfx/codec_webp.amni	fn put(o int, v int)	Loop Filtering	int	Stores a pixel value into the plane buffer, clamped to the byte range.
+gfx/codec_webp.amni	fn two(o int, st int, p1 int, p0 int, q0 int, q1 int)	Loop Filtering	int	Adjusts the two pixels nearest an edge using the common filter.
+gfx/codec_webp.amni	fn four(o int, st int, p1 int, p0 int, q0 int, q1 int)	Loop Filtering	int	Adjusts four pixels around an edge using the subblock filter.
+gfx/codec_webp.amni	fn six(o int, st int)	Loop Filtering	int	Adjusts six pixels around an edge using the macroblock filter.
+gfx/codec_webp.amni	fn edge(pos int, step int, lstep int, cnt int, thr int, il int, hv int, kind int)	Loop Filtering	int	Filters a run of pixels along one edge, skipping positions that exceed the thresholds.
+gfx/codec_webp.amni	fn fprep()	Loop Filtering	int	Computes per-segment filter limits and thresholds from the header settings.
+gfx/codec_webp.amni	fn loop_filter()	Loop Filtering	int	Applies the loop filter across all macroblocks of the decoded frame planes.
+gfx/codec_webp.amni	var up_u int[>..];	Color Conversion	int	Row buffer of upsampled U chroma values for the current output row.
+gfx/codec_webp.amni	var up_v int[>..];	Color Conversion	int	Row buffer of upsampled V chroma values for the current output row.
+gfx/codec_webp.amni	fn g(i int) int	Color Conversion	int	Returns the plane buffer byte at the given index as an integer.
+gfx/codec_webp.amni	fn mh(v int, k int) int	Color Conversion	int	Multiplies a value by a fixed-point factor with eight fractional bits.
+gfx/codec_webp.amni	fn clip8c(v int) int	Color Conversion	int	Converts a fixed-point color value to a byte, clamping out-of-range results.
+gfx/codec_webp.amni	fn upsample(pb int, nr int, fr int, dst int[>..]&)	Color Conversion	int	Fills a destination row with chroma values upsampled to full width by interpolating two chroma rows.
+gfx/codec_webp.amni	fn to_rgba(px byte[>..]&)	Color Conversion	int	Converts the decoded YUV planes into opaque RGBA pixels in the output buffer.
+gfx/codec_webp.amni	var al int[>..];	Alpha Channel	int	Decoded alpha values, one per pixel, of the current image.
+gfx/codec_webp.amni	fn alpha(px byte[>..]&) bool	Alpha Channel	int	Decodes and unfilters the alpha plane into the pixels' alpha bytes, returning false if absent or invalid.
+gfx/codec_webp.amni	fn rz(a int[>..]&, n int)	Lossy Frame Setup	int	Clears an integer array and resizes it to the given length filled with zeros.
+gfx/codec_webp.amni	fn vp8(px byte[>..]&) bool	Lossy Frame Setup	int	Decodes a lossy frame into RGBA pixels, returning false on error.
+gfx/codec_webp.amni	fn is_webp(b const byte[:]) bool	Image Decoding	pub	Returns whether the bytes begin with a RIFF container carrying the WebP signature.
+gfx/codec_webp.amni	fn load(data const byte[:])	Image Decoding	int	Copies the given file data into the decoder's internal source buffer.
+gfx/codec_webp.amni	fn size(b const byte[:]) int, int, bool	Image Decoding	pub	Returns the image width, height and a success flag, or zeros and false if parsing fails.
+gfx/codec_webp.amni	fn decode(data const byte[:], px byte[>..]&) int, int, bool	Image Decoding	pub	Decodes a lossy or lossless WebP into RGBA pixels, returning width, height and false on failure.
+gfx/draco.amni	fn w32(x int) int	Integer Helpers	int	Wraps an integer to a signed 32-bit value for decoder arithmetic.
+gfx/draco.amni	fn u32of(x int) int	Integer Helpers	int	Masks an integer down to its unsigned 32-bit value.
+gfx/draco.amni	fn idiv(a int, b int) int	Integer Helpers	int	Divides two integers using integer division.
+gfx/draco.amni	var faces u32[>..];	Decoded Mesh	pub	Triangle face corner indices of the decoded mesh, stored as unsigned 32-bit values.
+gfx/draco.amni	var points int = 0;	Decoded Mesh	pub	Number of points in the decoded mesh.
+gfx/draco.amni	var att_type int[>..];	Attributes	pub	Per-attribute type codes for the decoded vertex attributes.
+gfx/draco.amni	var att_dtype int[>..];	Attributes	pub	Per-attribute data type codes for the decoded vertex attributes.
+gfx/draco.amni	var att_comps int[>..];	Attributes	pub	Per-attribute component counts, such as three for a position.
+gfx/draco.amni	var att_norm int[>..];	Attributes	pub	Per-attribute flags marking whether values are normalized.
+gfx/draco.amni	var att_uid int[>..];	Attributes	pub	Per-attribute unique ids used to look up an attribute.
+gfx/draco.amni	var att_first int[>..];	Attributes	pub	Per-attribute index of the first entry in the shared values array.
+gfx/draco.amni	var values real[>..];	Attributes	pub	Decoded attribute values stored as reals for all attributes.
+gfx/draco.amni	var why byte[>..];	Errors	pub	Bytes of the message describing why decoding failed.
+gfx/draco.amni	fn error() const byte[:]	Errors	pub	Returns the message describing the most recent decoding failure.
+gfx/draco.amni	fn find(uid int) int	Attributes	pub	Returns the index of the attribute with the given unique id, or -1 if none matches.
+gfx/draco.amni	fn fail(msg const byte[:]) bool	Errors	int	Records a failure message and returns false.
+gfx/draco.amni	var buf byte[>..];	Byte Reader	int	Input byte buffer being decoded.
+gfx/draco.amni	var pos int = 0;	Byte Reader	int	Current read position within the input buffer.
+gfx/draco.amni	var bad bool = false;	Byte Reader	int	Flag set when a read runs past the data or is malformed.
+gfx/draco.amni	fn left() int	Byte Reader	int	Returns the number of unread bytes remaining in the buffer.
+gfx/draco.amni	fn bt(i int) int	Byte Reader	int	Returns the byte at the given index as an integer.
+gfx/draco.amni	fn u8v() int	Byte Reader	int	Reads an unsigned 8-bit value and advances, flagging an error at end of data.
+gfx/draco.amni	fn i8v() int	Byte Reader	int	Reads a signed 8-bit value and advances the position.
+gfx/draco.amni	fn u16v() int	Byte Reader	int	Reads a little-endian unsigned 16-bit value, flagging an error if too few bytes remain.
+gfx/draco.amni	fn u32v() int	Byte Reader	int	Reads a little-endian unsigned 32-bit value, flagging an error if too few bytes remain.
+gfx/draco.amni	fn i32v() int	Byte Reader	int	Reads a little-endian signed 32-bit value and advances the position.
+gfx/draco.amni	fn f32v() f32	Byte Reader	int	Reads a little-endian 32-bit float from the buffer and advances the position.
+gfx/draco.amni	fn varintv(limit int) int	Byte Reader	int	Reads a variable-length integer of at most the given number of bytes, flagging an error if malformed.
+gfx/draco.amni	var bit_at int = 0;	Bit Reader	int	Current byte offset where the bit reader starts.
+gfx/draco.amni	var bit_end int = 0;	Bit Reader	int	Byte offset at which bit reading must stop.
+gfx/draco.amni	var bit_off int = 0;	Bit Reader	int	Current bit offset relative to the bit reader's start.
+gfx/draco.amni	fn bits_begin(at int, end int)	Bit Reader	int	Starts bit reading over the given byte range from the first bit.
+gfx/draco.amni	fn bits(n int) int	Bit Reader	int	Reads the given number of bits, up to 32, least significant first.
+gfx/draco.amni	fn bits_bytes() int	Bit Reader	int	Returns the number of whole bytes consumed by the bits read so far.
+gfx/draco.amni	var rb_data int[>..];	Bit Decoding	int	Data start positions for each binary rANS bit decoder.
+gfx/draco.amni	var rb_off int[>..];	Bit Decoding	int	Remaining byte offsets for each binary rANS bit decoder.
+gfx/draco.amni	var rb_state int[>..];	Bit Decoding	int	Current states of each binary rANS bit decoder.
+gfx/draco.amni	var rb_p0 int[>..];	Bit Decoding	int	Zero-bit probabilities for each binary rANS bit decoder.
+gfx/draco.amni	fn rbit_start() int	Bit Decoding	int	Parses a binary rANS decoder header and returns its index, or -1 on failure.
+gfx/draco.amni	fn rbit(k int) bool	Bit Decoding	int	Decodes the next bit from the given binary rANS decoder.
+gfx/draco.amni	var rs_prob int[>..];	Symbol Decoding	int	Symbol probabilities of the current rANS table.
+gfx/draco.amni	var rs_cum int[>..];	Symbol Decoding	int	Cumulative probabilities of the current rANS table.
+gfx/draco.amni	var rs_lut int[>..];	Symbol Decoding	int	Lookup table mapping probability slots to symbols.
+gfx/draco.amni	var rs_precision int = 0;	Symbol Decoding	int	Total probability precision of the current rANS table.
+gfx/draco.amni	var rs_data int = 0;	Symbol Decoding	int	Data start position of the current rANS stream.
+gfx/draco.amni	var rs_off int = 0;	Symbol Decoding	int	Remaining byte offset within the current rANS stream.
+gfx/draco.amni	var rs_state int = 0;	Symbol Decoding	int	Current state of the rANS symbol decoder.
+gfx/draco.amni	fn rans_table(nb int) int	Symbol Decoding	int	Reads a rANS probability table and returns its symbol count, or -1 on failure.
+gfx/draco.amni	fn rans_begin() bool	Symbol Decoding	int	Initializes the rANS symbol decoder from the stream header, returning false on failure.
+gfx/draco.amni	fn rans_next() int	Symbol Decoding	int	Decodes and returns the next symbol from the rANS stream.
+gfx/draco.amni	fn symbols(n int, comps int, out int[>..]&) bool	Symbol Decoding	int	Decodes the given number of symbols into the output array, returning false on failure.
+gfx/draco.amni	fn skip_bytes(n int)	Metadata Skipping	int	Advances the read position by the given bytes, flagging an error if out of range.
+gfx/draco.amni	fn skip_tree() bool	Metadata Skipping	int	Skips a metadata tree, returning false if it is malformed.
+gfx/draco.amni	fn skip_meta() bool	Metadata Skipping	int	Skips all metadata blocks, returning false if malformed.
+gfx/draco.amni	var c2v int[>..];	Connectivity	int	Maps each corner to its vertex index.
+gfx/draco.amni	var opp int[>..];	Connectivity	int	Maps each corner to its opposite corner, or -1 if none.
+gfx/draco.amni	var lmc int[>..];	Connectivity	int	Maps each vertex to its leftmost corner.
+gfx/draco.amni	var n_ad int = 0;	Connectivity	int	Number of additional attribute connectivity decoders.
+gfx/draco.amni	var nc int = 0;	Connectivity	int	Total number of corners in the mesh.
+gfx/draco.amni	var a_c2v int[>..];	Attribute Connectivity	int	Per-attribute corner to vertex mappings.
+gfx/draco.amni	var a_seam bool[>..];	Attribute Connectivity	int	Per-attribute flags marking corners whose opposite edge is a seam.
+gfx/draco.amni	var a_vseam bool[>..];	Attribute Connectivity	int	Per-attribute flags marking vertices that lie on a seam.
+gfx/draco.amni	var a_lmc int[>..];	Attribute Connectivity	int	Per-attribute vertex to leftmost corner mappings.
+gfx/draco.amni	var a_lmc_at int[>..];	Attribute Connectivity	int	Starting offsets of each attribute's leftmost corner data.
+gfx/draco.amni	var a_nv int[>..];	Attribute Connectivity	int	Vertex counts for each attribute connectivity.
+gfx/draco.amni	fn nxt(c int) int	Connectivity	int	Returns the next corner within the same triangle.
+gfx/draco.amni	fn prv(c int) int	Connectivity	int	Returns the previous corner within the same triangle.
+gfx/draco.amni	fn vert(t int, c int) int	Connectivity	int	Returns the vertex at a corner, or -1 if invalid.
+gfx/draco.amni	fn oppo(t int, c int) int	Connectivity	int	Returns the opposite corner, or -1 if none or across a seam.
+gfx/draco.amni	fn lm(t int, v int) int	Connectivity	int	Returns the leftmost corner of a vertex, or -1 if invalid.
+gfx/draco.amni	fn nverts(t int) int	Connectivity	int	Returns the number of vertices in the given connectivity.
+gfx/draco.amni	fn swl(t int, c int) int	Connectivity	int	Returns the corner reached by swinging left around a vertex, or -1 at a boundary.
+gfx/draco.amni	fn swr(t int, c int) int	Connectivity	int	Returns the corner reached by swinging right around a vertex, or -1 at a boundary.
+gfx/draco.amni	fn boundary(t int, v int) bool	Connectivity	int	Returns whether the vertex lies on a mesh boundary.
+gfx/draco.amni	fn on_seam(k int, c int) bool	Attribute Connectivity	int	Returns whether the corner's vertex lies on a seam for the given attribute.
+gfx/draco.amni	fn set_opp(a int, b int)	Connectivity	int	Links two corners as opposites of each other, ignoring invalid indices.
+gfx/draco.amni	fn around(t int, c int, out int[>..]&)	Connectivity	int	Fills the output array with all corners around a corner's vertex.
+gfx/draco.amni	var valence bool = false;	Edgebreaker	int	Flag indicating valence-based traversal is used.
+gfx/draco.amni	var ev int = 0;	Edgebreaker	int	Vertex count read from the edgebreaker header.
+gfx/draco.amni	var ef int = 0;	Edgebreaker	int	Face count read from the edgebreaker header.
+gfx/draco.amni	var es int = 0;	Edgebreaker	int	Symbol count read from the edgebreaker header.
+gfx/draco.amni	var eq int = 0;	Edgebreaker	int	Split symbol count read from the edgebreaker header.
+gfx/draco.amni	var maxv int = 0;	Edgebreaker	int	Maximum vertex count including split vertices.
+gfx/draco.amni	var hole bool[>..];	Edgebreaker	int	Flags marking vertex slots not yet assigned.
+gfx/draco.amni	var sp_src int[>..<];	Edgebreaker	int	Source symbol positions of split events.
+gfx/draco.amni	var sp_split int[>..<];	Edgebreaker	int	Split target positions of split events.
+gfx/draco.amni	var sp_edge int[>..<];	Edgebreaker	int	Edge side bits for split events.
+gfx/draco.amni	fn edgebreaker() bool	Edgebreaker	int	Reads and validates the edgebreaker header and split data, returning false on failure.
+gfx/draco.amni	var start_dec int = -1;	Edgebreaker	int	Index of the start-face bit decoder, or -1 if unset.
+gfx/draco.amni	var seam_dec int[>..];	Edgebreaker	int	Indices of the seam bit decoders for each attribute.
+gfx/draco.amni	var valences int[>..];	Edgebreaker	int	Per-vertex valence counters used while decoding valence-based Edgebreaker symbols.
+gfx/draco.amni	var ctx_sym int[>..];	Edgebreaker	int	Buffer of decoded symbols for each of the six valence contexts.
+gfx/draco.amni	var ctx_at int[>..];	Edgebreaker	int	Start offsets into the context symbol buffer, one per valence context.
+gfx/draco.amni	var ctx_left int[>..];	Edgebreaker	int	Remaining symbol counts for each valence context while decoding.
+gfx/draco.amni	var active int = -1;	Edgebreaker	int	Index of the currently active valence context, or -1 when none is selected.
+gfx/draco.amni	var att_start int = 0;	Edgebreaker	int	Byte position where attribute data begins after the traversal section.
+gfx/draco.amni	fn traversal_start() bool	Edgebreaker	int	Reads symbol and seam decoder setup and valence contexts, returning false on failure.
+gfx/draco.amni	fn next_symbol() int	Edgebreaker	int	Returns the next Edgebreaker symbol, from bits or valence contexts, or 99 if invalid.
+gfx/draco.amni	fn addval(c int, k int)	Edgebreaker	int	Adds an amount to the valence counter of the vertex at a corner.
+gfx/draco.amni	fn reached(c int, sym int)	Edgebreaker	int	Updates vertex valences for a decoded symbol and selects the next valence context.
+gfx/draco.amni	var stk int[>..<];	Edgebreaker	int	Stack of corners for open faces during Edgebreaker symbol decoding.
+gfx/draco.amni	var sp_corner int[>..];	Edgebreaker	int	Corners recorded for pending split symbols, indexed by symbol position.
+gfx/draco.amni	var removed int[>..];	Edgebreaker	int	List of vertices merged away during S symbol handling, awaiting compaction.
+gfx/draco.amni	var nfaces int = 0;	Edgebreaker	int	Count of faces decoded so far in the connectivity pass.
+gfx/draco.amni	var tmp int[>..];	Edgebreaker	int	Scratch list of corners used during vertex compaction.
+gfx/draco.amni	var conn_nv int = 0;	Edgebreaker	int	Vertex count of the decoded connectivity after compaction.
+gfx/draco.amni	fn split_check(i int) bool	Edgebreaker	int	Resolves pending split symbols for the current symbol index, returning false on invalid data.
+gfx/draco.amni	fn symbol_loop() bool	Edgebreaker	int	Decodes all Edgebreaker symbols to build face connectivity, returning false on malformed data.
+gfx/draco.amni	fn finish_connectivity() bool	Edgebreaker	int	Decodes start faces, checks face count and compacts vertices, returning false on failure.
+gfx/draco.amni	fn mark_seam(k int, c int)	Attribute Connectivity	int	Marks a corner, its opposite corner and their vertices as seams for an attribute.
+gfx/draco.amni	fn seams() bool	Attribute Connectivity	int	Reads seam flags and builds per-attribute corner-to-vertex maps, returning false on failure.
+gfx/draco.amni	var cp int[>..];	Decoded Mesh	int	Scratch map from corner to output point index.
+gfx/draco.amni	fn assign_points() bool	Decoded Mesh	int	Fills the face list and point count from connectivity and seams, returning false on failure.
+gfx/draco.amni	fn sequential() bool	Decoded Mesh	int	Decodes sequentially encoded faces and point count, returning false on malformed data.
+gfx/draco.amni	var dec_slot int[>..];	Attributes	int	Per-decoder slot index of the connectivity an attribute decoder uses, or -1 for positions.
+gfx/draco.amni	var dec_type int[>..];	Attributes	int	Per-decoder type code, distinguishing standard decoders from corner-based decoders.
+gfx/draco.amni	var dec_trav int[>..];	Attributes	int	Per-decoder traversal method code, selecting depth-first or prediction-degree ordering.
+gfx/draco.amni	var dec_first int[>..];	Attributes	int	Per-decoder index of its first attribute in the global attribute list.
+gfx/draco.amni	var dec_cnt int[>..];	Attributes	int	Per-decoder count of attributes it handles.
+gfx/draco.amni	var att_dkind int[>..];	Attributes	int	Per-attribute decoder kind code, such as generic, quantized or normal.
+gfx/draco.amni	var port_at int[>..];	Attributes	int	Per-attribute index into the portable data buffer, or -1 when unset.
+gfx/draco.amni	var pmap_at int[>..];	Attributes	int	Per-attribute index into the stored point-to-entry maps, or -1 when unset.
+gfx/draco.amni	var gen_at int[>..];	Attributes	int	Per-attribute offset into the generic value buffer, or -1 when unset.
+gfx/draco.amni	var port_pc int[>..];	Attributes	int	Per-attribute count of prediction-related components for portable data.
+gfx/draco.amni	fn read_decoders(edge bool) bool	Attributes	int	Reads decoder headers and attribute descriptions, allocating value storage, returning false on failure.
+gfx/draco.amni	var v2d int[>..];	Attributes	int	Maps each vertex to its position in the attribute traversal sequence.
+gfx/draco.amni	var d2c int[>..];	Attributes	int	Maps each traversal sequence entry to its source corner.
+gfx/draco.amni	var seq int[>..];	Attributes	int	Sequence of point indices in the order attributes are encoded.
+gfx/draco.amni	var vis_f bool[>..];	Attributes	int	Flags marking which faces the traversal has already visited.
+gfx/draco.amni	var vis_v bool[>..];	Attributes	int	Flags marking which vertices the traversal has already visited.
+gfx/draco.amni	var dstk int[>..<];	Attributes	int	Stack of corners for the depth-first traversal.
+gfx/draco.amni	var pst0 int[>..<];	Attributes	int	Highest-priority stack of pending corners for degree-based traversal.
+gfx/draco.amni	var pst1 int[>..<];	Attributes	int	Medium-priority stack of pending corners for degree-based traversal.
+gfx/draco.amni	var pst2 int[>..<];	Attributes	int	Lowest-priority stack of pending corners for degree-based traversal.
+gfx/draco.amni	var pbest int = 0;	Attributes	int	Best non-empty priority level currently tracked by degree-based traversal.
+gfx/draco.amni	var pdegree int[>..];	Attributes	int	Per-vertex visit counts used to assign priorities in degree-based traversal.
+gfx/draco.amni	var pmap int[>..];	Attributes	int	Map from point index to its position in the attribute sequence.
+gfx/draco.amni	var pmaps int[>..];	Attributes	int	Concatenated point-to-entry maps for all attribute decoders.
+gfx/draco.amni	var nent int = 0;	Attributes	int	Number of entries in the current attribute sequence.
+gfx/draco.amni	var tt int = -1;	Attributes	int	Connectivity table index of the current traversal, or -1 for the default.
+gfx/draco.amni	fn fvis(c int) bool	Attributes	int	Returns whether the face of a corner is already visited, treating invalid corners as visited.
+gfx/draco.amni	fn visit(v int, c int) bool	Attributes	int	Records a vertex in the traversal sequence at a corner, returning false on invalid indices.
+gfx/draco.amni	fn dfs(t int, c0 int) bool	Attributes	int	Runs depth-first traversal from a corner, returning false on invalid connectivity.
+gfx/draco.amni	fn ppush(p int, c int)	Attributes	int	Pushes a corner onto the priority stack for a given level.
+gfx/draco.amni	fn pnext() int	Attributes	int	Pops the next corner from the best non-empty priority stack, or -1 if none remain.
+gfx/draco.amni	fn ppri(t int, c int) int	Attributes	int	Returns the traversal priority of a corner and counts its vertex's visits, or -1 if invalid.
+gfx/draco.amni	fn pdeg_trav(t int, c0 int) bool	Attributes	int	Runs prediction-degree-prioritized traversal from a corner, returning false on invalid connectivity.
+gfx/draco.amni	fn build_sequence(d int, edge bool) bool	Attributes	int	Builds the attribute sequence and point map for a decoder, returning false on failure.
+gfx/draco.amni	var cor int[>..];	Attributes	int	Buffer of corrected values read for the current attribute before prediction.
+gfx/draco.amni	var port int[>..];	Attributes	int	Buffer of portable attribute data for the current decoder.
+gfx/draco.amni	var gen real[>..];	Attributes	int	Buffer of raw values read for generic attributes, stored as reals.
+gfx/draco.amni	fn p2(k int) real	Attributes	int	Returns two raised to an integer power as a real.
+gfx/draco.amni	fn f64_of(x int) real	Attributes	int	Converts 64-bit IEEE double bits stored in an integer into a real.
+gfx/draco.amni	fn gen_read(ai int) bool	Attributes	int	Reads generic attribute values of the declared type into the generic buffer, returning false on failure.
+gfx/draco.amni	fn pick_kind(pm int, isnorm bool, edge bool) int	Attributes	int	Chooses a prediction scheme kind from the method code, or -1 if unsupported.
+gfx/draco.amni	fn first_pos() int	Attributes	int	Returns the index of the first position attribute, or -1 if none exists.
+gfx/draco.amni	fn read_cor(n int, pc int, zig bool) bool	Attributes	int	Reads correction values, raw or symbol-coded, optionally zigzag decoded, returning false on failure.
+gfx/draco.amni	var wmin int = 0;	Attributes	int	Minimum of the wrap-around prediction range.
+gfx/draco.amni	var wmax int = 0;	Attributes	int	Maximum of the wrap-around prediction range.
+gfx/draco.amni	var wdif int = 1;	Attributes	int	Size of the wrap-around prediction range, maximum minus minimum plus one.
+gfx/draco.amni	var nmq int = 0;	Attributes	int	Quantization bit mask for normal octahedron decoding.
+gfx/draco.amni	var nmv int = 0;	Attributes	int	Maximum quantized value for normal octahedron decoding.
+gfx/draco.amni	var nce int = 0;	Attributes	int	Center quantized value for normal octahedron decoding.
+gfx/draco.amni	fn read_wrap() bool	Attributes	int	Reads the wrap-around range bounds, returning false if invalid.
+gfx/draco.amni	fn wrap_apply(pv int, e int) int	Attributes	int	Applies a correction to a predicted value, wrapping within the range and returning the result.
+gfx/draco.amni	fn read_norm() bool	Normal Prediction	int	Reads the normal octahedron quantization parameters from the stream, returning false if they are invalid.
+gfx/draco.amni	fn modmax(x int) int	Normal Prediction	int	Wraps a value into the signed range used by octahedral normal coordinates.
+gfx/draco.amni	fn rot2(r int, s int, t int) int, int	Normal Prediction	int	Rotates an octahedral coordinate pair by the given number of quarter turns.
+gfx/draco.amni	fn invert(s int, t int) int, int	Normal Prediction	int	Inverts an octahedral coordinate pair across the diamond boundary.
+gfx/draco.amni	fn norm_apply(ps int, pt int, e int, f int) int, int	Normal Prediction	int	Applies a correction to a predicted octahedral normal and returns the resulting coordinate pair.
+gfx/draco.amni	var pbad bool = false;	Prediction State	int	Flag set when attribute prediction reads invalid data.
+gfx/draco.amni	var pbase int = 0;	Prediction State	int	Offset into the portable value array where the current attribute begins.
+gfx/draco.amni	var pos_ai int = -1;	Prediction State	int	Index of the position attribute used by texture and geometric normal predictors, or -1 if none.
+gfx/draco.amni	var pred int[>..];	Prediction State	int	Predicted value components for the current entry.
+gfx/draco.amni	fn wmul(a int, b int) int	Wrapping Math	int	Multiplies two integers with 64-bit wraparound on overflow.
+gfx/draco.amni	fn wadd(a int, b int) int	Wrapping Math	int	Adds two integers with 64-bit wraparound on overflow.
+gfx/draco.amni	fn wsub(a int, b int) int	Wrapping Math	int	Subtracts two integers with 64-bit wraparound on overflow.
+gfx/draco.amni	fn wabs(a int) int	Wrapping Math	int	Returns the absolute value of an integer using wraparound arithmetic.
+gfx/draco.amni	fn idw(a int, b int) int	Wrapping Math	int	Divides two integers, negating the first when the divisor is -1 to avoid overflow.
+gfx/draco.amni	fn zero_pred(pc int)	Prediction State	int	Fills the prediction with zeros for the given component count.
+gfx/draco.amni	fn dat(k int) int	Prediction State	int	Returns a value from the current attribute's portable data, flagging an error if out of range.
+gfx/draco.amni	fn prev_pred(p int, pc int)	Delta Prediction	int	Sets the prediction to the previous entry's values.
+gfx/draco.amni	fn ent(t int, c int) int	Prediction State	int	Returns the entry index for a corner's vertex, flagging an error if invalid.
+gfx/draco.amni	fn posc(e int, k int) int	Position Access	int	Returns one component of an entry's decoded position, flagging an error if unavailable.
+gfx/draco.amni	fn posof(e int) int, int, int	Position Access	int	Returns the x, y, and z position components of an entry.
+gfx/draco.amni	fn pred_delta(p int, pc int)	Delta Prediction	int	Sets the prediction to zero for the first entry or the previous entry otherwise.
+gfx/draco.amni	var cf_data int[>..];	Compression Prediction	int	Flat array of crease flags read for constrained multi-parallelogram prediction.
+gfx/draco.amni	var cf_at int[>..];	Compression Prediction	int	Start offsets of each context's flags within the crease flag array.
+gfx/draco.amni	var cf_cnt int[>..];	Compression Prediction	int	Number of crease flags stored for each context.
+gfx/draco.amni	var cf_used int[>..];	Compression Prediction	int	Number of crease flags already consumed for each context.
+gfx/draco.amni	var pall int[>..];	Compression Prediction	int	Scratch array holding all parallelogram predictions gathered for the current entry.
+gfx/draco.amni	var psum int[>..];	Compression Prediction	int	Scratch array accumulating the sum of accepted parallelogram predictions.
+gfx/draco.amni	fn para(t int, p int, c int, pc int) bool	Parallelogram Prediction	int	Computes a parallelogram prediction across a corner's opposite edge, returning false if unavailable.
+gfx/draco.amni	fn pred_para(p int, pc int)	Parallelogram Prediction	int	Sets the prediction using parallelogram prediction, falling back to the previous entry's values.
+gfx/draco.amni	fn cmp_data() bool	Compression Prediction	int	Reads the crease flag data for each context, returning false if the stream is invalid.
+gfx/draco.amni	fn pred_cmp(p int, pc int)	Compression Prediction	int	Sets the prediction by averaging parallelograms around the vertex, skipping those flagged as creases.
+gfx/draco.amni	var orient int[>..<];	Texture Prediction	int	Orientation bits read for texture coordinate prediction.
+gfx/draco.amni	fn tex_data(n int) bool	Texture Prediction	int	Reads texture orientation bits for the given entry count, returning false if the stream is invalid.
+gfx/draco.amni	fn isqrt(n int) int	Wrapping Math	int	Returns the integer square root of a non-negative value.
+gfx/draco.amni	fn pred_tex(p int, pc int)	Texture Prediction	int	Sets the predicted texture coordinates from neighboring vertices' positions and UVs.
+gfx/draco.amni	var flip_dec int = -1;	Geometric Normal Prediction	int	Bit decoder handle for the normal flip flags, or -1 if unset.
+gfx/draco.amni	var ar int[>..];	Geometric Normal Prediction	int	Scratch array of corners around the current vertex.
+gfx/draco.amni	fn pred_geo(p int, pc int)	Geometric Normal Prediction	int	Sets the predicted octahedral normal from the area-weighted face normals around a vertex.
+gfx/draco.amni	fn compute(ai int, kind int, xf int, pc int) bool	Attribute Decoding	int	Decodes prediction values and corrections for one attribute, returning false if the stream is invalid.
+gfx/draco.amni	fn portable(ai int, edge bool) bool	Attribute Decoding	int	Reads one attribute's portable values and prediction scheme, returning false if invalid.
+gfx/draco.amni	fn conv(dt int, v int) int	Attribute Decoding	int	Converts a raw integer to the attribute's integer data type by masking and sign-extending.
+gfx/draco.amni	fn finalize(ai int) bool	Attribute Decoding	pub	Converts decoded portable values into the attribute's final real values for each point.
+gfx/draco.amni	fn soft(msg const byte[:]) bool	Errors	int	Records an error message only if none is set, then returns false.
+gfx/draco.amni	fn attributes(edge bool) bool	Attribute Decoding	int	Decodes all attribute decoders and their values, returning false on failure.
+gfx/draco.amni	fn clear_outputs()	Decoded Mesh	int	Clears the decoded faces, points, and attribute outputs.
+gfx/draco.amni	fn reset()	Decoded Mesh	int	Resets all decoder state so a new stream can be decoded.
+gfx/draco.amni	fn body() bool	Decoded Mesh	int	Parses the header and runs the connectivity and attribute decoding stages.
+gfx/draco.amni	fn decode(src const byte[:]) bool	Decoded Mesh	pub	Decodes a Draco byte stream into faces, points, and attributes, returning false on failure.
+gfx/garment.amni	var bt int[>..];	Skeleton Fitting	int	Per-vertex index of the body triangle each garment vertex is bound to.
+gfx/garment.amni	var bw real[>..];	Skeleton Fitting	int	Per-vertex barycentric weights of the bound body triangle for each garment vertex.
+gfx/garment.amni	var bo real[>..];	Skeleton Fitting	int	Per-vertex offsets of garment vertices in the bound triangle's tangent, bitangent and normal frame.
+gfx/garment.amni	var pt real[>..];	Skeleton Fitting	int	Storage for garment vertex positions captured when binding to the body.
+gfx/garment.amni	var qn real[>..];	Skeleton Fitting	int	Scratch per-vertex normals computed for the body mesh being fitted.
+gfx/garment.amni	var rp real[>..];	Skeleton Fitting	int	Copy of the rest-pose body vertex positions used as the binding reference.
+gfx/garment.amni	var targets f32[>..];	Garment Output	pub	Target positions for each garment vertex, as xyz triples, updated when the body is posed.
+gfx/garment.amni	var bi int[>..];	Skeleton Fitting	int	Copy of the body triangle index list used for binding and posing.
+gfx/garment.amni	fn unit_len(x real, y real, z real) real, real, real, real	Skeleton Fitting	int	Normalizes a vector, returning its unit components and original length, or zeros if the length is near zero.
+gfx/garment.amni	fn perp3(nx real, ny real, nz real) real, real, real	Skeleton Fitting	int	Returns a unit vector perpendicular to the given normal, falling back to the x axis when degenerate.
+gfx/garment.amni	fn normals_of(Q const f32[:])	Skeleton Fitting	int	Computes area-weighted, normalized per-vertex normals for the body mesh into scratch storage.
+gfx/garment.amni	fn frame(Q const f32[:], t int, w0 real, w1 real, w2 real) real, real, real, real, real, real, real, real, real	Skeleton Fitting	int	Builds a position, normal and tangent frame at a barycentric point on a body triangle, rotated to match the rest pose.
+gfx/garment.amni	fn bary_of(p0 real, p1 real, p2 real, ax real, ay real, az real, bx real, by real, bz real, cx real, cy real, cz real) real, real, real	Skeleton Fitting	int	Returns barycentric weights of the point on a triangle closest to the given point.
+gfx/garment.amni	fn near_tri(P const f32[:], t int, x real, y real, z real) real, real, real, real	Skeleton Fitting	int	Returns squared distance and barycentric weights of the closest point on a body triangle to the given point.
+gfx/garment.amni	fn bind(P const f32[:], I const int[:]) bool	Skeleton Fitting	pub	Binds garment vertices to the nearest triangles of a rest-pose body mesh, returning false if inputs are invalid or mismatched.
+gfx/garment.amni	var gp real[>..];	Skeleton Fitting	int	Storage for garment vertex positions on the posed body surface.
+gfx/garment.amni	var gn real[>..];	Skeleton Fitting	int	Storage for body surface normals at each garment vertex after posing.
+gfx/garment.amni	fn pose(c int, Q const f32[:]) int	Skeleton Fitting	pub	Poses the bound garment onto a new body vertex set, updating targets, and returns -1 if unbound or mismatched.
+gfx/gltf.amni	var acc_view int[>..];	Draco Decoding	int	Pool mapping each accessor index to an override buffer view, or -1, used for Draco-decoded data.
+gfx/gltf.amni	fn put_value(v real, kind int)	Draco Decoding	int	Appends one number to the working blob in the byte format of the given glTF component type.
+gfx/gltf.amni	fn draco_view(ai int, at int)	Draco Decoding	int	Points an accessor at a new buffer view covering blob bytes from the given offset to the current end.
+gfx/gltf.amni	fn unpack_draco(d json::Doc&, p int, attrs int) bool	Draco Decoding	int	Decodes a primitive's Draco-compressed attributes into accessor-backed blob views, returning false and setting the problem text on failure.
+gfx.he	pref_path(org const byte[:], app const byte[:]) byte[>..]	Window Setup	pub	Returns the platform-specific per-user writable directory for an organization and application name, creating no assumptions about its contents.
+gfx/hud.amni	var TEXT_DROP f32 = 0.2;	Text	pub	Tunable fraction of text height used as drop offset, applied as a module-level variable for text rendering.
+gfx/hud.amni	fn text_size(n int) float2	Text	int	Measures the rich-text size of a node's localized string, returning width and height (line height 1.55 times the tallest glyph) for layout.
+gfx/meshopt.amni	let MODE_ATTRIBUTES = 0;	Decode Modes	pub	Mode constant selecting the vertex attribute decoder for the decode function.
+gfx/meshopt.amni	let MODE_TRIANGLES = 1;	Decode Modes	pub	Mode constant selecting the triangle index decoder for the decode function.
+gfx/meshopt.amni	let MODE_INDICES = 2;	Decode Modes	pub	Mode constant selecting the index sequence decoder for the decode function.
+gfx/meshopt.amni	let FILTER_NONE = 0;	Filters	pub	Filter constant meaning no post-decode filter is applied to the decoded attributes.
+gfx/meshopt.amni	let FILTER_OCTAHEDRAL = 1;	Filters	pub	Filter constant selecting octahedral decoding of normal-style attribute data.
+gfx/meshopt.amni	let FILTER_QUATERNION = 2;	Filters	pub	Filter constant selecting quaternion decoding of rotation attribute data.
+gfx/meshopt.amni	let FILTER_EXPONENTIAL = 3;	Filters	pub	Filter constant selecting exponential decoding of packed floating-point attribute data.
+gfx/meshopt.amni	let FILTER_COLOR = 4;	Filters	pub	Filter constant selecting color decoding of packed YCoCg-style color attribute data.
+gfx/meshopt.amni	fn mode_of(name const byte[:]) int	Decode Modes	pub	Returns the mode constant for a mode name such as "TRIANGLES", or -1 if unknown.
+gfx/meshopt.amni	fn filter_of(name const byte[:]) int	Filters	pub	Returns the filter constant for a filter name, treating an empty name as none, or -1 if unknown.
+gfx/meshopt.amni	fn unzig(v int) int	Decode Modes	int	Converts a zigzag-encoded unsigned value into its signed integer.
+gfx/meshopt.amni	fn read_varint(s const byte[:], pos int) int, int	Decode Modes	int	Reads a variable-length integer at a position, returning the value and next position, or -1 position on failure.
+gfx/meshopt.amni	fn put_index(out byte[>..]&, v int, size int)	Decode Modes	int	Appends an index to the output as little-endian bytes, two or four wide.
+gfx/meshopt.amni	fn attr_run(s const byte[:], count int, stride int, out byte[>..]&) bool	Decode Modes	int	Decodes an attribute stream into the output buffer, returning false on malformed data.
+gfx/meshopt.amni	fn attributes(s const byte[:], count int, stride int, out byte[>..]&) bool	Decode Modes	pub	Decodes a compressed attribute buffer into the output, returning false and leaving the output unchanged on failure.
+gfx/meshopt.amni	fn attr_width(v1 bool, ctl int, mode int) int	Decode Modes	int	Returns the delta bit width for a group given the format version, control value and mode.
+gfx/meshopt.amni	fn attr_block(s const byte[:], pos int&, limit int, v1 bool, stride int, n int, deltas byte[:]) bool	Decode Modes	int	Reads one block of attribute delta data into the deltas buffer, returning false if data is truncated.
+gfx/meshopt.amni	fn attr_element(prev byte[:], deltas const byte[:], n int, e int, stride int, v1 bool, chan const byte[:]) bool	Decode Modes	int	Applies one element's deltas to the previous values per channel, returning false for an invalid channel mode.
+gfx/meshopt.amni	fn tri_run(s const byte[:], count int, size int, out byte[>..]&) bool	Decode Modes	int	Decodes a triangle stream into index bytes, returning false on malformed data.
+gfx/meshopt.amni	fn triangles(s const byte[:], count int, size int, out byte[>..]&) bool	Decode Modes	pub	Decodes a compressed triangle buffer into two- or four-byte indices, returning false and leaving the output unchanged on failure.
+gfx/meshopt.amni	fn idx_run(s const byte[:], count int, size int, out byte[>..]&) bool	Decode Modes	int	Decodes an index sequence stream into index bytes, returning false on malformed data.
+gfx/meshopt.amni	fn indices(s const byte[:], count int, size int, out byte[>..]&) bool	Decode Modes	pub	Decodes a compressed index sequence buffer into two- or four-byte indices, returning false and leaving the output unchanged on failure.
+gfx/meshopt.amni	fn s8(v int) int	Filters	int	Sign-extends the low eight bits of a value into a signed integer.
+gfx/meshopt.amni	fn s16(v int) int	Filters	int	Sign-extends the low sixteen bits of a value into a signed integer.
+gfx/meshopt.amni	fn rnd(x real) int	Filters	int	Rounds a real number to the nearest integer.
+gfx/meshopt.amni	fn get_u(buf const byte[:], at int, w int) int	Filters	int	Reads an unsigned one- or two-byte little-endian value from a buffer.
+gfx/meshopt.amni	fn get_s(buf const byte[:], at int, w int) int	Filters	int	Reads a signed one- or two-byte little-endian value from a buffer.
+gfx/meshopt.amni	fn put_u(buf byte[:], at int, w int, v int)	Filters	int	Writes a one- or two-byte little-endian value into a buffer.
+gfx/meshopt.amni	fn octahedral(buf byte[:], start int, count int, stride int) bool	Filters	pub	Decodes octahedral-encoded normals in place for four- or eight-byte elements, returning false on invalid arguments or data.
+gfx/meshopt.amni	fn quaternion(buf byte[:], start int, count int, stride int) bool	Filters	pub	Decodes quaternion-encoded rotations in place for eight-byte elements, returning false on invalid arguments.
+gfx/meshopt.amni	fn exponential(buf byte[:], start int, count int, stride int) bool	Filters	pub	Decodes exponential-encoded values in place into 32-bit floats, returning false on invalid arguments.
+gfx/meshopt.amni	fn color(buf byte[:], start int, count int, stride int) bool	Filters	pub	Decodes color-encoded elements in place for four- or eight-byte elements, returning false on invalid arguments.
+gfx/meshopt.amni	fn decode(s const byte[:], count int, stride int, mode int, flt int, out byte[>..]&) bool	Decode Modes	pub	Decodes a compressed buffer using a mode and filter into the output, returning false and leaving the output unchanged on failure.
+gfx/rt.amni	var pos_of int[>..] = [];	Tree Building	int	Per-leaf-slot index mapping each triangle to its position in the tree's sorted order, used for incremental updates.
+gfx/rt.amni	var parent int[>..] = [];	Tree Building	int	Per-node parent index array, with -1 for the root, used when refitting bounds upward.
+gfx/rt.amni	var leaf_of int[>..] = [];	Tree Building	int	Array mapping each sorted triangle position to the leaf node that contains it.
+gfx/rt.amni	var dirty int[>..] = [];	Tree Building	int	List of leaf nodes whose triangles moved and need their bounds refit.
+gfx/rt.amni	var mark int[>..] = [];	Tree Building	int	Per-node stamp array that prevents the same leaf being added to the dirty list twice.
+gfx/rt.amni	var stamp = 0;	Tree Building	int	Counter incremented on each refit to distinguish dirty marks from earlier passes.
+gfx/rt.amni	var tri_lo = -1;	GPU Upload	int	Lowest sorted triangle position changed since the last upload, or -1 when nothing changed.
+gfx/rt.amni	var tri_hi = -1;	GPU Upload	int	One past the highest sorted triangle position changed since the last upload, used to bound the partial upload.
+gfx/rt.amni	var node_lo = -1;	GPU Upload	int	Lowest node index whose bounds changed since the last upload, or -1 when none changed.
+gfx/rt.amni	var node_hi = -1;	GPU Upload	int	One past the highest node index changed since the last upload, bounding the partial buffer update.
+gfx/rt.amni	var built_area f32 = 0.0;	Tree Building	int	Surface area of the root bounds recorded at build time, kept as a quality baseline.
+gfx/rt.amni	fn root_area() f32	Tree Building	int	Returns the surface-area measure of the root node's bounding box, or 0 when the tree is empty.
+gfx/rt.amni	fn set_tri(t int, a float3, b float3, c float3)	Triangle Input	pub	Moves an existing triangle to new vertex positions, marking its leaf dirty so a later refit updates the bounds.
+gfx/rt.amni	fn refit_node(k int)	Tree Building	int	Recomputes one node's bounds from its triangles or child nodes and records it as changed for upload.
+gfx/rt.amni	fn refit()	Tree Building	pub	Refits bounds of all nodes affected by moved triangles, doing a full bottom-up pass when many are dirty.
+gfx/rt.amni	fn update()	GPU Upload	pub	Uploads only the changed ranges of node and triangle data to the GPU buffers, then clears the change tracking.
+gfx/scene3d.amni	let GI_LIGHTS = 16;	Global Illumination	int	Sets the number of lights the global illumination probe update accepts, fixed at 16.
+gfx/scene3d.amni	var MSAA = 4;	Rendering Setup	pub	Sets the multisample count for the color pass, defaulting to 4 samples per pixel.
+gfx/scene3d.amni	let LOCAL_FACES = 96;	Shadows	int	Sets the number of faces in the local light shadow atlas, fixed at 96.
+gfx/scene3d.amni	var lite = false;	Rendering Setup	pub	Toggles a lighter rendering mode when set to true.
+gfx/scene3d.amni	var dof_bokeh f32 = 0.0;	Depth of Field	pub	Sets the bokeh strength of depth of field, where 0.0 disables the bokeh effect.
+gfx/scene3d.amni	var dof_bokeh_cut f32 = 1.0;	Depth of Field	pub	Sets the cutoff brightness for bokeh highlights in depth of field, defaulting to 1.0.
+gfx/scene3d.amni	var dof_band f32 = 0.0;	Depth of Field	pub	Sets the width of the in-focus band for depth of field, defaulting to 0.0.
+gfx/scene3d.amni	var dof_near f32 = 1.0;	Depth of Field	pub	Sets the near-field blur scale for depth of field, defaulting to 1.0.
+gfx/scene3d.amni	var gi_refit = true;	Global Illumination	pub	Toggles refitting of the ray tracing structure instead of a full rebuild when geometry moves.
+gfx/scene3d.amni	var gi_adaptive = true;	Global Illumination	pub	Toggles adaptive choice between refitting and rebuilding the global illumination acceleration structure.
+gfx/scene3d.amni	var gi_rebuilds = 0;	Global Illumination	int	Counts full acceleration structure rebuilds performed for global illumination, kept for statistics.
+gfx/scene3d.amni	var gi_refits = 0;	Global Illumination	int	Counts acceleration structure refits performed for global illumination, kept for statistics.
+gfx/scene3d.amni	var gi_refit_ms = 0.0;	Global Illumination	int	Records the milliseconds spent on the latest global illumination refit.
+gfx/scene3d.amni	var gi_build_ms = 0.0;	Global Illumination	int	Records the milliseconds spent on the latest global illumination structure build.
+gfx/scene3d.amni	var gi_moved = 0;	Global Illumination	int	Counts moved sources found during the latest global illumination update.
+gfx/scene3d.amni	var gi_stamp = 0;	Global Illumination	int	Holds a frame stamp used internally to track global illumination source changes.
+gfx/scene3d.amni	var gi_src = dictionary<int, int> {};	Global Illumination	int	Maps source keys to entries in the global illumination source tables.
+gfx/scene3d.amni	var gi_src_first int[>..] = [];	Global Illumination	int	Lists the first primitive index for each global illumination source.
+gfx/scene3d.amni	var gi_src_cnt int[>..] = [];	Global Illumination	int	Lists the primitive count for each global illumination source.
+gfx/scene3d.amni	var gi_src_prim int[>..] = [];	Global Illumination	int	Lists the primitive indices used by global illumination sources.
+gfx/scene3d.amni	var gi_src_seen int[>..] = [];	Global Illumination	int	Tracks the stamp when each global illumination source was last seen.
+gfx/scene3d.amni	var gi_src_live bool[>..] = [];	Global Illumination	int	Flags which global illumination sources are still live this frame.
+gfx/scene3d.amni	var gi_src_model gfx::mat4[>..] = [];	Global Illumination	int	Stores each global illumination source's last model matrix for movement detection.
+gfx/scene3d.amni	var pipe_full gfx::Pipeline;	Rendering Setup	int	Holds the GPU pipeline for drawing opaque surfaces with full shading.
+gfx/scene3d.amni	var pipe_full_two gfx::Pipeline;	Rendering Setup	int	Holds the double-sided GPU pipeline for drawing opaque surfaces with full shading.
+gfx/scene3d.amni	var local_atlas = 4096;	Shadows	pub	Sets the pixel size of the local light shadow atlas, defaulting to 4096.
+gfx/scene3d.amni	var local_auto = true;	Shadows	pub	Toggles automatic resolution selection for local light shadows, on by default.
+gfx/scene3d.amni	var local_res f32 = 1.0;	Shadows	pub	Scales local light shadow resolution, defaulting to 1.0.
+gfx/scene3d.amni	var local_min = 128;	Shadows	pub	Sets the minimum shadow tile size in pixels for local lights, defaulting to 128.
+gfx/scene3d.amni	var local_cache = true;	Shadows	pub	Toggles caching of local light shadow faces between frames, on by default.
+gfx/scene3d.amni	var local_drawn = 0;	Shadows	int	Counts local light shadow faces drawn in the latest frame.
+gfx/scene3d.amni	var local_fresh = true;	Shadows	int	Flags that the local shadow cache holds no valid data yet.
+gfx/scene3d.amni	var local_rc float4[96];	Shadows	int	Stores the atlas rectangle of each local shadow face.
+gfx/scene3d.amni	var local_ts int[>..] = [];	Shadows	int	Stores per-face timestamps used by the local shadow cache.
+gfx/scene3d.amni	var local_id int[>..] = [];	Shadows	int	Stores light identifiers for local shadow faces.
+gfx/scene3d.amni	var local_lk int[>..] = [];	Shadows	int	Stores per-light cache keys for local shadow faces.
+gfx/scene3d.amni	var local_lf int[>..] = [];	Shadows	int	Stores per-light face counts used by local shadow allocation.
+gfx/scene3d.amni	var local_ls int[>..] = [];	Shadows	int	Stores per-light size values used by local shadow allocation.
+gfx/scene3d.amni	var local_ord int[>..] = [];	Shadows	int	Stores the priority order of local shadow faces for rendering.
+gfx/scene3d.amni	var local_todo int[>..] = [];	Shadows	int	Lists local shadow faces that still need to be drawn.
+gfx/scene3d.amni	var local_bc real[>..] = [];	Shadows	int	Stores per-light bounding values used to prioritize local shadow faces.
+gfx/scene3d.amni	var local_last int[16] = [0; 16];	Shadows	int	Stores the last frame each light's shadow faces were drawn.
+gfx/scene3d.amni	var local_key int[96] = [-1; 96];	Shadows	int	Stores the cache key of each local shadow face, with -1 meaning empty.
+gfx/scene3d.amni	var vbuf_cap = 0;	Geometry Upload	int	Records the current capacity of the vertex buffer.
+gfx/scene3d.amni	var ibuf_cap = 0;	Geometry Upload	int	Records the current capacity of the index buffer.
+gfx/scene3d.amni	var verts_dirty_lo = -1;	Geometry Upload	int	Marks the low end of the vertex range needing re-upload, with -1 meaning none.
+gfx/scene3d.amni	var verts_dirty_hi = 0;	Geometry Upload	int	Marks the high end of the vertex range needing re-upload.
+gfx/scene3d.amni	fn clear_scene()	Scene Items	pub	Removes all items, lights, quads, decals, probes and instances, and resets temporal history on the next frame.
+gfx/scene3d.amni	fn pool_upload(buf gfx::Buffer&, cap int&, have int, bytes const byte[:], usage int) bool	Geometry Upload	int	Uploads bytes into a growing GPU buffer, appending only changed tail when possible; returns true when the whole buffer was rewritten.
+gfx/scene3d.amni	var item_remap int[>..] = [];	Scene Items	int	Table mapping each item's material slots to global material indices, used for per-item material overrides.
+gfx/scene3d.amni	fn remap_new(asset int) int	Scene Items	int	Appends a per-item material remap table for an asset's materials and returns the index of its first entry.
+gfx/scene3d.amni	fn item_mat(ii int, prim int) int	Scene Items	int	Returns the global material index for a primitive of an item, honoring any per-item material override.
+gfx/scene3d.amni	fn item_material(item int, k int) gltf::Material	Scene Items	pub	Returns the material of an item's k-th asset material slot, including any recolor override applied to it.
+gfx/scene3d.amni	fn recolor(item int, k int, m gltf::Material)	Scene Items	pub	Overrides the k-th material slot of one item with a new material, leaving other items sharing the asset unchanged.
+gfx/scene3d.amni	fn bmat(b const Batch&) gltf::Material	Scene Items	int	Returns the material used by a batch entry, falling back to the default material when none is assigned.
+gfx/scene3d.amni	fn gi_takes(b Batch) bool	Global Illumination	int	Returns whether a batch is included in the ray-traced scene, excluding blended, skinned, instanced and morphed draws or materials opting out of GI.
+gfx/scene3d.amni	fn gi_key(b Batch) int	Global Illumination	int	Returns the key identifying a batch's item and node, used to look up its source triangles.
+gfx/scene3d.amni	fn gi_pos(prim int, model gfx::mat4, at int) float3	Global Illumination	int	Returns the world-space position of an indexed vertex in a primitive after applying a model matrix.
+gfx/scene3d.amni	fn gi_same(a gfx::mat4, b gfx::mat4) bool	Global Illumination	int	Returns whether two matrices have identical rotation and translation columns.
+gfx/scene3d.amni	fn gi_rebuild()	Global Illumination	pub	Marks the ray-traced scene as stale so it is fully rebuilt on the next GI pass.
+gfx/scene3d.amni	fn gi_stats() int, int, real, real	Global Illumination	pub	Returns the GI rebuild count, refit count, last refit time in milliseconds and last build time in milliseconds.
+gfx/scene3d.amni	fn gi_read(out f32[>..]&) bool	Global Illumination	pub	Reads the irradiance probe buffer into the output array, returning false when no probe data exists.
+gfx/scene3d.amni	fn gi_track()	Global Illumination	int	Updates moved triangles in the ray-traced scene by refitting its acceleration structure, or flags a full rebuild when needed.
+gfx/scene3d.amni	fn local_pick(k int, l Light) int	Shadows	int	Returns the shadow map resolution chosen for a local light, adapting to its projected size on screen when auto sizing is on.
+gfx/scene3d.amni	fn local_zbits(v int) int	Shadows	int	Returns the value with its low bits spread to even bit positions, used for Morton-order atlas placement.
+gfx/scene3d.amni	fn local_units(i int) int	Shadows	int	Returns the number of atlas tiles a local light's shadow map occupies, counting one for spots and six for point lights.
+gfx/scene3d.amni	fn local_layout()	Shadows	int	Assigns atlas tiles, view-projection matrices and sizes to every local shadow-casting light, shrinking maps when the atlas is full.
+gfx/scene3d.amni	fn local_hits(b Batch, c int) bool	Shadows	int	Returns whether a batch can be seen by a local light's shadow face, using a frustum test or a range test for skinned and instanced draws.
+gfx/scene3d.amni	fn local_stats() int, int	Shadows	pub	Returns the number of local shadow faces drawn this frame and the number queued for redraw.
+gfx/shapes.amni	fn finish_groups(vfirst int, ifirst int, lo float3, hi float3, ms const gltf::Material[:], counts const int[:]) int	Mesh Building	int	Wraps vertices and indices from the given starts into a one-node asset with one material per index group, returning the new asset's index.
+gfx/video.amni	fn clip255(v int) int	Encoder Math	int	Clamps an integer to the 0–255 range used for 8-bit sample values.
+gfx/video.amni	fn cl(v int, lo int, hi int) int	Encoder Math	int	Clamps an integer to the inclusive range between the given low and high bounds.
+gfx/video.amni	let CBPINTER int[48] = [0, 2, 3, 7, 4, 8, 17, 13, 5, 18, 9, 14, 10, 15, 16, 11, 1, 32, 33, 36, 34, 37, 44, 40, 35, 45, 38, 41, 39, 42, 43, 19, 6, 24, 25, 20, 26, 21, 46, 28, 27, 47, 22, 29, 23, 30, 31, 12];	Entropy Tables	int	Lookup table mapping coded block pattern codes to macroblock values for inter-predicted blocks.
+gfx/video.amni	let CTLEN int[272] = [1, 0, 0, 0, 6, 2, 0, 0, 8, 6, 3, 0, 9, 8, 7, 5, 10, 9, 8, 6, 11, 10, 9, 7, 13, 11, 10, 8, 13, 13, 11, 9, 13, 13, 13, 10, 14, 14, 13, 11, 14, 14, 14, 13, 15, 15, 14, 14, 15, 15, 15, 14, 16, 15, 15, 1	Entropy Tables	int	Table of code lengths for coefficient token coding, indexed by context, trailing ones, and coefficient count.
+gfx/video.amni	let CTBITS int[272] = [1, 0, 0, 0, 5, 1, 0, 0, 7, 4, 1, 0, 7, 6, 5, 3, 7, 6, 5, 3, 7, 6, 5, 4, 15, 6, 5, 4, 11, 14, 5, 4, 8, 10, 13, 4, 15, 14, 9, 4, 11, 10, 13, 12, 15, 14, 9, 12, 11, 10, 13, 8, 15, 1, 9, 12, 11, 14, 13	Entropy Tables	int	Table of code bit values for coefficient token coding, paired with the token length table.
+gfx/video.amni	let CDCLEN int[20] = [2, 0, 0, 0, 6, 1, 0, 0, 6, 6, 3, 0, 6, 7, 7, 6, 6, 8, 8, 7];	Entropy Tables	int	Table of code lengths for chroma DC coefficient tokens.
+gfx/video.amni	let CDCBITS int[20] = [1, 0, 0, 0, 7, 1, 0, 0, 4, 6, 1, 0, 3, 3, 2, 5, 2, 3, 2, 0];	Entropy Tables	int	Table of code bit values for chroma DC coefficient tokens, paired with the chroma DC length table.
+gfx/video.amni	let TZLEN int[256] = [1, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 9, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 6, 6, 0, 4, 3, 3, 3, 4, 4, 3, 3, 4, 5, 5, 6, 5, 6, 0, 0, 5, 3, 4, 4, 3, 3, 3, 4, 3, 4, 5, 5, 5, 0, 0, 0, 4, 4, 	Entropy Tables	int	Table of code lengths for total-zeros coding of 4x4 blocks, indexed by coefficient count and zeros.
+gfx/video.amni	let TZBITS int[256] = [1, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 1, 7, 6, 5, 4, 3, 5, 4, 3, 2, 3, 2, 3, 2, 1, 0, 0, 5, 7, 6, 5, 4, 3, 4, 3, 2, 3, 2, 1, 1, 0, 0, 0, 3, 7, 5, 4, 6, 5, 4, 3, 3, 2, 2, 1, 0, 0, 0, 0, 5, 4,	Entropy Tables	int	Table of code bit values for total-zeros coding of 4x4 blocks, paired with the length table.
+gfx/video.amni	let CTZLEN int[12] = [1, 2, 3, 3, 1, 2, 2, 0, 1, 1, 0, 0];	Entropy Tables	int	Table of code lengths for total-zeros coding of chroma DC blocks.
+gfx/video.amni	let CTZBITS int[12] = [1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0];	Entropy Tables	int	Table of code bit values for total-zeros coding of chroma DC blocks, paired with the length table.
+gfx/video.amni	let RUNLEN int[112] = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2,	Entropy Tables	int	Table of code lengths for run-before coding, indexed by zeros remaining and run value.
+gfx/video.amni	let RUNBITS int[112] = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2	Entropy Tables	int	Table of code bit values for run-before coding, paired with the run length table.
+gfx/video.amni	let ZZ int[16] = [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15];	Transform and Quantization	int	Zigzag scan order mapping scan position to index within a 4x4 coefficient block.
+gfx/video.amni	let MF int[18] = [13107, 5243, 8066, 11916, 4660, 7490, 10082, 4194, 6554, 9362, 3647, 5825, 8192, 3355, 5243, 7282, 2893, 4559];	Transform and Quantization	int	Quantization multiplier factors indexed by quantizer remainder and coefficient position class.
+gfx/video.amni	let DQ int[18] = [10, 16, 13, 11, 18, 14, 13, 20, 16, 14, 23, 18, 16, 25, 20, 18, 29, 23];	Transform and Quantization	int	Dequantization scale factors indexed by quantizer remainder and coefficient position class.
+gfx/video.amni	let CQP int[22] = [29, 30, 31, 32, 32, 33, 34, 34, 35, 35, 36, 36, 37, 37, 37, 38, 38, 38, 39, 39, 39, 39];	Transform and Quantization	int	Table mapping luma quantizer values of 30 and above to chroma quantizer values.
+gfx/video.amni	let LEVELS int[42] = [10, 1485, 99, 11, 3000, 396, 12, 6000, 396, 13, 11880, 396, 21, 19800, 792, 22, 20250, 1620, 30, 40500, 1620, 31, 108000, 3600, 32, 216000, 5120, 40, 245760, 8192, 42, 522240, 8704, 50, 589824, 2208	Stream Setup	int	Table of level limits as triples of level code, maximum macroblock rate, and maximum frame size.
+gfx/video.amni	fn cqp(q int) int	Transform and Quantization	int	Returns the chroma quantizer for a luma quantizer, using the lookup table at 30 and above.
+gfx/video.amni	var why byte[>..];	Stream Setup	int	Buffer holding the most recent error message text.
+gfx/video.amni	fn fail(reason const byte[:]) bool	Stream Setup	int	Records the given reason as the error message and returns false.
+gfx/video.amni	fn error() const byte[:]	Stream Setup	pub	Returns the message describing the most recent failure from starting or adding frames.
+gfx/video.amni	var bs byte[>..];	Bitstream Writing	int	Working buffer that accumulates bytes of the NAL unit payload being written.
+gfx/video.amni	var acc int = 0;	Bitstream Writing	int	Partial byte accumulator holding bits not yet flushed to the bitstream buffer.
+gfx/video.amni	var nacc int = 0;	Bitstream Writing	int	Count of bits currently held in the partial byte accumulator.
+gfx/video.amni	fn nbits(x int) int	Bitstream Writing	int	Returns the number of bits needed to represent a non-negative integer.
+gfx/video.amni	fn put(v int, n int)	Bitstream Writing	int	Appends the low n bits of a value to the bitstream, most significant bit first.
+gfx/video.amni	fn ue(v int)	Bitstream Writing	int	Writes an unsigned value using Exp-Golomb coding.
+gfx/video.amni	fn se(v int)	Bitstream Writing	int	Writes a signed value using signed Exp-Golomb coding.
+gfx/video.amni	fn trailing()	Bitstream Writing	int	Writes the stop bit and zero padding to align the bitstream to a byte boundary.
+gfx/video.amni	fn nal(ty int, out byte[>..]&)	Bitstream Writing	int	Wraps the pending bitstream as a NAL unit with emulation prevention bytes, appending it to the output buffer.
+gfx/video.amni	var width int = 0;	Stream Setup	pub	Width of the input picture in pixels, set by a successful start.
+gfx/video.amni	var height int = 0;	Stream Setup	pub	Height of the input picture in pixels, set by a successful start.
+gfx/video.amni	var cw int = 0;	Stream Setup	int	Picture width in pixels padded up to a multiple of 16 macroblock units.
+gfx/video.amni	var ch int = 0;	Stream Setup	int	Picture height in pixels padded up to a multiple of 16 macroblock units.
+gfx/video.amni	var mbw int = 0;	Stream Setup	int	Number of macroblock columns in the padded picture.
+gfx/video.amni	var mbh int = 0;	Stream Setup	int	Number of macroblock rows in the padded picture.
+gfx/video.amni	var fps int = 0;	Stream Setup	pub	Frame rate in frames per second, set by a successful start.
+gfx/video.amni	var qp int = 0;	Stream Setup	pub	Quantizer value used for encoding, clamped between 10 and 51.
+gfx/video.amni	var gop int = 1;	Stream Setup	pub	Group of pictures length, the number of frames between keyframes.
+gfx/video.amni	var frames int = 0;	Stream Setup	pub	Count of frames encoded so far.
+gfx/video.amni	var frame_num int = 0;	Stream Setup	int	Frame number written into slice headers, reset at each keyframe.
+gfx/video.amni	var idrs int = 0;	Stream Setup	int	Count of keyframes encoded so far, used to alternate the keyframe identifier.
+gfx/video.amni	var ready bool = false;	Stream Setup	int	Flag that is true once start has succeeded and frames may be added.
+gfx/video.amni	var sps byte[>..];	Stream Setup	pub	Buffer holding the encoded sequence parameter set NAL unit.
+gfx/video.amni	var pps byte[>..];	Stream Setup	pub	Buffer holding the encoded picture parameter set NAL unit.
+gfx/video.amni	var samples byte[>..];	Frame Encoding	pub	Buffer holding all encoded frame NAL units concatenated in order.
+gfx/video.amni	var sizes int[>..];	Frame Encoding	pub	List of byte sizes of each encoded frame within the samples buffer.
+gfx/video.amni	var keys int[>..];	Frame Encoding	pub	List of flags marking whether each encoded frame is a keyframe.
+gfx/video.amni	var cy int[>..];	Frame Encoding	int	Current frame's luma plane samples converted from the input image.
+gfx/video.amni	var cu int[>..];	Frame Encoding	int	Current frame's blue-difference chroma plane samples converted from the input image.
+gfx/video.amni	var cv int[>..];	Frame Encoding	int	Current frame's red-difference chroma plane samples converted from the input image.
+gfx/video.amni	var ry int[>..];	Frame Encoding	int	Reconstructed luma plane of the frame being encoded.
+gfx/video.amni	var ru int[>..];	Frame Encoding	int	Reconstructed blue-difference chroma plane of the frame being encoded.
+gfx/video.amni	var rv int[>..];	Frame Encoding	int	Reconstructed red-difference chroma plane of the frame being encoded.
+gfx/video.amni	var py int[>..];	Frame Encoding	int	Luma plane of the previous reconstructed frame used for prediction.
+gfx/video.amni	var pu int[>..];	Frame Encoding	int	Blue-difference chroma plane of the previous reconstructed frame used for prediction.
+gfx/video.amni	var pv int[>..];	Frame Encoding	int	Red-difference chroma plane of the previous reconstructed frame used for prediction.
+gfx/video.amni	var keep_recon bool = false;	Frame Encoding	pub	Flag that, when true, makes each added frame's reconstruction be saved to the recon buffer.
+gfx/video.amni	var recon byte[>..];	Frame Encoding	pub	Buffer of reconstructed frames as planar luma, blue chroma and red chroma bytes, filled when keep_recon is set.
+gfx/video.amni	var skip_run int = 0;	Frame Encoding	int	Count of consecutive skipped macroblocks not yet written to the bitstream.
+gfx/video.amni	var mb_kind int[>..];	Frame Encoding	int	Per-macroblock prediction kind recorded during encoding.
+gfx/video.amni	var mb_mx int[>..];	Frame Encoding	int	Per-macroblock horizontal motion vector component.
+gfx/video.amni	var mb_my int[>..];	Frame Encoding	int	Per-macroblock vertical motion vector component.
+gfx/video.amni	var mb_tc int[>..];	Frame Encoding	int	Per-macroblock coefficient counts for each of its 24 blocks.
+gfx/video.amni	var lev_y int[256] = [0; 256];	Transform and Quantization	int	Scratch array of quantized luma coefficient levels for a macroblock.
+gfx/video.amni	var lev_ydc int[16] = [0; 16];	Transform and Quantization	int	Scratch array of quantized luma DC levels for an intra macroblock.
+gfx/video.amni	var lev_cdc int[8] = [0; 8];	Transform and Quantization	int	Scratch array of quantized chroma DC levels for both chroma planes.
+gfx/video.amni	var lev_cac int[128] = [0; 128];	Transform and Quantization	int	Scratch array of quantized chroma AC levels for both chroma planes.
+gfx/video.amni	var pr_y int[256] = [0; 256];	Frame Encoding	int	Scratch array holding the 16x16 luma prediction for a macroblock.
+gfx/video.amni	var pr_u int[64] = [0; 64];	Frame Encoding	int	Scratch array holding the 8x8 blue chroma prediction for a macroblock.
+gfx/video.amni	var pr_v int[64] = [0; 64];	Frame Encoding	int	Scratch array holding the 8x8 red chroma prediction for a macroblock.
+gfx/video.amni	var tmp_y int[256] = [0; 256];	Transform and Quantization	int	Scratch array of luma samples used during transform work.
+gfx/video.amni	var tmp_c int[64] = [0; 64];	Transform and Quantization	int	Scratch array of chroma samples used during transform work.
+gfx/video.amni	fn start(w int, h int, rate int, q int, g int) bool	Stream Setup	pub	Begins a new encoding session with size, frame rate, quantizer and keyframe interval; returns false on invalid parameters.
+gfx/video.amni	fn convert(rgba const byte[:])	Frame Encoding	int	Converts an RGBA frame into luma and subsampled chroma planes padded to macroblock size.
+gfx/video.amni	fn add(rgba const byte[:]) bool	Frame Encoding	pub	Encodes one RGBA frame and appends it to the output; returns false if start failed or data is too short.
+gfx/video.amni	fn slice_header(idr bool)	Frame Encoding	int	Writes the slice header fields for a keyframe or predicted frame.
+gfx/video.amni	fn encode_frame(idr bool)	Frame Encoding	int	Encodes every macroblock of the current frame as one slice, using intra prediction for keyframes.
+gfx/video.amni	fn blkx(k int) int	Transform and Quantization	int	Returns the horizontal pixel offset of a luma 4x4 block within its macroblock.
+gfx/video.amni	fn blky(k int) int	Transform and Quantization	int	Returns the vertical pixel offset of a luma 4x4 block within its macroblock.
+gfx/video.amni	fn blkof(gx int, gy int) int	Transform and Quantization	int	Returns the block index for a luma 4x4 block at the given grid position.
+gfx/video.amni	fn cblkx(k int) int	Transform and Quantization	int	Returns the horizontal pixel offset of a chroma 4x4 block within its macroblock.
+gfx/video.amni	fn cblky(k int) int	Transform and Quantization	int	Returns the vertical pixel offset of a chroma 4x4 block within its macroblock.
+gfx/video.amni	fn pcls(i int) int	Transform and Quantization	int	Returns the position class of a coefficient index within a 4x4 block, selecting the quantization column.
+gfx/video.amni	fn fwd4(t int[:])	Transform and Quantization	int	Applies the forward 4x4 integer transform to a block in place.
+gfx/video.amni	fn had4(t int[:])	Transform and Quantization	int	Applies a 4x4 Hadamard transform to a block in place.
+gfx/video.amni	fn qz(c int, mf int, ad int, sh int) int	Transform and Quantization	int	Quantizes a coefficient using multiplier, rounding offset and shift, preserving sign and capping magnitude at 2047.
+gfx/video.amni	fn tq_luma(x0 int, y0 int, pred const int[:], intra bool, q int)	Transform and Quantization	int	Transforms and quantizes the luma residual of a macroblock, filling luma level arrays including DC levels for intra.
+gfx/video.amni	fn tq_c(src const int[:], pl int, x0 int, y0 int, pred const int[:], intra bool, q int)	Transform and Quantization	int	Transforms and quantizes one chroma plane's residual of a macroblock, storing AC levels and starting the chroma DC levels.
+gfx/video.amni	fn inv4(d int[:])	Transform and Quantization	int	Applies an in-place 4x4 inverse integer transform to a block of dequantized coefficients.
+gfx/video.amni	fn rec_luma(x0 int, y0 int, pred const int[:], intra bool, q int)	Frame Encoding	int	Reconstructs a 16x16 luma macroblock from prediction plus dequantized residual, with optional intra DC handling.
+gfx/video.amni	fn rec_c(dst int[:], pl int, x0 int, y0 int, pred const int[:], q int)	Frame Encoding	int	Reconstructs one 8x8 chroma plane macroblock from prediction plus dequantized DC and AC residual levels.
+gfx/video.amni	fn pp(p const int[:], w int, x int, y int) int	Encoder Math	int	Returns the sample at the given column and row of a plane with the given width.
+gfx/video.amni	fn ipred_y(mode int, mbx int, mby int, p const int[:], out int[:])	Frame Encoding	int	Fills a 16x16 luma intra prediction from neighboring samples using vertical, horizontal, DC, or plane mode.
+gfx/video.amni	fn sad_y(x0 int, y0 int, pred const int[:]) int	Encoder Math	int	Returns the sum of absolute differences between a source luma macroblock and a prediction.
+gfx/video.amni	fn best_intra_y(mbx int, mby int) int, int	Frame Encoding	int	Returns the best luma intra mode and its SAD cost among the modes available at the position.
+gfx/video.amni	fn ipred_c(mode int, mbx int, mby int, p const int[:], out int[:])	Frame Encoding	int	Fills an 8x8 chroma intra prediction from neighboring samples using DC, horizontal, vertical, or plane mode.
+gfx/video.amni	fn sad_c(src const int[:], x0 int, y0 int, pred const int[:]) int	Encoder Math	int	Returns the sum of absolute differences between an 8x8 chroma block of a source plane and a prediction.
+gfx/video.amni	fn best_intra_c(mbx int, mby int) int	Frame Encoding	int	Returns the chroma intra mode with the lowest combined U and V SAD among the available modes.
+gfx/video.amni	fn inter_c(src const int[:], x0 int, y0 int, mx int, my int, out int[:])	Frame Encoding	int	Computes an 8x8 chroma motion-compensated prediction using bilinear interpolation in eighth-sample units with edge clamping.
+gfx/video.amni	fn inter_pred(mbx int, mby int, mx int, my int)	Frame Encoding	int	Builds the luma and chroma inter predictions for a macroblock from a motion vector in quarter-sample units.
+gfx/video.amni	fn nbr(x int, y int) bool, int, int, int	Frame Encoding	int	Returns whether a neighboring macroblock is available, plus its reference index and motion vector for prediction.
+gfx/video.amni	fn mvp(mbx int, mby int) int, int, int, int	Frame Encoding	int	Returns the predicted motion vector and the skip motion vector for a macroblock from its neighbors.
+gfx/video.amni	fn any_nz(a const int[:]) bool	Encoder Math	int	Returns true if any element of the array is nonzero.
+gfx/video.amni	fn se_bits(v int) int	Entropy Tables	int	Returns the bit length of the signed Exp-Golomb code for a value.
+gfx/video.amni	fn sad_mv(x0 int, y0 int, mx int, my int) int	Encoder Math	int	Returns the SAD between a luma macroblock and its motion-displaced reference block, clamped at frame edges.
+gfx/video.amni	fn mv_cost(x0 int, y0 int, mx int, my int, pmx int, pmy int, lam int) int	Encoder Math	int	Returns a rate-distortion motion vector cost combining SAD with a lambda-weighted bit estimate of the vector difference.
+gfx/video.amni	fn store_pred(mbx int, mby int)	Frame Encoding	int	Copies the current inter prediction into the reconstruction planes for a macroblock.
+gfx/video.amni	fn write_inter(mbi int, mbx int, mby int, dx int, dy int)	Bitstream Writing	int	Writes the syntax elements for a coded inter macroblock, including motion vector difference, coded block pattern and residual blocks.
+gfx/video.amni	fn enc_p_coded(mbi int, mbx int, mby int, pmx int, pmy int, sx int, sy int)	Frame Encoding	int	Encodes a P macroblock with residual by searching for a motion vector and choosing between intra and inter coding.
+gfx/video.amni	fn enc_p(mbi int, mbx int, mby int)	Frame Encoding	int	Encodes a P-frame macroblock, either as a skip or as a coded macroblock when the prediction leaves residual.
+gfx/video.amni	fn write_chroma(mbi int, mbx int, mby int, cvl int)	Bitstream Writing	int	Writes chroma DC and, when present, AC residual blocks for a macroblock using CAVLC.
+gfx/video.amni	fn write_intra(mbi int, mbx int, mby int, lmode int, cmode int, isp bool)	Bitstream Writing	int	Writes the syntax elements and residual blocks for an intra 16x16 macroblock, optionally flushing a pending skip run.
+gfx/video.amni	fn enc_intra(mbi int, mbx int, mby int, isp bool, lmode int)	Frame Encoding	int	Encodes an intra 16x16 macroblock by predicting, transforming, reconstructing and writing it in the chosen luma mode.
+gfx/video.amni	fn nc_luma(mbi int, mbx int, mby int, k int) int	Entropy Tables	int	Returns the CAVLC context value for a luma block from the nonzero counts of its left and upper neighbors.
+gfx/video.amni	fn nc_chroma(mbi int, mbx int, mby int, pl int, k int) int	Entropy Tables	int	Returns the CAVLC context value for a chroma block from the nonzero counts of its left and upper neighbors.
+gfx/video.amni	fn cavlc(lv const int[:], n int, nc int) int	Entropy Tables	int	Writes one block of coefficient levels using CAVLC and returns the number of nonzero coefficients.
+gfx/video.amni	fn w8(o byte[>..]&, v int)	Stream Setup	int	Appends the low byte of a value to a byte buffer.
+gfx/video.amni	fn w16(o byte[>..]&, v int)	Stream Setup	int	Appends the low 16 bits of a value to a byte buffer in big-endian order.
+gfx/video.amni	fn w32(o byte[>..]&, v int)	Stream Setup	int	Appends a 32-bit value to a byte buffer in big-endian order.
+gfx/video.amni	fn wz(o byte[>..]&, n int)	Stream Setup	int	Appends the given number of zero bytes to a byte buffer.
+gfx/video.amni	fn box_open(o byte[>..]&, ty const byte[:]) int	Stream Setup	int	Starts an MP4 box with the given type and returns its start offset for later closing.
+gfx/video.amni	fn full_open(o byte[>..]&, ty const byte[:], vf int) int	Stream Setup	int	Starts an MP4 full box with the given type and version and flags word, returning its start offset.
+gfx/video.amni	fn box_close(o byte[>..]&, st int)	Stream Setup	int	Patches the size field of an MP4 box opened at the given offset to cover its contents.
+gfx/video.amni	fn matrix(o byte[>..]&)	Stream Setup	int	Appends the identity transformation matrix used in MP4 headers.
+gfx/video.amni	fn build_moov(o byte[>..]&, offset int)	Stream Setup	int	Builds the MP4 movie metadata box describing the video track, sample sizes, keyframes and chunk offset.
+gfx/video.amni	fn finish(out byte[>..]&) bool	Stream Setup	pub	Assembles the encoded frames into an MP4 file in the buffer, returning false with an error if none exist or it would reach 4 GiB.
+gfx/video.amni	fn save(path const byte[:]) bool	Stream Setup	pub	Writes the encoded MP4 file to the given path, returning false with an error if encoding or writing fails.
+gfx/video.amni	fn frame_bytes(i int) int	Stream Setup	pub	Returns the encoded size in bytes of the frame at the given index, or 0 if out of range.
+gfx/video.amni	fn psnr_y() real	Encoder Math	pub	Returns the luma peak signal-to-noise ratio in decibels between source and reconstruction, or 99 if identical.
+gfx/sdf_font.amni	var SDF_TTF_PIX byte[>..] = [];	Glyph Data	int	Buffer of raw TrueType pixel bytes used internally by the font module, empty until populated.
+gfx/sdf_font.amni	var SDF_KERN f32[>..] = [];	Glyph Data	int	Growable table of pairwise kerning adjustments, indexed by previous and next glyph, empty until populated.
+gfx/sdf_font.amni	fn sdf_kern(t const byte[:], i int) f32	Text Rendering	pub	Returns the kerning adjustment in font units between the characters at index i and i+1 of text, or 0 if unavailable.
+gfx/sdf_ttf.amni	fn sdf_ttf_dt1(f real[>..]&, d real[>..]&, v int[>..]&, z real[>..]&, n int)	SDF Generation	int	Runs a one-dimensional squared Euclidean distance transform along a line, as a building block for the two-dimensional transform.
+gfx/sdf_ttf.amni	fn sdf_ttf_dt(g f32[>..]&, w int, h int)	SDF Generation	int	Computes an in-place two-dimensional squared distance transform over a w by h grid by transforming columns, then rows.
+gfx/sdf_ttf.amni	fn sdf_use_ttf(bytes const byte[:]) bool	TrueType Fonts	pub	Builds the SDF font atlas and kerning table from TrueType bytes, returning false if the font cannot be parsed.
+gfx/sdf_ttf.amni	fn sdf_use_ttf_file(path const byte[:]) bool	TrueType Fonts	pub	Reads a TrueType file from a path and builds the SDF font atlas from it, returning false if reading fails.
+gfx/hwrt.he	extern cc3(f int, a int, b int, c int) int	Vulkan Setup	int	Thin binding to a C call helper taking a function pointer and three integer arguments, returning an integer.
+gfx/hwrt.he	extern cc4(f int, a int, b int, c int, d int) int	Vulkan Setup	int	Thin binding to a C call helper taking a function pointer and four integer arguments, returning an integer.
+gfx/hwrt.he	extern cc5(f int, a int, b int, c int, d int, e int) int	Vulkan Setup	int	Thin binding to a C call helper taking a function pointer and five integer arguments, returning an integer.
+gfx/hwrt.he	var ST = 0	Vulkan Setup	int	Module state flag tracking whether initialization is untried, succeeded, or failed.
+gfx/hwrt.he	var INST uint = 0	Vulkan Setup	int	Handle of the Vulkan instance created during initialization.
+gfx/hwrt.he	var PHYS uint = 0	Vulkan Setup	int	Handle of the physical GPU selected for ray tracing.
+gfx/hwrt.he	var DEV uint = 0	Vulkan Setup	int	Handle of the logical Vulkan device used for all GPU work.
+gfx/hwrt.he	var QUEUE uint = 0	Vulkan Setup	int	Handle of the compute queue used to submit command buffers.
+gfx/hwrt.he	var CPOOL uint = 0	Vulkan Setup	int	Handle of the command pool that owns the shared command buffer.
+gfx/hwrt.he	var CB uint = 0	Vulkan Setup	int	Handle of the shared command buffer used for recording GPU work.
+gfx/hwrt.he	var MEMP byte[>..]	Vulkan Setup	int	Raw memory properties of the selected GPU, used to choose memory types.
+gfx/hwrt.he	var NAME byte[>..]	Vulkan Setup	int	Cached device name of the selected GPU as bytes.
+gfx/hwrt.he	var DTY = 0	Vulkan Setup	int	Cached Vulkan device type code of the selected GPU.
+gfx/hwrt.he	var FN int[>..]	Vulkan Setup	int	Table of loaded acceleration structure function pointers.
+gfx/hwrt.he	var BUF uint[>..]	Vulkan Setup	int	List of Vulkan buffer handles, indexed by buffer id.
+gfx/hwrt.he	var MEM uint[>..]	Vulkan Setup	int	List of device memory handles backing each buffer, indexed by buffer id.
+gfx/hwrt.he	var MAP uint[>..]	Vulkan Setup	int	List of host-mapped memory addresses for each buffer, zero if not mapped.
+gfx/hwrt.he	var ADR uint[>..]	Vulkan Setup	int	List of GPU device addresses for each buffer, indexed by buffer id.
+gfx/hwrt.he	var AS uint[>..]	Vulkan Setup	int	List of created acceleration structure handles.
+gfx/hwrt.he	var PP uint[>..]	Vulkan Setup	int	Flat table of pipeline objects, seven entries per compute pipeline.
+gfx/hwrt.he	EXTS := ["VK_KHR_acceleration_structure", "VK_KHR_ray_query", "VK_KHR_deferred_host_operations"]	Vulkan Setup	int	Device extension names required for ray query and acceleration structure support.
+gfx/hwrt.he	pt(b const byte[:]) uint	Vulkan Setup	int	Converts a byte slice to its raw memory address.
+gfx/hwrt.he	ok(r int) bool	Vulkan Setup	int	Returns whether a Vulkan result code indicates success.
+gfx/hwrt.he	name() const byte[:]	Vulkan Setup	pub	Returns the name of the selected GPU as bytes.
+gfx/hwrt.he	is_cpu() bool	Vulkan Setup	pub	Returns whether the selected GPU is a software CPU device.
+gfx/hwrt.he	hasx(pd uint, x const byte[:]) bool	Vulkan Setup	int	Returns whether a physical device supports the named extension.
+gfx/hwrt.he	feats(on bool) byte[>..]	Vulkan Setup	int	Builds a feature structure chain, with ray tracing features enabled when requested.
+gfx/hwrt.he	init() bool	Vulkan Setup	pub	Initializes Vulkan and selects a ray-query-capable GPU, returning false if unavailable or disabled.
+gfx/hwrt.he	begin() bool	Vulkan Setup	int	Starts recording the shared command buffer, returning whether it succeeded.
+gfx/hwrt.he	bar(s int, d int, sa int, da int)	Vulkan Setup	int	Records a memory barrier with the given pipeline stages and access masks.
+gfx/hwrt.he	submit() bool	Vulkan Setup	int	Ends and submits the shared command buffer, waiting for completion and returning whether it succeeded.
+gfx/hwrt.he	mtype(bits int, wants const int[:]) int	Buffers and Dispatch	int	Returns the first memory type index matching the type bits and wanted property flags, or -1.
+gfx/hwrt.he	buf(size int, use int, local bool) int	Buffers and Dispatch	pub	Creates a GPU buffer of the given size and usage, returning its id or -1 on failure.
+gfx/hwrt.he	drop(b int)	Buffers and Dispatch	pub	Frees the buffer and its memory for the given id.
+gfx/hwrt.he	put<T>(b int, d const T[:])	Buffers and Dispatch	pub	Copies data from a slice into a host-mapped buffer.
+gfx/hwrt.he	get<T>(b int, d T[:])	Buffers and Dispatch	pub	Copies data from a host-mapped buffer into a slice.
+gfx/hwrt.he	asbuild(ty int, geo const byte[:], count int) uint	Buffers and Dispatch	int	Builds an acceleration structure from geometry, returning its handle or 0 on failure.
+gfx/hwrt.he	scene(tris const f32[:], opaque bool) bool	Buffers and Dispatch	pub	Builds a bottom and top level acceleration structure from triangle floats, returning false on failure.
+gfx/hwrt.he	pipe(blob const byte[:], nb int) int	Buffers and Dispatch	pub	Creates a compute pipeline from a shader blob, returning its id or -1 on failure.
+gfx/hwrt.he	run(p int, bufs const int[:], gx int, gy int, gz int) bool	Buffers and Dispatch	pub	Dispatches a compute pipeline over the given grid with the listed buffers, returning whether it succeeded.
+gfx/hwrt.he	done()	Buffers and Dispatch	pub	Destroys all pipelines, acceleration structures, and buffers, and shuts down Vulkan.
+gfx/pathtrace.he	var TRI f32[>..]	Scene Data	int	Packed triangle buffer of per-vertex normals, UVs, tangents, material index and color, consumed by the render shader.
+gfx/pathtrace.he	var POS f32[>..]	Scene Data	int	Packed triangle vertex positions used to build the hardware ray tracing acceleration structure.
+gfx/pathtrace.he	var MAT f32[>..]	Scene Data	int	Packed material parameter buffer with 20 floats per material, uploaded to the renderer.
+gfx/pathtrace.he	var TXH u32[>..]	Scene Data	int	Texture header table holding pixel offset, width and height for each uploaded image.
+gfx/pathtrace.he	var TXP u32[>..]	Scene Data	int	Packed RGBA pixel data for all uploaded textures, one u32 per pixel.
+gfx/pathtrace.he	var LIT f32[>..]	Scene Data	int	Packed point light buffer holding position, color and range, eight floats per light.
+gfx/pathtrace.he	var IMG int[>..]	Scene Data	int	Cache mapping glTF image indices to uploaded texture indices, with -1 meaning not yet uploaded.
+gfx/pathtrace.he	var PMAT int[>..]	Scene Data	int	Cache mapping scene primitives to created material indices, with -1 meaning not yet created.
+gfx/pathtrace.he	var MASK = false	Scene Data	int	Flag set when any triangle uses an alpha-masked material, which disables opaque-only acceleration.
+gfx/pathtrace.he	var EYE = [0.0, 1.5, 5.0]	Camera and Sky	pub	Camera eye position as x, y, z world coordinates used by the next render.
+gfx/pathtrace.he	var TGT = [0.0, 0.5, 0.0]	Camera and Sky	pub	Camera look-at target position as x, y, z world coordinates.
+gfx/pathtrace.he	var UP = [0.0, 1.0, 0.0]	Camera and Sky	pub	Camera up direction vector used to orient the rendered view.
+gfx/pathtrace.he	var FOV = 0.9	Camera and Sky	pub	Vertical field of view of the camera, in radians.
+gfx/pathtrace.he	var TO_SUN = [0.4, 0.8, 0.45]	Camera and Sky	pub	Direction vector pointing toward the sun, normalized before rendering.
+gfx/pathtrace.he	var SUN = [3.0, 2.85, 2.6]	Camera and Sky	pub	Sun radiance color as red, green, blue; all zeros disables the sun.
+gfx/pathtrace.he	var SUN_COS = 1.0	Camera and Sky	pub	Cosine of the sun's angular radius, controlling the sun disc size.
+gfx/pathtrace.he	var ZEN = [0.25, 0.42, 0.75]	Camera and Sky	pub	Sky color at the zenith as red, green, blue.
+gfx/pathtrace.he	var HOR = [0.65, 0.72, 0.8]	Camera and Sky	pub	Sky color at the horizon as red, green, blue.
+gfx/pathtrace.he	var GND = [0.2, 0.18, 0.16]	Camera and Sky	pub	Ground color used below the horizon as red, green, blue.
+gfx/pathtrace.he	var SKY = 1.0	Camera and Sky	pub	Sky brightness multiplier applied during rendering.
+gfx/pathtrace.he	var FURN = -1.0	Camera and Sky	pub	White furnace test value; a nonnegative value enables the furnace test, negative disables it.
+gfx/pathtrace.he	var MS = true	Camera and Sky	pub	Flag enabling multiple scattering in material shading; true by default.
+gfx/pathtrace.he	var PDFK = 1.0	Camera and Sky	pub	Probability density scaling factor passed to the render shader.
+gfx/pathtrace.he	var DEPTH = 32	Camera and Sky	pub	Maximum path bounce depth per ray.
+gfx/pathtrace.he	var MAXMS = 0.0	Camera and Sky	int	Slowest dispatch time in milliseconds recorded during the last render.
+gfx/pathtrace.he	var SKIPPED = 0	Scene Data	pub	Count of scene lights and instanced batches that from_scene could not convert and skipped.
+gfx/pathtrace.he	var WAVES = [0.35, 0.0, 1.0, 0.0]	Water	pub	Wave parameters: base frequency, amplitude, speed scale and time used by the water surface.
+gfx/pathtrace.he	var ABSORB = [0.0, 0.0, 0.0]	Water	pub	Water absorption color coefficients as red, green, blue.
+gfx/pathtrace.he	var SCATTER = [0.0, 0.0, 0.0]	Water	pub	Water scattering color coefficients as red, green, blue.
+gfx/pathtrace.he	var PHASE_G = 0.0	Water	pub	Phase function asymmetry parameter for water scattering.
+gfx/pathtrace.he	var ETA = 1.33	Water	pub	Index of refraction used for water, 1.33 by default.
+gfx/pathtrace.he	var TK = 1.0	Water	int	Scalar parameter passed through to the render shader's water settings.
+gfx/pathtrace.he	var NWAVE = 11	Water	pub	Number of wave octaves summed when computing water surface height.
+gfx/pathtrace.he	var UNDER = false	Water	pub	Flag indicating the camera is underwater, set from the scene's sea state.
+gfx/pathtrace.he	struct Mat { base real[4]	Materials	pub	Material description with base color, emission, metalness, roughness, textures, alpha mode and water flag.
+gfx/pathtrace.he	clear()	Scene Data	pub	Clears all accumulated triangles, materials, textures, lights and flags to start a new scene.
+gfx/pathtrace.he	mat(m Mat) int	Materials	pub	Adds a material and returns its index for use when adding triangles.
+gfx/pathtrace.he	image(w int, h int, px const byte[:]) int	Textures	pub	Adds an RGBA8 image of the given size and returns its texture index.
+gfx/pathtrace.he	light(x real, y real, z real, r real, g real, b real, range real)	Lights	pub	Adds a point light at a position with RGB color and range.
+gfx/pathtrace.he	tri(p const real[:], n const real[:], uv const real[:], col const real[:], m int)	Scene Data	pub	Adds a triangle from positions, normals, UVs and vertex color with a material index, skipping degenerate ones.
+gfx/pathtrace.he	ico(levels int) real[>..]	Meshes	pub	Returns triangle vertex positions of a unit icosphere subdivided the given number of levels.
+gfx/pathtrace.he	sphere(cx real, cy real, cz real, r real, levels int, m int)	Meshes	pub	Adds a sphere of given center and radius, built from subdivided icosphere triangles, using a material index.
+gfx/pathtrace.he	v3(a float3) real[>..]	Scene Data	int	Converts a float3 vector into a real array of three components.
+gfx/pathtrace.he	wave(x real, z real) real	Water	pub	Returns the water surface height at an x, z position by summing wave octaves.
+gfx/pathtrace.he	texof(r gltf::TexRef) int	Textures	int	Returns the uploaded texture index for a glTF texture reference, uploading its image on first use, or -1 if none.
+gfx/pathtrace.he	matof(prim int) int	Materials	int	Returns the material index for a scene primitive, creating it from the glTF material on first use.
+gfx/pathtrace.he	from_scene()	Scene Data	pub	Rebuilds the path tracing scene from the current scene3d camera, sun, sky, lights and geometry.
+gfx/pathtrace.he	render(w int, h int, spp int) f32[>..]	Rendering	pub	Renders the scene at the given size and samples per pixel, returning accumulated float data, or empty on failure.
+gfx/pathtrace.he	bad(acc const f32[:]) int	Rendering	pub	Returns the total count of flagged bad samples in an accumulation buffer.
+gfx/pathtrace.he	save(path const byte[:], acc const f32[:], w int, h int, ex real) bool	Rendering	pub	Tone maps an accumulation buffer with exposure and writes it as a PNG, returning false on failure.
+gfx/pathtrace.he	var SKYC f32[>..]	Camera and Sky	int	Buffer of captured environment-map cube face pixels, filled by sky_cube for use in rendering.
+gfx/pathtrace.he	var SKYN = 0	Camera and Sky	int	Edge size in pixels of each captured sky cube face, or 0 when no cube is captured.
+gfx/pathtrace.he	var SKYI = 1.0	Camera and Sky	int	Intensity multiplier copied from the environment map for the captured sky cube.
+gfx/pathtrace.he	var SKYR = 0.0	Camera and Sky	int	Rotation of the environment map recorded with the captured sky cube.
+gfx/pathtrace.he	var CLD u32[>..]	Camera and Sky	int	Pixel data of the cloud texture and cloud shadow texture captured from the scene.
+gfx/pathtrace.he	var CW = 0	Camera and Sky	int	Width in pixels of the captured cloud texture.
+gfx/pathtrace.he	var CH = 0	Camera and Sky	int	Height in pixels of the captured cloud texture.
+gfx/pathtrace.he	var CSN = 0	Camera and Sky	int	Width in pixels of the captured cloud shadow texture, or 0 when none is captured.
+gfx/pathtrace.he	var CSK = 0.0	Camera and Sky	int	Cloud shadow strength copied from the scene cloud settings.
+gfx/pathtrace.he	var CLU = [0.0, 0.0, 0.0, 0.0]	Camera and Sky	int	Four-component cloud shadow projection vector for the U axis.
+gfx/pathtrace.he	var CLV = [0.0, 0.0, 0.0, 0.0]	Camera and Sky	int	Four-component cloud shadow projection vector for the V axis.
+gfx/pathtrace.he	struct CubeU { p float4 }	Camera and Sky	int	Uniform block carrying the cube face index to the environment copy shader.
+gfx/pathtrace.he	lift(p real[>..]&) bool	Water	int	Displaces the y coordinates of the given points in place by the sea wave function on the GPU, returning false on failure.
+gfx/pathtrace.he	sky_cube(n int) bool	Camera and Sky	int	Captures the environment map into six cube faces of the given size, returning false if unavailable or a read fails.
+gfx/pathtrace.he	clouds_of()	Camera and Sky	int	Reads the scene's cloud and cloud shadow textures into the capture buffers, counting skipped reads on failure.
