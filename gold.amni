@@ -1446,7 +1446,7 @@ fn sync_one(dir const byte[:], kind int, i int, tries int) bool {
 }
 fn sync_restore(dir const byte[:], before const byte[:]) {
 	var o byte[>..] = [];
-	in_dir(dir, "git checkout -q -- .", o);
+	in_dir(dir, "git reset -q --hard", o);
 	var nw byte[>..] = [];
 	in_dir(dir, "git ls-files --others --exclude-standard", nw);
 	for f in split(nw, '\n') { if f.len > 0 && find(before, str("\n", f, "\n")) < 0 { delete_file(str(dir, "/", f)); } }

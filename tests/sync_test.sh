@@ -31,7 +31,7 @@ mkdir -p hc/seed && echo seed > hc/seed/hc.c && printf 'build/\n' > .gitignore
 git init -q -b main && git add -A && git commit -qm v1 && git clone -q --bare . "$W/hel-up.git" && git remote add origin "$W/hel-up.git" && git fetch -q && git branch -q -u origin/main
 bash hc/bootstrap.sh
 
-# the product
+# the product (its build step stages files, so a failed sync must also undo the index)
 mkdir -p "$W/prod" && cd "$W/prod" && git init -q -b main
 cat > util.gold <<'EOF'
 into util.amni
@@ -42,7 +42,7 @@ fn half_answer() int { demo::twice(10) + 1 }
 ```
 EOF
 printf 'import demo;\nimport util;\nfn main() { print("answer ", demo::twice(half_answer())); }\n' > main.amni
-printf 'helium ../hel\ngold *.gold\nbuild main.amni main\ntest ./main | grep -qx "answer 42"\n' > helium.sync
+printf 'helium ../hel\ngold *.gold\nbuild main.amni main\nstep git add -A .\ntest ./main | grep -qx "answer 42"\n' > helium.sync
 printf 'main\n' > .gitignore
 git add -A && git commit -qm product
 
