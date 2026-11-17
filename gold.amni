@@ -327,10 +327,6 @@ fn load_pack(name const byte[:]) bool {
 	PK.push(Pk { put(name), put(dir), put(lang), put(mn), put(ts), put(nt) });
 	var api byte[>..] = [];
 	readall(str(d, "/api.tsv"), api);
-	add_rows(pk, api);
-	true
-}
-fn add_rows(pk int, api const byte[:]) {
 	for l in split(api, '\n') {
 		let f = split(l, '\t');
 		if f.len < 5 { continue; }
@@ -353,27 +349,7 @@ fn add_rows(pk int, api const byte[:]) {
 		}
 		R.push(Row { pk, nm, kd, sg, fl, ln, dc, put(toks) });
 	}
-}
-// std indexed straight from a Helium library folder, without writing the pack (gold sync uses the library it just pulled)
-fn load_std_from(lib const byte[:]) {
-	var c byte[>..] = [];
-	var skip byte[>..] = [];
-	readall(str(pack_dir("std"), "/pack.conf"), c);
-	conf_get(c, "skip", skip);
-	var fl byte[>..] = [];
-	var cmd byte[>..] = [];
-	cmd.append("cd ");
-	q(cmd, lib);
-	cmd.append(" && find . \\( -name '*.amni' -o -name '*.he' \\) -not -path '*/.*' -not -path '*/build/*' | sed 's|^\\./||' | sort");
-	if skip.len > 0 { cmd.append(" | grep -Ev "); q(cmd, skip); }
-	sh(cmd, fl);
-	var api byte[>..] = [];
-	for f in split(fl, '\n') { if f.len > 0 { index_file(str(lib, "/", f), f, api); } }
-	var nt byte[>..] = [];
-	readall(str(pack_dir("std"), "/notes.md"), nt);
-	let pk = PK.len;
-	PK.push(Pk { put("std"), put(lib), put("he"), put(""), put(""), put(nt) });
-	add_rows(pk, api);
+	true
 }
 fn modof(file const byte[:]) byte[>..] { var o byte[>..] = []; let e = rfind(file, "."); for c in file[..(if e > 0 { e } else { file.len })] { o.push(if c == '/' { '.' } else { c }); } o }
 fn is_const(nm const byte[:]) bool { let s = nm[(rfind(nm, "::") + 1)..]; var up = false; for c in s { if c >= 'a' && c <= 'z' { return false; } up = up || (c >= 'A' && c <= 'Z'); } up }
@@ -1071,7 +1047,7 @@ fn build(gp const byte[:], run_args const byte[:], quiet bool, outp byte[>..]&) 
 			let v, ok = parse_int(l[..c]);
 			let bi = if ok { block_of(v) } else { -1 };
 			if bi >= 0 && B[bi].kind == 0 && !contains(bad, bi) { bad.push(bi); }
-			if bi >= 0 && B[bi].kind == 1 { let fl = split(file, '\n'); print("gold: error in literal Helium block ", bi, ": ", l, if v >= 1 && v <= fl.len { str("\n  at: ", trim(fl[v - 1])) } else { str("") }); return false; }
+			if bi >= 0 && B[bi].kind == 1 { print("gold: error in literal Helium block ", bi, ": ", l); return false; }
 		}
 		if bad.len == 0 && find(errs, " (in ") >= 0 && find(errs, "0: the program ran") < 0 { var mine = false; for l in split(errs, '\n') { if l.len > 0 && find(l, " (in ") < 0 { mine = true; } } if !mine { write_stderr(str("gold: the product itself does not compile with this Helium:\n", errs)); return false; } }
 		if bad.len == 0 { for b, i in B { if b.kind == 0 { bad.push(i); } } }
@@ -1242,348 +1218,6 @@ fn cmd_squeeze(a byte[:][:]) int {
 	print("gold squeeze: could not keep a shorter version; restored ", gp);
 	1
 }
-// gold sync: rebuild a product with the newest Helium. The product's helium.sync lists its Gold files (`gold <glob>`),
-// its hc outputs (`build <src> <out> [flags]`), build scripts (`step <cmd>`) and checks (`test <cmd>`), plus optional
-// `branch <name>` and `helium <checkout>`. Code the new compiler rejects is repaired by the model from the errors; the
-// result is kept only when every test passes, then committed to the sync branch with helium.lock naming the Helium
-// commit it was tested with. Anything else leaves the product exactly as it was.
-struct SyB { src Sp, out Sp, flags Sp }
-var SYG Sp[>..];
-var SYB SyB[>..];
-var SYS Sp[>..];
-var SYT Sp[>..];
-var SYBR byte[>..];
-var SYH byte[>..];
-var SYLOG byte[>..];
-var SYFIX byte[>..];
-var SYENV byte[>..];
-fn sh10(s const byte[:]) const byte[:] { s[..min(s.len, 10)] }
-fn tailof(s const byte[:], n int) const byte[:] { s[(max(0, s.len - n))..] }
-fn in_dir(dir const byte[:], cmd const byte[:], out byte[>..]&) int { var c byte[>..] = []; c.append("cd "); q(c, dir); c.append(" && "); c.append(cmd); sh(c, out) }
-fn git1(dir const byte[:], a const byte[:], out byte[>..]&) bool { var o byte[>..] = []; let rc = in_dir(dir, str("git ", a), o); out.clear(); out.append(trim(o)); rc == 0 }
-fn base_of(p const byte[:]) const byte[:] { p[(rfind(p, "/") + 1)..] }
-fn self_exe(out byte[>..]&) { out.clear(); let a = args(); if a.len > 0 && find(a[0], "/") >= 0 { absp(a[0], out); } else { format(out, ROOT, "/gold_bin"); } }
-fn sync_conf(dir const byte[:]) bool {
-	var s byte[>..] = [];
-	if !readall(str(dir, "/helium.sync"), s) { print("gold sync: ", dir, " has no helium.sync"); return false; }
-	SYBR.clear();
-	SYBR.append("helium-sync");
-	envor("GOLD_HELIUM", str(HOME, "/ai/amni-lang/helium"), SYH);
-	for raw in split(s, '\n') {
-		let t = trim(raw);
-		if t.len == 0 || t[0] == '#' { continue; }
-		let w = words(t);
-		let key = w[0];
-		let rest = trim(t[key.len..]);
-		if key == "gold" && w.len >= 2 {
-			var o byte[>..] = [];
-			in_dir(dir, str("for f in ", rest, "; do [ -f \"$f\" ] && echo \"$f\"; done"), o);
-			for f in split(o, '\n') { if trim(f).len > 0 { SYG.push(put(trim(f))); } }
-		} else if key == "build" && w.len >= 3 {
-			var fl byte[>..] = [];
-			for i in w.len { if i >= 3 { fl.push(' '); q(fl, w[i]); } }
-			SYB.push(SyB { src: put(w[1]), out: put(w[2]), flags: put(fl) });
-		} else if key == "step" && w.len >= 2 { SYS.push(put(rest)); }
-		else if key == "test" && w.len >= 2 { SYT.push(put(rest)); }
-		else if key == "branch" && w.len == 2 { SYBR.clear(); SYBR.append(w[1]); }
-		else if key == "helium" && w.len == 2 { SYH.clear(); if w[1][0] == '/' { SYH.append(w[1]); } else if w[1].starts_with("~/") { format(SYH, HOME, w[1][1..]); } else { format(SYH, dir, "/", w[1]); } }
-		else { print("gold sync: helium.sync: cannot read this line: ", t); return false; }
-	}
-	if SYG.len + SYB.len + SYS.len == 0 { print("gold sync: helium.sync lists nothing to build"); return false; }
-	true
-}
-fn sync_helium(pull bool, old byte[>..]&, now byte[>..]&) bool {
-	if !git1(SYH, "rev-parse HEAD", old) { print("gold sync: ", SYH, " is not a Helium git checkout (set GOLD_HELIUM, or a helium line in helium.sync)"); return false; }
-	var st byte[>..] = [];
-	git1(SYH, "status --porcelain --untracked-files=no", st);
-	let clean = st.len == 0;
-	if pull {
-		if !clean { print("gold sync: the Helium checkout ", SYH, " has local changes, so it is used as it is"); }
-		else { var o byte[>..] = []; if !git1(SYH, "pull --ff-only -q", o) { print("gold sync: could not fast-forward Helium: ", o[..min(o.len, 800)]); return false; } }
-	}
-	git1(SYH, "rev-parse HEAD", now);
-	let mk = str(SYH, "/build/.gold-sync");
-	var built byte[>..] = [];
-	readall(mk, built);
-	let have = file_exists(str(SYH, "/build/hc"));
-	if have && built.len == 0 && old[..] == now[..] { write_file(mk, now); built.append(now); }
-	if !have || trim(built) != now[..] {
-		print("gold sync: building Helium ", sh10(now), " with hc/bootstrap.sh");
-		var o byte[>..] = [];
-		let rc = in_dir(SYH, "BUILD=\"$PWD/build\" bash hc/bootstrap.sh", o);
-		if clean { var o2 byte[>..] = []; in_dir(SYH, "git checkout -q -- hc/seed/hc.c", o2); }
-		if rc != 0 { print("gold sync: Helium ", sh10(now), " did not build:\n", tailof(o, 3000)); return false; }
-		write_file(mk, now);
-	}
-	HC.clear();
-	format(HC, SYH, "/build/hc");
-	HCLIB.clear();
-	format(HCLIB, SYH, "/hc/lib");
-	SYENV.clear();
-	for nm in ["GOLD_HELIUM", "HELIUM"] { exportv(SYENV, nm, SYH); }
-	for nm in ["GOLD_HC", "HC"] { exportv(SYENV, nm, HC); }
-	for nm in ["GOLD_HC_LIB", "HC_LIB"] { exportv(SYENV, nm, HCLIB); }
-	true
-}
-fn exportv(out byte[>..]&, name const byte[:], v const byte[:]) { format(out, "export ", name, "="); q(out, v); out.append("; "); }
-fn sync_run(dir const byte[:], kind int, i int, o byte[>..]&) int {
-	var c byte[>..] = [];
-	c.append(SYENV);
-	if kind == 0 { var me byte[>..] = []; self_exe(me); q(c, me); c.append(" build "); q(c, at(SYG[i])); }
-	else { let b = SYB[i]; q(c, HC); c.append(" build "); q(c, at(b.src)); c.append(" -o "); q(c, at(b.out)); c.append(at(b.flags)); }
-	in_dir(dir, c, o)
-}
-// the Gold file in this product whose output is `rel`, if any
-fn gold_making(dir const byte[:], rel const byte[:], out byte[>..]&) bool {
-	let b = base_of(rel);
-	for g in SYG {
-		var s byte[>..] = [];
-		if !readall(str(dir, "/", at(g)), s) { continue; }
-		var into byte[>..] = [];
-		for l in split(s, '\n') { let t = trim(l); if t.starts_with("into ") { into.append(trim(t[5..])); break; } if t.starts_with("```") { break; } }
-		let a1 = str(stem(at(g)), ".amni");
-		let a2 = str(stem(at(g)), ".he");
-		if (into.len > 0 && base_of(into) == b) || (into.len == 0 && (a1[..] == b || a2[..] == b)) { out.clear(); out.append(at(g)); return true; }
-	}
-	false
-}
-// the product file to repair: the first file an error names (from the source's folder or the product root), or the
-// failing source itself, mapped to the Gold file that writes it
-fn sync_target(dir const byte[:], kind int, i int, o const byte[:], target byte[>..]&) bool {
-	target.clear();
-	let src = if kind == 0 { at(SYG[i]) } else { at(SYB[i].src) };
-	var named byte[>..] = [];
-	for l in split(o, '\n') {
-		let k0 = find(l, " (in ");
-		if k0 >= 0 { let e = find(l[(k0 + 5)..], ")"); if e > 0 { let w = l[(k0 + 5)..(k0 + 5 + e)]; let c = rfind(w, ":"); named.append(if c > 0 { w[..c] } else { w }); break; } }
-		let k = find(l, ": error: ");
-		if k > 0 && kind == 1 { let c = rfind(l[..k], ":"); if c > 0 { named.append(l[..c]); break; } }
-	}
-	var rel byte[>..] = [];
-	if named.len > 0 {
-		let sd = dirof(src);
-		if named[0] == '/' { if named.starts_with(str(dir, "/")) { rel.append(named[(dir.len + 1)..]); } }
-		else if file_exists(str(dir, "/", sd, "/", named)) { if sd == "." { rel.append(named); } else { format(rel, sd, "/", named); } }
-		else if file_exists(str(dir, "/", named)) { rel.append(named); }
-	}
-	if rel.len == 0 { if kind == 0 { target.append(src); return true; } rel.append(src); }
-	if ends_with(rel, ".gold") { target.append(rel); return true; }
-	if !gold_making(dir, rel, target) { target.append(rel); }
-	file_exists(str(dir, "/", target))
-}
-fn sync_sys() const byte[:] { "You update Helium code so it compiles with the newest Helium compiler and library. You make the smallest edits that fix the reported errors and never change what the code does." }
-fn sync_rules() const byte[:] { "Fix the errors with the smallest edits. The code built and passed its tests with the previous Helium, so keep its behavior exactly; when a library function was renamed or changed, use the API listed above. Reply with edits only, each in exactly this form, and nothing else:\n<<<<<<< SEARCH\nlines copied exactly from the file (without the added line numbers), enough of them to match one place\n=======\nthe lines that replace them\n>>>>>>> REPLACE\n" }
-// apply the reply's SEARCH/REPLACE edits to src; an edit whose search text is missing or not unique is skipped
-fn apply_edits(src const byte[:], reply const byte[:], out byte[>..]&) int {
-	out.clear();
-	out.append(src);
-	var n = 0;
-	var mode = 0;
-	var a byte[>..] = [];
-	var b byte[>..] = [];
-	for l in split(reply, '\n') {
-		let t = trim_end(l);
-		if mode == 0 { if t == "<<<<<<< SEARCH" { mode = 1; a.clear(); b.clear(); } continue; }
-		if mode == 1 { if t == "=======" { mode = 2; } else { a.append(l); a.push('\n'); } continue; }
-		if t != ">>>>>>> REPLACE" { b.append(l); b.push('\n'); continue; }
-		mode = 0;
-		let hits = if a.len > 0 { count(out, a) } else { 0 };
-		if hits != 1 { write_stderr(str("gold sync: skipped an edit whose search text ", if a.len == 0 { "is empty" } else if hits == 0 { "is not in the file" } else { "matches more than one place" }, "\n")); continue; }
-		let k = find(out, a);
-		var nx byte[>..] = [];
-		nx.append(out[..k]);
-		nx.append(b);
-		nx.append(out[(k + a.len)..]);
-		out.clear();
-		out.append(nx);
-		n++;
-	}
-	n
-}
-fn sync_fix(dir const byte[:], target const byte[:], errs const byte[:], round int) bool {
-	let path = str(dir, "/", target);
-	var src byte[>..] = [];
-	if !readall(path, src) { return false; }
-	LANG.clear();
-	LANG.append(if ends_with(target, ".he") { "he" } else { "amni" });
-	var p byte[>..] = [];
-	context(str(errs, "\n", src[..min(src.len, 30000)]), p);
-	if SYLOG.len > 0 { format(p, "\n# Helium changes since this code last built\n", SYLOG, "\n"); }
-	format(p, "\n# File ", target, "\n");
-	if ends_with(target, ".gold") { p.append("A Gold file: its ```amni and ```he fences are copied into the Helium file exactly as written, so fix code there; plain-English blocks are translated by Gold.\n"); }
-	p.append("Line numbers are added here and are not part of the file.\n");
-	var ln = 0;
-	for l in split(src, '\n') { ln++; format(p, ln, "| ", l, "\n"); }
-	format(p, "\n# Errors from the newest Helium\n", tailof(errs, 6000), "\n# Task\n", sync_rules());
-	var m byte[>..] = [];
-	if round >= 1 { envor("GOLD_MODEL_HARD", "opus", m); } else { envor("GOLD_MODEL", "sonnet", m); }
-	var reply byte[>..] = [];
-	if !ask(m, sync_sys(), p, reply) { print("gold sync: the repair call failed"); return false; }
-	var fixed byte[>..] = [];
-	let n = apply_edits(src, reply, fixed);
-	if n == 0 { print("gold sync: no edit in the reply applies to ", target); return false; }
-	write_file(path, fixed);
-	print("gold sync: repaired ", target, " (", n, if n == 1 { " edit)" } else { " edits)" });
-	if find(SYFIX, str("  ", target, "\n")) < 0 { format(SYFIX, "  ", target, "\n"); }
-	true
-}
-fn sync_one(dir const byte[:], kind int, i int, tries int) bool {
-	let name = if kind == 0 { at(SYG[i]) } else { at(SYB[i].src) };
-	var o byte[>..] = [];
-	var rc = sync_run(dir, kind, i, o);
-	var round = 0;
-	while rc != 0 {
-		if round >= tries { print("gold sync: ", name, " still does not build after ", round, " repair round(s):\n", tailof(o, 2500)); return false; }
-		var target byte[>..] = [];
-		if !sync_target(dir, kind, i, o, target) { print("gold sync: ", name, " does not build, and the file to fix is not in the product:\n", tailof(o, 2500)); return false; }
-		print("gold sync: ", name, " does not build with this Helium; repairing ", target);
-		if !sync_fix(dir, target, o, round) { print(tailof(o, 2500)); return false; }
-		round++;
-		rc = sync_run(dir, kind, i, o);
-	}
-	print("gold sync: built ", if kind == 0 { name } else { at(SYB[i].out) });
-	true
-}
-fn sync_restore(dir const byte[:], before const byte[:]) {
-	var o byte[>..] = [];
-	in_dir(dir, "git reset -q --hard", o);
-	var nw byte[>..] = [];
-	in_dir(dir, "git ls-files --others --exclude-standard", nw);
-	for f in split(nw, '\n') { if f.len > 0 && find(before, str("\n", f, "\n")) < 0 { delete_file(str(dir, "/", f)); } }
-}
-fn sync_commit(dir const byte[:], orig const byte[:], prev const byte[:], now const byte[:], before const byte[:], push bool) bool {
-	var o byte[>..] = [];
-	if !git1(dir, str("checkout -q -B ", SYBR), o) { print("gold sync: cannot make branch ", SYBR, ": ", o); return false; }
-	git1(dir, "add -u", o);
-	git1(dir, "add -- helium.lock", o);
-	var nw byte[>..] = [];
-	in_dir(dir, "git ls-files --others --exclude-standard", nw);
-	for f in split(nw, '\n') {
-		if f.len == 0 || find(before, str("\n", f, "\n")) >= 0 { continue; }
-		var made = ends_with(f, ".amni") || ends_with(f, ".he") || ends_with(f, ".gold.lock");
-		for b in SYB { if at(b.out) == f { made = true; } }
-		if made { var c byte[>..] = []; c.append("add -- "); q(c, f); git1(dir, c, o); }
-	}
-	var msg byte[>..] = [];
-	format(msg, "Rebuild with Helium ", sh10(now), "\n\n");
-	if prev.len > 0 { format(msg, "Helium ", sh10(prev), "..", sh10(now), ":\n", SYLOG, "\n\n"); }
-	if SYFIX.len > 0 { format(msg, "Repaired for the new compiler:\n", SYFIX, "\n"); }
-	if SYT.len > 0 { msg.append("Tests passed:\n"); for t in SYT { format(msg, "  ", at(t), "\n"); } msg.push('\n'); }
-	msg.append("Written by gold sync.\n");
-	let mf = tmp("sync-msg.txt");
-	write_file(mf, msg);
-	var c byte[>..] = [];
-	c.append("commit -q -F ");
-	q(c, mf);
-	let ok = git1(dir, c, o);
-	delete_file(mf);
-	if !ok { print("gold sync: commit failed: ", o); }
-	if ok && push { var o2 byte[>..] = []; if git1(dir, str("push -q --force-with-lease origin ", SYBR), o2) { print("gold sync: pushed ", SYBR); } else { print("gold sync: push failed: ", o2); } }
-	var o3 byte[>..] = [];
-	git1(dir, str("checkout -q ", orig), o3);
-	ok
-}
-fn sync_list() byte[>..] { str(HOME, "/.config/gold/sync.list") }
-fn sync_register(dir const byte[:]) {
-	var s byte[>..] = [];
-	readall(sync_list(), s);
-	for l in split(s, '\n') { if l == dir { return; } }
-	run_command(str("mkdir -p '", HOME, "/.config/gold'"));
-	format(s, dir, "\n");
-	write_file(sync_list(), s);
-}
-fn cmd_sync(a byte[:][:]) int {
-	var dir0 byte[>..] = [];
-	var flags byte[>..] = [];
-	var push = false;
-	var pull = true;
-	var force = false;
-	for x in a {
-		if x == "push" { push = true; } else if x == "nopull" { pull = false; } else if x == "force" { force = true; }
-		else if dir0.len == 0 { dir0.append(x); continue; }
-		else { print("usage: gold sync [dir | all] [push] [nopull] [force]"); return 2; }
-		flags.push(' ');
-		flags.append(x);
-	}
-	var me byte[>..] = [];
-	self_exe(me);
-	if dir0 == "all" {
-		var s byte[>..] = [];
-		readall(sync_list(), s);
-		var bad = 0;
-		var n = 0;
-		for d in split(s, '\n') {
-			if trim(d).len == 0 { continue; }
-			n++;
-			var c byte[>..] = [];
-			q(c, me);
-			c.append(" sync ");
-			q(c, d);
-			c.append(flags);
-			let rc = run_command(c);
-			if rc != 0 { bad++; }
-		}
-		print("gold sync all: ", n, " product(s), ", bad, " failed");
-		return if bad > 0 { 1 } else { 0 };
-	}
-	if dir0.len == 0 { dir0.append("."); }
-	var dir byte[>..] = [];
-	var ab byte[>..] = [];
-	absp(dir0, ab);
-	if in_dir(ab, "pwd -P", dir) != 0 { print("gold sync: no folder ", dir0); return 2; }
-	let d2 = trim(dir);
-	dir.clear();
-	dir.append(d2);
-	if !sync_conf(dir) { return 2; }
-	sync_register(dir);
-	var st byte[>..] = [];
-	if !git1(dir, "status --porcelain --untracked-files=no", st) { print("gold sync: ", dir, " is not a git repository"); return 2; }
-	if st.len > 0 { print("gold sync: ", dir, " has uncommitted changes; commit or stash them first, so a failed sync can be undone exactly"); return 2; }
-	var orig byte[>..] = [];
-	git1(dir, "rev-parse --abbrev-ref HEAD", orig);
-	if orig == "HEAD" { git1(dir, "rev-parse HEAD", orig); }
-	if orig[..] == SYBR[..] { print("gold sync: run it from the branch you work on; ", SYBR, " is where its results go"); return 2; }
-	if pull {
-		var up byte[>..] = [];
-		if git1(dir, "rev-parse --abbrev-ref @{u}", up) { var o byte[>..] = []; if !git1(dir, "pull --ff-only -q", o) { print("gold sync: could not fast-forward ", dir, ": ", o); return 1; } }
-	}
-	var old byte[>..] = [];
-	var now byte[>..] = [];
-	if !sync_helium(pull, old, now) { return 1; }
-	var prev byte[>..] = [];
-	var lk byte[>..] = [];
-	if readall(str(dir, "/helium.lock"), lk) { for l in split(lk, '\n') { let t = trim(l); if t.starts_with("helium ") { prev.append(trim(t[7..])); } } }
-	if !force && prev[..] == now[..] { print("gold sync: ", dir, " is already built and tested with Helium ", sh10(now)); return 0; }
-	if !force { var bl byte[>..] = []; if git1(dir, str("show ", SYBR, ":helium.lock"), bl) && find(bl, str("helium ", now)) >= 0 { print("gold sync: branch ", SYBR, " already has ", dir, " rebuilt and tested with Helium ", sh10(now), "; merge it when you are ready"); return 0; } }
-	SYLOG.clear();
-	var lo byte[>..] = [];
-	if prev.len > 0 && git1(SYH, str("log --no-decorate --format='%h %s' -n 80 ", prev, "..", now), lo) { SYLOG.append(lo); }
-	else if git1(SYH, str("log --no-decorate --format='%h %s' -n 15 ", now), lo) { SYLOG.append(lo); }
-	load_std_from(HCLIB);
-	print("gold sync: rebuilding ", dir, " with Helium ", sh10(now), if prev.len > 0 { str(" (last tested with ", sh10(prev), ")") } else { str("") });
-	var tries = 3;
-	var e byte[>..] = [];
-	if env("GOLD_SYNC_TRIES", e) { let v, ok = parse_int(e); if ok { tries = v; } }
-	var before byte[>..] = [];
-	in_dir(dir, "git ls-files --others --exclude-standard", before);
-	let bef = str("\n", before, "\n");
-	var ok = true;
-	for i in SYG.len { if ok && !sync_one(dir, 0, i, tries) { ok = false; } }
-	for i in SYB.len { if ok && !sync_one(dir, 1, i, tries) { ok = false; } }
-	for s in SYS { if ok { var o byte[>..] = []; if in_dir(dir, str(SYENV, at(s)), o) != 0 { print("gold sync: step failed: ", at(s), "\n", tailof(o, 2500)); ok = false; } } }
-	for t in SYT {
-		if !ok { break; }
-		var o byte[>..] = [];
-		let rc = in_dir(dir, str(SYENV, at(t)), o);
-		print("gold sync: test ", if rc == 0 { "passed" } else { "FAILED" }, ": ", at(t));
-		if rc != 0 { print(tailof(o, 3000)); ok = false; }
-	}
-	if !ok { sync_restore(dir, bef); print("gold sync: ", dir, " is unchanged", if prev.len > 0 { str("; it stays on Helium ", sh10(prev)) } else { str("") }); return 1; }
-	write_file(str(dir, "/helium.lock"), str("# gold sync: the Helium commit this product was last rebuilt and tested with\nhelium ", now, "\n"));
-	if !sync_commit(dir, orig, prev, now, bef, push) { sync_restore(dir, bef); return 1; }
-	print("gold sync: committed to branch ", SYBR, if SYFIX.len > 0 { str(", with repairs to:\n", SYFIX) } else { str("") });
-	0
-}
 fn usage() {
 	print("gold - plain-English programming that compiles to checked Helium\n");
 	print("  gold build file.gold        translate (cached in file.gold.lock), check with hc, write the Helium");
@@ -1598,8 +1232,6 @@ fn usage() {
 	print("  gold lint f.gold            list lines that read as code instead of English (build rejects them in changed blocks)");
 	print("  gold compact f.gold         pack its data tables (column scales, blank = same as above); no model call");
 	print("  gold compact f.gold wide    write its data tables back out in full, every cell spelled out");
-	print("  gold sync [dir] [push] [nopull] [force]   rebuild a product (its helium.sync) with the newest Helium, repair what the new compiler rejects, run its tests, commit to its sync branch only if they pass");
-	print("  gold sync all [push]        the same for every product synced before (listed in ~/.config/gold/sync.list)");
 	print("\nenv: GOLD_MODEL (sonnet; granite or local:<name> = the local llama-server, GOLD_LOCAL_URL http://127.0.0.1:18790, started via GOLD_LOCAL_UNIT amni-bonsai.service, waiting GOLD_LOCAL_WAIT 120 s for the GPU; it gets the first GOLD_LOCAL_ROUNDS 2 repair rounds, then GOLD_MODEL_FALLBACK sonnet takes over, and the whole build falls back when the local model is unavailable), GOLD_MODEL_HARD (opus, last repair), GOLD_MODEL_PORT, GOLD_TRIES (4, extended up to 10 while each round changes the errors), GOLD_K (70), GOLD_HC, GOLD_HC_LIB, GOLD_VERBOSE");
 }
 fn main() {
@@ -1613,7 +1245,6 @@ fn main() {
 	if cmd == "find" { exit(cmd_find(rest)); }
 	if cmd == "port" { exit(local_done(cmd_port(rest))); }
 	if cmd == "squeeze" { exit(local_done(cmd_squeeze(rest))); }
-	if cmd == "sync" { exit(local_done(cmd_sync(rest))); }
 	if cmd == "lint" { var ls byte[>..] = []; if rest.len == 0 || !readall(rest[0], ls) { print("usage: gold lint <file.gold>"); exit(2); } parse_gold(ls); var nl = 0; for b, i in B { if b.kind == 0 { nl += lint(at(b.src), i); } } print("gold: ", nl, " line(s) read as code"); exit(if nl > 0 { 1 } else { 0 }); }
 	if cmd == "compact" { var o byte[>..] = []; var pk byte[>..] = []; if rest.len == 0 || !readall(rest[0], o) { print("usage: gold compact <file.gold> [wide]"); exit(2); } WIDE = rest.len > 1 && rest[1] == "wide"; pack_tables(o, pk); write_file(rest[0], pk); print("gold compact: ", rest[0], " ", o.len, " -> ", pk.len, " bytes"); exit(0); }
 	if cmd != "build" && cmd != "run" && cmd != "show" && cmd != "test" || rest.len == 0 { usage(); exit(2); }

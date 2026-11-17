@@ -2681,3 +2681,21 @@ gfx/pathtrace.he	struct CubeU { p float4 }	Camera and Sky	int	Uniform block carr
 gfx/pathtrace.he	lift(p real[>..]&) bool	Water	int	Displaces the y coordinates of the given points in place by the sea wave function on the GPU, returning false on failure.
 gfx/pathtrace.he	sky_cube(n int) bool	Camera and Sky	int	Captures the environment map into six cube faces of the given size, returning false if unavailable or a read fails.
 gfx/pathtrace.he	clouds_of()	Camera and Sky	int	Reads the scene's cloud and cloud shadow textures into the capture buffers, counting skipped reads on failure.
+gfx/hair.amni	var export_p gfx::ComputePipeline;	Strand Physics	int	Compute pipeline that exports per-strand fiber and bounding box data, used internally by the fibers function.
+gfx/hair.amni	fn fibers(g int, m int, k int, fib f32[>..]&, box f32[>..]&) bool	Hair Rendering	pub	Exports a groom's strand segments as fiber and bounding box data, returning false if the groom is not live.
+gfx/hwrt.he	scene(tris const f32[:], boxes const f32[:], opaque bool) bool	Ray Tracing Scene	pub	Builds a ray tracing acceleration structure from triangle and box data, returning false if setup or any build step fails.
+gfx/pathtrace.he	var FIB f32[>..]	Scene Data	int	Global buffer of packed fiber primitives (12 floats each) accumulated by fiber calls for the path tracer.
+gfx/pathtrace.he	var BOX f32[>..]	Scene Data	int	Global buffer of axis-aligned bounding boxes, six floats per fiber segment, built alongside the fiber data.
+gfx/pathtrace.he	var KB = 1	Scene Data	int	Number of bounding box segments each fiber is split into when its boxes are generated.
+gfx/pathtrace.he	fiber(a const real[:], b const real[:], r real, sig const real[:], m int)	Materials	pub	Adds a fiber segment between two points with radius, per-channel signature and material index to the scene.
+gfx/scene3d.amni	struct MatteU	See-Through Matte	int	Uniform struct holding the tuning parameters passed to the matte pass shader.
+gfx/scene3d.amni	var pipe_matte gfx::Pipeline;	See-Through Matte	int	GPU pipeline that draws the see-through matte layer used internally by the renderer.
+gfx/scene3d.amni	var see_through = false;	See-Through Matte	pub	Flag that enables see-through rendering, so the matte layer lets content behind the scene show.
+gfx/scene3d.amni	var matte_layer gfx::Texture;	See-Through Matte	int	Texture holding the matte layer for the current frame, managed by the renderer.
+gfx/scene3d.amni	var matte_cur gfx::Texture;	See-Through Matte	int	Texture holding the current frame's matte result before it is stored in the history.
+gfx/scene3d.amni	var matte_hist gfx::Texture[>..] = [];	See-Through Matte	int	List of history textures that carry the matte across frames for temporal accumulation.
+gfx/scene3d.amni	var matte_at = 0;	See-Through Matte	int	Index of the matte history texture currently in use.
+gfx/scene3d.amni	var matte_valid = false;	See-Through Matte	int	Flag that marks whether the matte history holds usable data from a previous frame.
+gfx/scene3d.amni	var matte_live = false;	See-Through Matte	int	Flag that records whether the matte pass is active for the current frame.
+gfx/scene3d.amni	fn temporal_draw(cur gfx::Texture, prev gfx::Texture, into gfx::Texture, fresh bool) bool	Temporal Upscaling	int	Runs one temporal accumulation pass blending the current image with history into a target, returning false if the pass could not begin.
+gfx/scene3d.amni	fn matte_pass()	See-Through Matte	int	Renders the matte mask from motion data and the current layer, accumulating it temporally when enabled, then marks the matte live.

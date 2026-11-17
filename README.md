@@ -48,8 +48,6 @@ gold: units.amni ok (6 blocks, 294 Gold words -> 846 Helium words; 2 model calls
 | `gold find <pack,…> <words>` | show which API a sentence retrieves |
 | `gold compact f.gold [wide]` | pack the data tables with no model call: a first `@` row of column marks (`.` real column, `.2` point two places left, `e9` appended exponent, `+` text that changes only in its first number), and blank cells or short rows repeat the cells above; `wide` writes every cell back out in full |
 | `gold squeeze f.gold check='cmd' [rounds=4]` | rewrite the Gold as shorter plain English, rebuild it from scratch and keep it only if the check command passes (failures are fed back, the original is the reference) |
-| `gold sync [dir] [push] [nopull] [force]` | rebuild a product with the newest Helium: pull it, rebuild hc, rebuild every Gold file and hc output its `helium.sync` lists, repair what the new compiler rejects, run its tests, and commit to its sync branch only if they all pass (see below) |
-| `gold sync all [push]` | the same for every product synced on this machine before |
 | `gold lint f.gold` | list lines that read as code (operators, signatures, Helium types); `gold build` refuses them in changed blocks unless `GOLD_LINT=warn` |
 
 ## A Gold file
@@ -72,38 +70,13 @@ Without `lang`, Gold writes the language of the `into` file, else the product's 
 4. Missing std imports are added without a model call. Other errors go back to the model for the failing blocks only; the last round uses `GOLD_MODEL_HARD` (default `opus`). `GOLD_TRIES` rounds in all (default 4).
 5. On success the lock is saved and, when writing into a product, its pack is re-indexed so the new code is callable by the next Gold file.
 
-## Keeping products on the newest Helium
-
-`gold sync` rebuilds a product whenever Helium moves, repairs the code the new compiler rejects, and keeps the result only when the product's own tests pass. A product opts in with a `helium.sync` file at its root:
-
-```
-# Gold files, hc outputs, build scripts and the checks that must pass
-gold cad/he/*.gold
-build cad/he/flow_oct.amni cad/he/flow_oct.wasm --web
-step bash build.sh
-test cd cad && node tests/flow_oct_test.mjs
-branch helium-sync
-```
-
-`gold <glob>` lines are rebuilt with `gold build`, `build <src> <out> [flags]` lines with `hc build <src> -o <out> [flags]`, and `step` lines run as written; `test` lines must all exit 0. `branch` (default `helium-sync`) is where results go, and `helium <dir>` picks a Helium checkout other than `GOLD_HELIUM`. Steps and tests see `HELIUM`, `HC` and `HC_LIB` for the synced compiler.
-
-A run:
-
-1. Needs a clean working tree (untracked files are fine), so a failed sync can be undone exactly. It fast-forwards the product and the Helium checkout to their upstreams (`nopull` skips both), and runs `hc/bootstrap.sh` when the checkout moved past the compiler last built there.
-2. Stops early when `helium.lock` already names this Helium commit, or the sync branch already holds a rebuild with it (`force` rebuilds anyway).
-3. Rebuilds everything listed. When the new compiler rejects code, the model gets the errors, the file, the Helium commits since the product's last sync and the newest library API, and answers with SEARCH/REPLACE edits; the step is retried, up to `GOLD_SYNC_TRIES` (3) rounds per step. A module Gold writes is repaired in its Gold file (literal fences included), never in the generated Helium.
-4. Runs the tests. A failing test is not repaired: if the same code builds but behaves differently, that is a compiler change for a person to look at. The product is restored and the sync branch is left as it was.
-5. On success writes `helium.lock` (the Helium commit tested), commits the rebuilt outputs and repairs to the sync branch with the Helium change log and the list of repaired files, and switches back to the branch you were on. `push` also pushes the sync branch (`--force-with-lease`; it is rewritten from your branch on every run). Merging it is up to you.
-
-Every product synced once is listed in `~/.config/gold/sync.list`, so `gold sync all` keeps them all current; run it from cron or a systemd timer, for example `17 3 * * * GOLD_HELIUM=$HOME/ai/amni-lang/helium $HOME/ai/amni-lang/gold/gold sync all >> $HOME/.cache/gold/sync.log 2>&1`. `tests/sync_test.sh <hc> <helium lib>` runs the whole cycle offline with a stand-in Helium and model.
-
 ## Packs
 
 `packs/<name>/` holds `pack.conf` (dir, lang, main, test, skip), `api.tsv` (every top-level function, type and global with file, line and doc comment) and an optional hand-written `notes.md` of conventions. Current packs: `std` (hc/lib), `waystone`, `pomling`, `mail` (Amni-Mail core), `prayer`. Re-run `gold pack <name>` after the product changes; Gold does it itself after writing into a product.
 
 ## Environment
 
-`GOLD_MODEL` (sonnet), `GOLD_MODEL_HARD` (opus, last repair round), `GOLD_MODEL_PORT` (opus), `GOLD_TRIES` (4, extended up to 10 while each round changes the errors), `GOLD_K` (70 retrieved symbols), `GOLD_HELIUM` (Helium checkout, default `~/ai/amni-lang/helium`), `GOLD_HC`, `GOLD_HC_LIB`, `GOLD_CACHE` (`~/.cache/gold`), `GOLD_SYNC_TRIES` (3 repair rounds per sync step), `GOLD_VERBOSE`.
+`GOLD_MODEL` (sonnet), `GOLD_MODEL_HARD` (opus, last repair round), `GOLD_MODEL_PORT` (opus), `GOLD_TRIES` (4, extended up to 10 while each round changes the errors), `GOLD_K` (70 retrieved symbols), `GOLD_HELIUM` (Helium checkout, default `~/ai/amni-lang/helium`), `GOLD_HC`, `GOLD_HC_LIB`, `GOLD_CACHE` (`~/.cache/gold`), `GOLD_VERBOSE`.
 
 ## Build Gold
 
