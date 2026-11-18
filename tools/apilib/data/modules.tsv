@@ -94,3 +94,4 @@ gfx/video.amni	graphics	Encodes video frames into an H.264-style bitstream using
 gfx/sdf_ttf.amni	graphics	Builds signed distance field font atlases from TrueType font data so programs can render crisp scalable text.
 gfx/hwrt.he	graphics	Lets a program use Vulkan hardware ray tracing and compute pipelines on the GPU, including device setup, buffers, and dispatching shaders.
 gfx/pathtrace.he	graphics	Lets a program build a 3D scene of triangles, materials, textures, and lights, then render it with hardware path tracing.
+gfx/impostor.amni	graphics	Lets a program compute view directions, camera bases, and projection matrices for baking impostor sprites of 3D objects.

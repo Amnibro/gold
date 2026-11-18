@@ -2388,6 +2388,9 @@ hwrt::scene	0	scene(tris const f32[:], boxes const f32[:], opaque bool) bool	gfx
 hwrt::pipe	0	pipe(blob const byte[:], nb int) int	gfx/hwrt.he	156	
 hwrt::run	0	run(p int, bufs const int[:], gx int, gy int, gz int) bool	gfx/hwrt.he	171	
 hwrt::done	0	done()	gfx/hwrt.he	181	
+imp::view_dir	0	fn view_dir(i int, j int, n int) float3	gfx/impostor.amni	5	`view_dir(i int, j int, n int) float3` gives the direction of view (i, j) in an n by n grid. Take u as i over n minus one, times two, minus one, and v the same from j. Let a be half of u plus v and b half of u minus v. The direction is a, then the larger of zero and one minus the absolute values of a and b, then b, normalized with linalg's unit3.
+imp::basis	0	fn basis(d float3) float3, float3	gfx/impostor.amni	13	`basis(d float3) (float3, float3)` gives the right and up vectors of a camera looking back along d. Right starts as d's z, zero, and minus d's x; when its length is at most 1e-4 right is the x axis, otherwise right divided by its length. Up is linalg's cross3 of d and right. Return right, then up.
+imp::bake_proj	0	fn bake_proj(d float3, c float3, r f32) gfx::mat4	gfx/impostor.amni	24	`bake_proj(d float3, c float3, r f32) gfx::mat4` is the orthographic view-projection that frames the sphere of center c and radius r seen along minus d from c plus d times r, with depth zero at the eye and one at the far side. With right and up from `basis`, the four rows are: right divided by r, with a last term of minus the dot of c and right over r; up divided by r, with minus the dot of c and 
 ktx2::Info	1	struct Info	gfx/ktx2.amni	4	The struct `Info` has, in this order: `ok` bool (default false), `kind` int, `srgb` bool, `width` int, `height` int, `levels` int, `scheme` int, and `error` int (default 0). Error codes are constants: `E_NONE = 0`, `E_SHORT = 1` (file too short), `E_MAGIC = 2` (not a KTX2 file), `E_FORMAT = 3` (a pixel format this module does not read), `E_SHAPE = 4` (3D, array, cube map, or a bad size or level co
 ktx2::E_NONE	2	let E_NONE = 0;	gfx/ktx2.amni	5	The struct `Info` has, in this order: `ok` bool (default false), `kind` int, `srgb` bool, `width` int, `height` int, `levels` int, `scheme` int, and `error` int (default 0). Error codes are constants: `E_NONE = 0`, `E_SHORT = 1` (file too short), `E_MAGIC = 2` (not a KTX2 file), `E_FORMAT = 3` (a pixel format this module does not read), `E_SHAPE = 4` (3D, array, cube map, or a bad size or level co
 ktx2::E_SHORT	2	let E_SHORT = 1;	gfx/ktx2.amni	6	The struct `Info` has, in this order: `ok` bool (default false), `kind` int, `srgb` bool, `width` int, `height` int, `levels` int, `scheme` int, and `error` int (default 0). Error codes are constants: `E_NONE = 0`, `E_SHORT = 1` (file too short), `E_MAGIC = 2` (not a KTX2 file), `E_FORMAT = 3` (a pixel format this module does not read), `E_SHAPE = 4` (3D, array, cube map, or a bad size or level co
@@ -2726,821 +2729,843 @@ scal::scale_of	0	fn scale_of(l int) f32	gfx/scalability.amni	7
 scal::apply	0	fn apply(l int)	gfx/scalability.amni	8	
 scal::init	0	fn init(w int, h int, l int) bool	gfx/scalability.amni	16	
 scal::pick	0	fn pick(budget_ms f32, ms f32[4]) int	gfx/scalability.amni	17	
-s3d::CASCADES	2	let CASCADES = 3;	gfx/scene3d.amni	44	
-s3d::MAX_LIGHTS	2	let MAX_LIGHTS = 16;	gfx/scene3d.amni	45	
-s3d::MAX_FOG_VOLUMES	2	let MAX_FOG_VOLUMES = 8;	gfx/scene3d.amni	46	
-s3d::MAX_PROBES	2	let MAX_PROBES = 8;	gfx/scene3d.amni	47	
-s3d::GI_LIGHTS	2	let GI_LIGHTS = 16;	gfx/scene3d.amni	48	
-s3d::GLOW_LEVELS	2	let GLOW_LEVELS = 5;	gfx/scene3d.amni	49	
-s3d::MSAA	2	var MSAA = 4;	gfx/scene3d.amni	50	
-s3d::LOCAL_FACES	2	let LOCAL_FACES = 96;	gfx/scene3d.amni	51	
-s3d::HIZ_LEVELS	2	let HIZ_LEVELS = 7;	gfx/scene3d.amni	52	
-s3d::Camera	1	struct Camera	gfx/scene3d.amni	54	
-s3d::Sun	1	struct Sun	gfx/scene3d.amni	55	
-s3d::Light	1	struct Light	gfx/scene3d.amni	56	
-s3d::Sky	1	struct Sky	gfx/scene3d.amni	57	
-s3d::Look	1	struct Look	gfx/scene3d.amni	58	
-s3d::NodeOv	1	struct NodeOv	gfx/scene3d.amni	59	
-s3d::WeightOv	1	struct WeightOv	gfx/scene3d.amni	60	
-s3d::Item	1	struct Item	gfx/scene3d.amni	61	
-s3d::InstSet	1	struct InstSet	gfx/scene3d.amni	62	
-s3d::Caustics	1	struct Caustics	gfx/scene3d.amni	63	
-s3d::Sea	1	struct Sea	gfx/scene3d.amni	64	
-s3d::Wind	1	struct Wind	gfx/scene3d.amni	65	
-s3d::Clouds	1	struct Clouds	gfx/scene3d.amni	66	
-s3d::CloudU	1	struct CloudU	gfx/scene3d.amni	67	
-s3d::CloudShadowU	1	struct CloudShadowU	gfx/scene3d.amni	68	
-s3d::Batch	1	struct Batch	gfx/scene3d.amni	69	
-s3d::DrawU	1	struct DrawU	gfx/scene3d.amni	71	
-s3d::FrameU	1	struct FrameU	gfx/scene3d.amni	72	
-s3d::GiU	1	struct GiU	gfx/scene3d.amni	78	
-s3d::SurfaceU	1	struct SurfaceU	gfx/scene3d.amni	79	
-s3d::ExtU	1	struct ExtU	gfx/scene3d.amni	80	
-s3d::CutU	1	struct CutU	gfx/scene3d.amni	81	
-s3d::CutViewU	1	struct CutViewU	gfx/scene3d.amni	82	
-s3d::SkyU	1	struct SkyU	gfx/scene3d.amni	83	
-s3d::AoU	1	struct AoU	gfx/scene3d.amni	84	
-s3d::ContactU	1	struct ContactU	gfx/scene3d.amni	85	
-s3d::SssU	1	struct SssU	gfx/scene3d.amni	86	
-s3d::GtaoU	1	struct GtaoU	gfx/scene3d.amni	87	
-s3d::TileU	1	struct TileU	gfx/scene3d.amni	88	
-s3d::NearU	1	struct NearU	gfx/scene3d.amni	89	
-s3d::MblurU	1	struct MblurU	gfx/scene3d.amni	90	
-s3d::DofU	1	struct DofU	gfx/scene3d.amni	91	
-s3d::TexelU	1	struct TexelU	gfx/scene3d.amni	92	
-s3d::GlowU	1	struct GlowU	gfx/scene3d.amni	93	
-s3d::GradeU	1	struct GradeU	gfx/scene3d.amni	94	
-s3d::HistU	1	struct HistU	gfx/scene3d.amni	95	
-s3d::AdaptU	1	struct AdaptU	gfx/scene3d.amni	96	
-s3d::FogVolume	1	struct FogVolume	gfx/scene3d.amni	97	
-s3d::SeaU	1	struct SeaU	gfx/scene3d.amni	98	
-s3d::FogU	1	struct FogU	gfx/scene3d.amni	99	
-s3d::QuadG	1	struct QuadG	gfx/scene3d.amni	100	
-s3d::QuadViewU	1	struct QuadViewU	gfx/scene3d.amni	101	
-s3d::SsrU	1	struct SsrU	gfx/scene3d.amni	102	
-s3d::SsgiU	1	struct SsgiU	gfx/scene3d.amni	103	
-s3d::SsgiAU	1	struct SsgiAU	gfx/scene3d.amni	104	
-s3d::SsgiUpU	1	struct SsgiUpU	gfx/scene3d.amni	105	
-s3d::HizU	1	struct HizU	gfx/scene3d.amni	106	
-s3d::TemporalU	1	struct TemporalU	gfx/scene3d.amni	107	
-s3d::MatteU	1	struct MatteU	gfx/scene3d.amni	108	
-s3d::view	2	var view Camera = Camera { eye: float3 { 0.0, 1.5, 5.0 }, target: float3 { 0.0, 0.5, 0.0 }, up: float3 { 0.0, 1.0, 0.0 }, fov_y: 0.9, near: 0.1, far: 200.0 };	gfx/scene3d.amni	110	
-s3d::sun	2	var sun Sun = Sun { to_sun: float3 { 0.4, 0.8, 0.45 }, rgb: float3 { 3.0, 2.85, 2.6 }, shadows: true, shadow_far: 40.0, map_size: 2048 };	gfx/scene3d.amni	111	
-s3d::sky	2	var sky Sky = Sky { zenith: float3 { 0.25, 0.42, 0.75 }, horizon: float3 { 0.65, 0.72, 0.8 }, ground: float3 { 0.2, 0.18, 0.16 }, ambient: 1.0, draw: true };	gfx/scene3d.amni	112	
-s3d::look	2	var look Look = Look { exposure: 1.0, white: 6.0, bloom: 0.6, bloom_cut: 1.2, desaturate: 0.5, ssao: true, ao_radius: 0.5, ao_power: 1.5, ao_samples: 16 };	gfx/scene3d.amni	113	
-s3d::debug_view	2	var debug_view = 0;	gfx/scene3d.amni	116	Debug view for the colour pass: 0 shaded; 1 shading normal; 2 vertex normal; 3 tangent; 4 ambient term; 5 direct light; 6 occlusion; 7 base colour; 8 n.v.
-s3d::ao_mode	2	var ao_mode = 0;	gfx/scene3d.amni	117	
-s3d::gtao_steps	2	var gtao_steps = 8;	gfx/scene3d.amni	118	
-s3d::gtao_falloff	2	var gtao_falloff f32 = 0.1;	gfx/scene3d.amni	119	
-s3d::spec_occlusion	2	var spec_occlusion = true;	gfx/scene3d.amni	120	
-s3d::ssr_on	2	var ssr_on = false;	gfx/scene3d.amni	121	
-s3d::lite	2	var lite = false;	gfx/scene3d.amni	122	
-s3d::ssr_steps	2	var ssr_steps = 48;	gfx/scene3d.amni	123	
-s3d::ssr_thickness	2	var ssr_thickness f32 = 0.05;	gfx/scene3d.amni	124	
-s3d::ssr_max_dist	2	var ssr_max_dist f32 = 3.0;	gfx/scene3d.amni	125	
-s3d::ssr_rough	2	var ssr_rough f32 = 0.5;	gfx/scene3d.amni	126	
-s3d::ssr_edge	2	var ssr_edge f32 = 0.07;	gfx/scene3d.amni	127	
-s3d::ssr_hit	2	var ssr_hit gfx::Texture;	gfx/scene3d.amni	128	
-s3d::ssr_prev	2	var ssr_prev gfx::Texture;	gfx/scene3d.amni	129	
-s3d::hiz	2	var hiz gfx::Texture[>..] = [];	gfx/scene3d.amni	130	
-s3d::ssr_have	2	var ssr_have = false;	gfx/scene3d.amni	131	
-s3d::bent_ran	2	var bent_ran = false;	gfx/scene3d.amni	132	
-s3d::mt_ran	2	var mt_ran = false;	gfx/scene3d.amni	133	
-s3d::pipe_hiz	2	var pipe_hiz gfx::Pipeline;	gfx/scene3d.amni	134	
-s3d::pipe_ssr	2	var pipe_ssr gfx::Pipeline;	gfx/scene3d.amni	135	
-s3d::pipe_ssr_copy	2	var pipe_ssr_copy gfx::Pipeline;	gfx/scene3d.amni	136	
-s3d::ssgi_on	2	var ssgi_on = false;	gfx/scene3d.amni	137	
-s3d::ssgi_rays	2	var ssgi_rays = 4;	gfx/scene3d.amni	138	
-s3d::ssgi_steps	2	var ssgi_steps = 64;	gfx/scene3d.amni	139	
-s3d::ssgi_dist	2	var ssgi_dist f32 = 10.0;	gfx/scene3d.amni	140	
-s3d::ssgi_thickness	2	var ssgi_thickness f32 = 0.05;	gfx/scene3d.amni	141	
-s3d::ssgi_edge	2	var ssgi_edge f32 = 0.02;	gfx/scene3d.amni	142	
-s3d::ssgi_intensity	2	var ssgi_intensity f32 = 1.0;	gfx/scene3d.amni	143	
-s3d::ssgi_ao	2	var ssgi_ao f32 = 1.0;	gfx/scene3d.amni	144	
-s3d::ssgi_frames	2	var ssgi_frames f32 = 17.0;	gfx/scene3d.amni	145	
-s3d::ssgi_new	2	var ssgi_new gfx::Texture;	gfx/scene3d.amni	146	
-s3d::ssgi_hc	2	var ssgi_hc gfx::Texture[>..] = [];	gfx/scene3d.amni	147	
-s3d::ssgi_hz	2	var ssgi_hz gfx::Texture[>..] = [];	gfx/scene3d.amni	148	
-s3d::ssgi_buf	2	var ssgi_buf gfx::Buffer;	gfx/scene3d.amni	149	
-s3d::ssgi_cur	2	var ssgi_cur = 0;	gfx/scene3d.amni	150	
-s3d::ssgi_valid	2	var ssgi_valid = false;	gfx/scene3d.amni	151	
-s3d::pipe_ssgi_trace	2	var pipe_ssgi_trace gfx::Pipeline;	gfx/scene3d.amni	152	
-s3d::pipe_ssgi_accum	2	var pipe_ssgi_accum gfx::Pipeline;	gfx/scene3d.amni	153	
-s3d::pipe_ssgi_up	2	var pipe_ssgi_up gfx::ComputePipeline;	gfx/scene3d.amni	154	
-s3d::motion_blur	2	var motion_blur f32 = 0.0;	gfx/scene3d.amni	155	
-s3d::mb_samples	2	var mb_samples = 15;	gfx/scene3d.amni	156	
-s3d::mb_soft_z	2	var mb_soft_z f32 = 0.02;	gfx/scene3d.amni	157	
-s3d::lens_tile_px	2	var lens_tile_px = 20;	gfx/scene3d.amni	158	
-s3d::dof_aperture	2	var dof_aperture f32 = 0.0;	gfx/scene3d.amni	159	
-s3d::dof_focus	2	var dof_focus f32 = 10.0;	gfx/scene3d.amni	160	
-s3d::dof_max_px	2	var dof_max_px f32 = 24.0;	gfx/scene3d.amni	161	
-s3d::dof_samples	2	var dof_samples = 48;	gfx/scene3d.amni	162	
-s3d::dof_bokeh	2	var dof_bokeh f32 = 0.0;	gfx/scene3d.amni	163	
-s3d::dof_bokeh_cut	2	var dof_bokeh_cut f32 = 1.0;	gfx/scene3d.amni	164	
-s3d::dof_band	2	var dof_band f32 = 0.0;	gfx/scene3d.amni	165	
-s3d::dof_near	2	var dof_near f32 = 1.0;	gfx/scene3d.amni	166	
-s3d::lens_offset	2	var lens_offset float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	167	
-s3d::fx_dt	2	var fx_dt f32 = 0.0;	gfx/scene3d.amni	168	
-s3d::nd_ran	2	var nd_ran = false;	gfx/scene3d.amni	169	
-s3d::depth_wanted	2	var depth_wanted = false;	gfx/scene3d.amni	170	
-s3d::gi_on	2	var gi_on = false;	gfx/scene3d.amni	171	
-s3d::rt_shadows	2	var rt_shadows = false;	gfx/scene3d.amni	172	
-s3d::rt_reflect	2	var rt_reflect = false;	gfx/scene3d.amni	173	
-s3d::rt_rough	2	var rt_rough f32 = 0.3;	gfx/scene3d.amni	174	
-s3d::rt_reach	2	var rt_reach f32 = 1000.0;	gfx/scene3d.amni	175	
-s3d::gi_ao	2	var gi_ao = true;	gfx/scene3d.amni	176	
-s3d::gi_rt_visibility	2	var gi_rt_visibility = true;	gfx/scene3d.amni	177	
-s3d::gi_dims	2	var gi_dims = [16, 16, 16];	gfx/scene3d.amni	178	
-s3d::gi_rays	2	var gi_rays = 256;	gfx/scene3d.amni	179	
-s3d::gi_hysteresis	2	var gi_hysteresis f32 = 0.97;	gfx/scene3d.amni	180	
-s3d::gi_bias	2	var gi_bias f32 = 0.3;	gfx/scene3d.amni	181	
-s3d::gi_max_dist	2	var gi_max_dist f32 = 0.0;	gfx/scene3d.amni	182	
-s3d::gi_updates_per_frame	2	var gi_updates_per_frame = 1;	gfx/scene3d.amni	183	
-s3d::gi_interval	2	var gi_interval = 1;	gfx/scene3d.amni	184	
-s3d::shadow_reach	2	var shadow_reach f32 = 0.0;	gfx/scene3d.amni	185	
-s3d::gi_built	2	var gi_built = false;	gfx/scene3d.amni	186	
-s3d::gi_refit	2	var gi_refit = true;	gfx/scene3d.amni	187	
-s3d::gi_adaptive	2	var gi_adaptive = true;	gfx/scene3d.amni	188	
-s3d::gi_rebuilds	2	var gi_rebuilds = 0;	gfx/scene3d.amni	189	
-s3d::gi_refits	2	var gi_refits = 0;	gfx/scene3d.amni	190	
-s3d::gi_refit_ms	2	var gi_refit_ms = 0.0;	gfx/scene3d.amni	191	
-s3d::gi_build_ms	2	var gi_build_ms = 0.0;	gfx/scene3d.amni	192	
-s3d::gi_moved	2	var gi_moved = 0;	gfx/scene3d.amni	193	
-s3d::gi_stamp	2	var gi_stamp = 0;	gfx/scene3d.amni	194	
-s3d::gi_src	2	var gi_src = dictionary<int, int> {};	gfx/scene3d.amni	195	
-s3d::gi_src_first	2	var gi_src_first int[>..] = [];	gfx/scene3d.amni	196	
-s3d::gi_src_cnt	2	var gi_src_cnt int[>..] = [];	gfx/scene3d.amni	197	
-s3d::gi_src_prim	2	var gi_src_prim int[>..] = [];	gfx/scene3d.amni	198	
-s3d::gi_src_seen	2	var gi_src_seen int[>..] = [];	gfx/scene3d.amni	199	
-s3d::gi_src_live	2	var gi_src_live bool[>..] = [];	gfx/scene3d.amni	200	
-s3d::gi_src_model	2	var gi_src_model gfx::mat4[>..] = [];	gfx/scene3d.amni	201	
-s3d::gi_np	2	var gi_np = 0;	gfx/scene3d.amni	202	
-s3d::gi_nr	2	var gi_nr = 0;	gfx/scene3d.amni	203	
-s3d::gi_updates	2	var gi_updates = 0;	gfx/scene3d.amni	204	
-s3d::gi_lo	2	var gi_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	205	
-s3d::gi_box	2	var gi_box = false;	gfx/scene3d.amni	207	optional probe volume; off = the whole scene's bounds
-s3d::gi_box_lo	2	var gi_box_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	208	
-s3d::gi_box_hi	2	var gi_box_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	209	
-s3d::img_avg	2	var img_avg float4[>..] = [];	gfx/scene3d.amni	210	
-s3d::gi_step	2	var gi_step float3 = float3 { 1.0, 1.0, 1.0 };	gfx/scene3d.amni	211	
-s3d::gi_irr	2	var gi_irr gfx::Buffer;	gfx/scene3d.amni	212	
-s3d::gi_dist	2	var gi_dist gfx::Buffer;	gfx/scene3d.amni	213	
-s3d::gi_rays_buf	2	var gi_rays_buf gfx::Buffer;	gfx/scene3d.amni	214	
-s3d::gi_dummy	2	var gi_dummy gfx::Buffer;	gfx/scene3d.amni	215	
-s3d::gi_have	2	var gi_have = false;	gfx/scene3d.amni	216	
-s3d::pipe_gi_trace	2	var pipe_gi_trace gfx::ComputePipeline;	gfx/scene3d.amni	217	
-s3d::pipe_gi_update	2	var pipe_gi_update gfx::ComputePipeline;	gfx/scene3d.amni	218	
-s3d::multiscatter	2	var multiscatter = true;	gfx/scene3d.amni	220	Multiple-scattering energy compensation of the specular lobe (surface.frag ms_factor).
-s3d::furnace_scale	2	var furnace_scale f32 = 1.0;	gfx/scene3d.amni	222	Test hook for the furnace control: scales the direct light; 1.0 in normal use.
-s3d::furnace_mode	2	var furnace_mode = 0;	gfx/scene3d.amni	225	Test hook for the furnace controls that must fail, 0 in normal use: 1 gives dielectrics F0 = 1 in the specular lobe only, 2 weights diffuse by the older per-light 1 - F(v.h).
-s3d::test_rect_naive	2	var test_rect_naive = false;	gfx/scene3d.amni	226	
-s3d::rect_detail	2	var rect_detail = 3;	gfx/scene3d.amni	227	
-s3d::test_all_lights	2	var test_all_lights = false;	gfx/scene3d.amni	228	
-s3d::test_cluster_range	2	var test_cluster_range f32 = 1.0;	gfx/scene3d.amni	229	
-s3d::alpha_to_coverage	2	var alpha_to_coverage = false;	gfx/scene3d.amni	230	
-s3d::mip_bias	2	var mip_bias f32 = 0.0;	gfx/scene3d.amni	231	
-s3d::mip_bias_auto	2	var mip_bias_auto = true;	gfx/scene3d.amni	232	
-s3d::test_morph_still	2	var test_morph_still = false;	gfx/scene3d.amni	233	
-s3d::ClothIt	1	struct ClothIt	gfx/scene3d.amni	234	
-s3d::cloths	2	var cloths ClothIt[>..] = [];	gfx/scene3d.amni	235	
-s3d::temporal	2	var temporal = 0;	gfx/scene3d.amni	237	Temporal accumulation. 0 off (unless the output is upscaled), 1 on.
-s3d::temporal_blend	2	var temporal_blend f32 = 0.0625;     // weight of a new frame on a still pixel	gfx/scene3d.amni	238	
-s3d::temporal_motion	2	var temporal_motion f32 = 0.01;      // extra weight per output pixel of motion	gfx/scene3d.amni	239	
-s3d::temporal_max	2	var temporal_max f32 = 0.5;	gfx/scene3d.amni	240	
-s3d::temporal_gamma	2	var temporal_gamma f32 = 1.25;       // neighbourhood clip width in standard deviations (0 = no clip)	gfx/scene3d.amni	241	
-s3d::temporal_reset	2	var temporal_reset = false;          // drop the history on the next frame (camera cut)	gfx/scene3d.amni	242	
-s3d::temporal_depth_reject	2	var temporal_depth_reject f32 = 0.1;	gfx/scene3d.amni	247	Depth-based history rejection (shaders/temporal.frag): a pixel whose history shows a surface in front of it (nearer by more than this fraction of its depth) that is no longer anywhere in its 3x3 neighbourhood was hidden last frame, so its history is dropped. 0 turns it off (a test control).
-s3d::temporal_motion_scale	2	var temporal_motion_scale f32 = 1.0;	gfx/scene3d.amni	250	Test hook: scales the motion vectors the temporal pass reads; 1 in normal use, 0 is the "motion forced to zero" control of the ghost gate.
-s3d::jitter_phases	2	var jitter_phases = 16;	gfx/scene3d.amni	251	
-s3d::motion_vectors	2	var motion_vectors = false;	gfx/scene3d.amni	254	Write the motion target even when temporal is off (for a caller that reads motion_target()). With both off the target is neither allocated nor drawn.
-s3d::shadow_test_shift	2	var shadow_test_shift float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	259	Test hooks for gfx_smoke's must-fail shadow controls (leave at their defaults): the shadow map is drawn with each cascade shifted along light-space x by this many texels (x, y, z = cascades 0, 1, 2; sampling is unshifted), and every cascade's clear cycles the whole map (what a layer-only cycling rule did before S5).
-s3d::shadow_test_cycle_all	2	var shadow_test_cycle_all = false;	gfx/scene3d.amni	260	
-s3d::shadow_test_cycle_never	2	var shadow_test_cycle_never = false;	gfx/scene3d.amni	262	and never cycles at all (reported only: does the driver serialise frames anyway)
-s3d::lights	2	var lights Light[>..] = [];	gfx/scene3d.amni	263	
-s3d::fog_on	2	var fog_on = false;	gfx/scene3d.amni	264	
-s3d::fog_density	2	var fog_density f32 = 0.03;	gfx/scene3d.amni	265	
-s3d::fog_falloff	2	var fog_falloff f32 = 0.25;	gfx/scene3d.amni	266	
-s3d::fog_height	2	var fog_height f32 = 0.0;	gfx/scene3d.amni	267	
-s3d::fog_far	2	var fog_far f32 = 60.0;	gfx/scene3d.amni	268	
-s3d::fog_steps	2	var fog_steps = 32;	gfx/scene3d.amni	269	
-s3d::fog_g	2	var fog_g f32 = 0.6;	gfx/scene3d.amni	270	
-s3d::fog_ambient	2	var fog_ambient float3 = float3 { 0.05, 0.06, 0.07 };	gfx/scene3d.amni	271	
-s3d::fog_sun	2	var fog_sun f32 = 1.0;	gfx/scene3d.amni	272	
-s3d::fog_lights	2	var fog_lights f32 = 1.0;	gfx/scene3d.amni	273	
-s3d::fog_noise	2	var fog_noise f32 = 0.0;	gfx/scene3d.amni	274	
-s3d::fog_noise_size	2	var fog_noise_size f32 = 20.0;	gfx/scene3d.amni	275	
-s3d::fog_wind	2	var fog_wind float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	276	
-s3d::fog_volumes	2	var fog_volumes FogVolume[>..] = [];	gfx/scene3d.amni	277	
-s3d::pipe_fog	2	var pipe_fog gfx::Pipeline;	gfx/scene3d.amni	278	
-s3d::pipe_sea	2	var pipe_sea gfx::Pipeline;	gfx/scene3d.amni	279	
-s3d::quads	2	var quads QuadG[>..] = [];	gfx/scene3d.amni	280	
-s3d::quad_buf	2	var quad_buf gfx::Buffer;	gfx/scene3d.amni	281	
-s3d::quad_cap	2	var quad_cap = 0;	gfx/scene3d.amni	282	
-s3d::pipe_quad_add	2	var pipe_quad_add gfx::Pipeline;	gfx/scene3d.amni	283	
-s3d::pipe_quad_mul	2	var pipe_quad_mul gfx::Pipeline;	gfx/scene3d.amni	284	
-s3d::items	2	var items Item[>..] = [];	gfx/scene3d.amni	285	
-s3d::batch	2	var batch Batch[>..] = [];	gfx/scene3d.amni	286	
-s3d::ready	2	var ready bool = false;	gfx/scene3d.amni	289	---- GPU state
-s3d::width	2	var width int = 0;	gfx/scene3d.amni	290	
-s3d::height	2	var height int = 0;	gfx/scene3d.amni	291	
-s3d::pipe_lit	2	var pipe_lit gfx::Pipeline;	gfx/scene3d.amni	292	
-s3d::pipe_lit_two	2	var pipe_lit_two gfx::Pipeline;     // double sided	gfx/scene3d.amni	293	
-s3d::pipe_cut	2	var pipe_cut gfx::Pipeline;	gfx/scene3d.amni	294	
-s3d::pipe_cut_two	2	var pipe_cut_two gfx::Pipeline;	gfx/scene3d.amni	295	
-s3d::pipe_full	2	var pipe_full gfx::Pipeline;	gfx/scene3d.amni	296	
-s3d::pipe_full_two	2	var pipe_full_two gfx::Pipeline;	gfx/scene3d.amni	297	
-s3d::pipe_blend	2	var pipe_blend gfx::Pipeline;	gfx/scene3d.amni	298	
-s3d::pipe_blend_back	2	var pipe_blend_back gfx::Pipeline;	gfx/scene3d.amni	299	
-s3d::pipe_trans_copy	2	var pipe_trans_copy gfx::Pipeline;	gfx/scene3d.amni	300	
-s3d::sss_on	2	var sss_on = false;	gfx/scene3d.amni	301	
-s3d::sss_taps	2	var sss_taps = 64;	gfx/scene3d.amni	302	
-s3d::sss_lod	2	var sss_lod f32 = 5.0;	gfx/scene3d.amni	303	
-s3d::sss_depth	2	var sss_depth = true;	gfx/scene3d.amni	304	
-s3d::sss_ran	2	var sss_ran = false;	gfx/scene3d.amni	305	
-s3d::sss_live	2	var sss_live = false;	gfx/scene3d.amni	306	
-s3d::sss_mode	2	var sss_mode = 0;	gfx/scene3d.amni	307	
-s3d::sss_np	2	var sss_np = 0;	gfx/scene3d.amni	308	
-s3d::sss_built	2	var sss_built = 0;	gfx/scene3d.amni	309	
-s3d::sss_w	2	var sss_w = 0;	gfx/scene3d.amni	310	
-s3d::sss_h	2	var sss_h = 0;	gfx/scene3d.amni	311	
-s3d::sss_levels	2	var sss_levels = 1;	gfx/scene3d.amni	312	
-s3d::sss_ps	2	var sss_ps f32 = 0.0;	gfx/scene3d.amni	313	
-s3d::sss_u	2	var sss_u SssU;	gfx/scene3d.amni	314	
-s3d::sss_irr	2	var sss_irr gfx::Texture;	gfx/scene3d.amni	315	
-s3d::sss_set	2	var sss_set gfx::Texture;	gfx/scene3d.amni	316	
-s3d::sss_out	2	var sss_out gfx::Texture;	gfx/scene3d.amni	317	
-s3d::pipe_sss	2	var pipe_sss gfx::Pipeline;	gfx/scene3d.amni	318	
-s3d::pipe_sss_two	2	var pipe_sss_two gfx::Pipeline;	gfx/scene3d.amni	319	
-s3d::pipe_sss_set	2	var pipe_sss_set gfx::Pipeline;	gfx/scene3d.amni	320	
-s3d::pipe_sss_blur	2	var pipe_sss_blur gfx::Pipeline;	gfx/scene3d.amni	321	
-s3d::Probe	1	struct Probe	gfx/scene3d.amni	322	
-s3d::Decal	1	struct Decal	gfx/scene3d.amni	323	
-s3d::decals	2	var decals Decal[>..] = [];	gfx/scene3d.amni	324	
-s3d::ProbeCopyU	1	struct ProbeCopyU	gfx/scene3d.amni	325	
-s3d::probes	2	var probes Probe[>..] = [];	gfx/scene3d.amni	326	
-s3d::probe_res	2	var probe_res = 256;	gfx/scene3d.amni	327	
-s3d::probe_near	2	var probe_near f32 = 0.05;	gfx/scene3d.amni	328	
-s3d::probe_intensity	2	var probe_intensity f32 = 1.0;	gfx/scene3d.amni	329	
-s3d::probe_parallax	2	var probe_parallax = true;	gfx/scene3d.amni	330	
-s3d::probe_bounces	2	var probe_bounces = 3;	gfx/scene3d.amni	331	
-s3d::cap_np	2	var cap_np = 0;	gfx/scene3d.amni	332	
-s3d::probes_dirty	2	var probes_dirty = false;	gfx/scene3d.amni	333	
-s3d::probe_gen	2	var probe_gen = -1;	gfx/scene3d.amni	334	
-s3d::capturing	2	var capturing = false;	gfx/scene3d.amni	335	
-s3d::pipe_probe_copy	2	var pipe_probe_copy gfx::Pipeline;	gfx/scene3d.amni	336	
-s3d::pipe_shadow	2	var pipe_shadow gfx::Pipeline;	gfx/scene3d.amni	337	
-s3d::pipe_normals	2	var pipe_normals gfx::Pipeline;	gfx/scene3d.amni	338	
-s3d::pipe_normals_two	2	var pipe_normals_two gfx::Pipeline;	gfx/scene3d.amni	339	
-s3d::pipe_sky	2	var pipe_sky gfx::Pipeline;	gfx/scene3d.amni	340	
-s3d::pipe_sky_motion	2	var pipe_sky_motion gfx::Pipeline;	gfx/scene3d.amni	341	
-s3d::pipe_ao	2	var pipe_ao gfx::Pipeline;	gfx/scene3d.amni	342	
-s3d::pipe_ao_blur	2	var pipe_ao_blur gfx::Pipeline;	gfx/scene3d.amni	343	
-s3d::pipe_gtao	2	var pipe_gtao gfx::Pipeline;	gfx/scene3d.amni	344	
-s3d::pipe_contact	2	var pipe_contact gfx::Pipeline;	gfx/scene3d.amni	345	
-s3d::contact_tex	2	var contact_tex gfx::Texture;	gfx/scene3d.amni	346	
-s3d::contact_steps	2	var contact_steps = 12;	gfx/scene3d.amni	347	
-s3d::contact_thick	2	var contact_thick f32 = 0.02;	gfx/scene3d.amni	348	
-s3d::pipe_lens_tile	2	var pipe_lens_tile gfx::Pipeline;	gfx/scene3d.amni	349	
-s3d::pipe_lens_near	2	var pipe_lens_near gfx::Pipeline;	gfx/scene3d.amni	350	
-s3d::pipe_mblur	2	var pipe_mblur gfx::Pipeline;	gfx/scene3d.amni	351	
-s3d::pipe_dof	2	var pipe_dof gfx::Pipeline;	gfx/scene3d.amni	352	
-s3d::pipe_dof_pack	2	var pipe_dof_pack gfx::Pipeline;	gfx/scene3d.amni	353	
-s3d::fx	2	var fx gfx::Texture;	gfx/scene3d.amni	354	
-s3d::tile_a	2	var tile_a gfx::Texture;	gfx/scene3d.amni	355	
-s3d::tile_b	2	var tile_b gfx::Texture;	gfx/scene3d.amni	356	
-s3d::pipe_gtao_blur	2	var pipe_gtao_blur gfx::Pipeline;	gfx/scene3d.amni	357	
-s3d::pipe_bright	2	var pipe_bright gfx::Pipeline;	gfx/scene3d.amni	358	
-s3d::pipe_down	2	var pipe_down gfx::Pipeline;	gfx/scene3d.amni	359	
-s3d::pipe_up	2	var pipe_up gfx::Pipeline;	gfx/scene3d.amni	360	
-s3d::pipe_grade	2	var pipe_grade gfx::Pipeline;	gfx/scene3d.amni	361	
-s3d::pipe_temporal	2	var pipe_temporal gfx::Pipeline;	gfx/scene3d.amni	362	
-s3d::pipe_matte	2	var pipe_matte gfx::Pipeline;	gfx/scene3d.amni	363	
-s3d::pipe_hist	2	var pipe_hist gfx::ComputePipeline;	gfx/scene3d.amni	364	
-s3d::pipe_adapt	2	var pipe_adapt gfx::ComputePipeline;	gfx/scene3d.amni	365	
-s3d::hist_buf	2	var hist_buf gfx::Buffer;	gfx/scene3d.amni	366	
-s3d::expo_buf	2	var expo_buf gfx::Buffer;	gfx/scene3d.amni	367	
-s3d::expo_fresh	2	var expo_fresh = true;	gfx/scene3d.amni	368	
-s3d::exposure_dt	2	var exposure_dt f32 = 0.0166667;	gfx/scene3d.amni	369	
-s3d::lut_tex	2	var lut_tex gfx::Texture;	gfx/scene3d.amni	370	
-s3d::lut_n	2	var lut_n = 0;	gfx/scene3d.amni	371	
-s3d::ae_log_min	2	var ae_log_min f32 = -10.0;	gfx/scene3d.amni	372	
-s3d::ae_log_max	2	var ae_log_max f32 = 10.0;	gfx/scene3d.amni	373	
-s3d::color_ms	2	var color_ms gfx::Texture;	gfx/scene3d.amni	374	
-s3d::depth_ms	2	var depth_ms gfx::Texture;	gfx/scene3d.amni	375	
-s3d::hdr	2	var hdr gfx::Texture;	gfx/scene3d.amni	376	
-s3d::motion_tex	2	var motion_tex gfx::Texture;	gfx/scene3d.amni	377	
-s3d::history	2	var history gfx::Texture[>..] = [];	gfx/scene3d.amni	378	
-s3d::hist_cur	2	var hist_cur = 0;	gfx/scene3d.amni	379	
-s3d::hist_valid	2	var hist_valid = false;	gfx/scene3d.amni	380	
-s3d::see_through	2	var see_through = false;	gfx/scene3d.amni	381	
-s3d::matte_layer	2	var matte_layer gfx::Texture;	gfx/scene3d.amni	382	
-s3d::matte_cur	2	var matte_cur gfx::Texture;	gfx/scene3d.amni	383	
-s3d::matte_hist	2	var matte_hist gfx::Texture[>..] = [];	gfx/scene3d.amni	384	
-s3d::matte_at	2	var matte_at = 0;	gfx/scene3d.amni	385	
-s3d::matte_valid	2	var matte_valid = false;	gfx/scene3d.amni	386	
-s3d::matte_live	2	var matte_live = false;	gfx/scene3d.amni	387	
-s3d::out_width	2	var out_width int = 0;	gfx/scene3d.amni	388	
-s3d::out_height	2	var out_height int = 0;	gfx/scene3d.amni	389	
-s3d::jitter	2	var jitter float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	390	
-s3d::temporal_used	2	var temporal_used = false;	gfx/scene3d.amni	391	
-s3d::nd	2	var nd gfx::Texture;	gfx/scene3d.amni	392	
-s3d::nd_depth	2	var nd_depth gfx::Texture;	gfx/scene3d.amni	393	
-s3d::ao_raw	2	var ao_raw gfx::Texture;	gfx/scene3d.amni	394	
-s3d::lin_depth	2	var lin_depth gfx::Texture;	gfx/scene3d.amni	395	
-s3d::bent_raw	2	var bent_raw gfx::Texture;	gfx/scene3d.amni	396	
-s3d::bent	2	var bent gfx::Texture;	gfx/scene3d.amni	397	
-s3d::ao	2	var ao gfx::Texture;	gfx/scene3d.amni	398	
-s3d::shadow_map	2	var shadow_map gfx::Texture;	gfx/scene3d.amni	399	
-s3d::local_map	2	var local_map gfx::Texture;	gfx/scene3d.amni	400	
-s3d::local_size	2	var local_size = 0;	gfx/scene3d.amni	401	
-s3d::local_shadow_size	2	var local_shadow_size = 1024;	gfx/scene3d.amni	402	
-s3d::local_atlas	2	var local_atlas = 4096;	gfx/scene3d.amni	403	
-s3d::local_auto	2	var local_auto = true;	gfx/scene3d.amni	404	
-s3d::local_res	2	var local_res f32 = 1.0;	gfx/scene3d.amni	405	
-s3d::local_min	2	var local_min = 128;	gfx/scene3d.amni	406	
-s3d::local_cache	2	var local_cache = true;	gfx/scene3d.amni	407	
-s3d::local_drawn	2	var local_drawn = 0;	gfx/scene3d.amni	408	
-s3d::local_fresh	2	var local_fresh = true;	gfx/scene3d.amni	409	
-s3d::local_used	2	var local_used = 0;	gfx/scene3d.amni	410	
-s3d::local_vp	2	var local_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	411	
-s3d::local_rc	2	var local_rc float4[96];	gfx/scene3d.amni	412	
-s3d::local_ts	2	var local_ts int[>..] = [];	gfx/scene3d.amni	413	
-s3d::local_id	2	var local_id int[>..] = [];	gfx/scene3d.amni	414	
-s3d::local_lk	2	var local_lk int[>..] = [];	gfx/scene3d.amni	415	
-s3d::local_lf	2	var local_lf int[>..] = [];	gfx/scene3d.amni	416	
-s3d::local_ls	2	var local_ls int[>..] = [];	gfx/scene3d.amni	417	
-s3d::local_ord	2	var local_ord int[>..] = [];	gfx/scene3d.amni	418	
-s3d::local_todo	2	var local_todo int[>..] = [];	gfx/scene3d.amni	419	
-s3d::local_bc	2	var local_bc real[>..] = [];	gfx/scene3d.amni	420	
-s3d::local_last	2	var local_last int[16] = [0; 16];	gfx/scene3d.amni	421	
-s3d::local_key	2	var local_key int[96] = [-1; 96];	gfx/scene3d.amni	422	
-s3d::shadow_size	2	var shadow_size int = 0;	gfx/scene3d.amni	423	
-s3d::glow	2	var glow gfx::Texture[>..] = [];	gfx/scene3d.amni	424	
-s3d::white	2	var white gfx::Texture;	gfx/scene3d.amni	425	
-s3d::flat_normal	2	var flat_normal gfx::Texture;	gfx/scene3d.amni	426	
-s3d::smp_linear	2	var smp_linear gfx::Sampler;	gfx/scene3d.amni	427	
-s3d::smp_point	2	var smp_point gfx::Sampler;	gfx/scene3d.amni	428	
-s3d::smp_shadow	2	var smp_shadow gfx::Sampler;	gfx/scene3d.amni	429	
-s3d::smp_cache	2	var smp_cache gfx::Sampler[>..] = [];	gfx/scene3d.amni	430	
-s3d::spec_aa	2	var spec_aa = true;	gfx/scene3d.amni	431	
-s3d::wet	2	var wet f32 = 0.0;	gfx/scene3d.amni	432	
-s3d::ripples	2	var ripples f32 = 0.0;	gfx/scene3d.amni	433	
-s3d::puddles	2	var puddles f32 = 0.0;	gfx/scene3d.amni	434	
-s3d::puddle_size	2	var puddle_size f32 = 1.7;	gfx/scene3d.amni	435	
-s3d::world_time	2	var world_time f32 = 0.0;	gfx/scene3d.amni	436	
-s3d::snow	2	var snow f32 = 0.0;	gfx/scene3d.amni	437	
-s3d::shelter	2	var shelter = true;	gfx/scene3d.amni	438	
-s3d::shelter_res	2	var shelter_res = 512;	gfx/scene3d.amni	439	
-s3d::shelter_size	2	var shelter_size = 0;	gfx/scene3d.amni	440	
-s3d::shelter_map	2	var shelter_map gfx::Texture;	gfx/scene3d.amni	441	
-s3d::shelter_depth	2	var shelter_depth gfx::Texture;	gfx/scene3d.amni	442	
-s3d::pipe_shelter	2	var pipe_shelter gfx::Pipeline;	gfx/scene3d.amni	443	
-s3d::light_data	2	var light_data float4[>..] = [];	gfx/scene3d.amni	444	
-s3d::light_xr	2	var light_xr float4[>..] = [];	gfx/scene3d.amni	445	
-s3d::cluster_words	2	var cluster_words u32[>..] = [];	gfx/scene3d.amni	446	
-s3d::light_buf	2	var light_buf gfx::Buffer;	gfx/scene3d.amni	447	
-s3d::cluster_buf	2	var cluster_buf gfx::Buffer;	gfx/scene3d.amni	448	
-s3d::light_cap	2	var light_cap = 0;	gfx/scene3d.amni	449	
-s3d::CAST_REC	2	let CAST_REC = 4096;	gfx/scene3d.amni	450	
-s3d::cast_want	2	var cast_want = 0;	gfx/scene3d.amni	451	
-s3d::cast_at	2	var cast_at = 0;	gfx/scene3d.amni	452	
-s3d::cast_room	2	var cast_room = 0;	gfx/scene3d.amni	453	
-s3d::cast_frame	2	var cast_frame = -9;	gfx/scene3d.amni	454	
-s3d::cast_gen	2	var cast_gen = 0;	gfx/scene3d.amni	455	
-s3d::cast_live	0	fn cast_live() f32	gfx/scene3d.amni	456	
-s3d::cluster_cap	2	var cluster_cap = 0;	gfx/scene3d.amni	457	
-s3d::ext_size	2	var ext_size = 1024;	gfx/scene3d.amni	458	
-s3d::ext_arr	2	var ext_arr gfx::Texture[2] = [gfx::Texture { 0 }, gfx::Texture { 0 }];	gfx/scene3d.amni	459	
-s3d::ext_cap	2	var ext_cap int[2] = [0, 0];	gfx/scene3d.amni	460	
-s3d::ext_cnt	2	var ext_cnt int[2] = [0, 0];	gfx/scene3d.amni	461	
-s3d::ext_dirty	2	var ext_dirty bool[2] = [false, false];	gfx/scene3d.amni	462	
-s3d::ext_map	2	var ext_map int[>..] = [];	gfx/scene3d.amni	463	
-s3d::ext_src	2	var ext_src int[>..] = [];	gfx/scene3d.amni	464	
-s3d::ext_zero	2	var ext_zero ExtU;	gfx/scene3d.amni	465	
-s3d::ext_pushed	2	var ext_pushed = false;	gfx/scene3d.amni	466	
-s3d::smp_ext	2	var smp_ext gfx::Sampler;	gfx/scene3d.amni	467	
-s3d::pipe_ext_copy	2	var pipe_ext_copy gfx::Pipeline;	gfx/scene3d.amni	468	
-s3d::trans_tex	2	var trans_tex gfx::Texture;	gfx/scene3d.amni	469	
-s3d::trans_w	2	var trans_w = 0;	gfx/scene3d.amni	470	
-s3d::trans_h	2	var trans_h = 0;	gfx/scene3d.amni	471	
-s3d::smp_trans	2	var smp_trans gfx::Sampler;	gfx/scene3d.amni	472	
-s3d::tex_srgb	2	var tex_srgb gfx::Texture[>..] = [];	gfx/scene3d.amni	473	
-s3d::tex_linear	2	var tex_linear gfx::Texture[>..] = [];	gfx/scene3d.amni	474	
-s3d::tex_compress	2	var tex_compress = false;	gfx/scene3d.amni	475	
-s3d::tex_gpu_bc	2	var tex_gpu_bc = true;	gfx/scene3d.amni	476	
-s3d::tex_cache	2	var tex_cache byte[>..] = [];	gfx/scene3d.amni	477	
-s3d::tex_encoded	2	var tex_encoded = 0;	gfx/scene3d.amni	478	
-s3d::tex_cached	2	var tex_cached = 0;	gfx/scene3d.amni	479	
-s3d::tex_mem	2	var tex_mem = 0;	gfx/scene3d.amni	480	
-s3d::tex_ns	2	var tex_ns = 0;	gfx/scene3d.amni	481	
-s3d::tex_stream	2	var tex_stream = false;	gfx/scene3d.amni	482	
-s3d::tex_budget	2	var tex_budget = 0;	gfx/scene3d.amni	483	
-s3d::tex_upload_cap	2	var tex_upload_cap = 4194304;	gfx/scene3d.amni	484	
-s3d::tex_hold	2	var tex_hold = 30;	gfx/scene3d.amni	485	
-s3d::tex_wait	2	var tex_wait = false;	gfx/scene3d.amni	486	
-s3d::tex_stream_bias	2	var tex_stream_bias = 0;	gfx/scene3d.amni	487	
-s3d::tex_streamed	2	var tex_streamed = 0;	gfx/scene3d.amni	488	
-s3d::tex_steps	2	var tex_steps = 0;	gfx/scene3d.amni	489	
-s3d::tex_pending	2	var tex_pending = 0;	gfx/scene3d.amni	490	
-s3d::tex_starved	2	var tex_starved = 0;	gfx/scene3d.amni	491	
-s3d::tex_read	2	var tex_read = 0;	gfx/scene3d.amni	492	
-s3d::tex_stream_ns	2	var tex_stream_ns = 0;	gfx/scene3d.amni	493	
-s3d::TexStream	1	struct TexStream	gfx/scene3d.amni	494	
-s3d::streams	2	var streams TexStream[>..] = [];	gfx/scene3d.amni	495	
-s3d::stream_pool	2	var stream_pool byte[>..] = [];	gfx/scene3d.amni	496	
-s3d::stream_lv	2	var stream_lv int[>..] = [];	gfx/scene3d.amni	497	
-s3d::stream_mem	2	var stream_mem = 0;	gfx/scene3d.amni	498	
-s3d::uv_dens	2	var uv_dens f32[>..] = [];	gfx/scene3d.amni	499	
-s3d::texture_bytes	0	fn texture_bytes() int	gfx/scene3d.amni	500	
-s3d::set_texture_cache	0	fn set_texture_cache(dir const byte[:])	gfx/scene3d.amni	501	
-s3d::vbuf	2	var vbuf gfx::Buffer;	gfx/scene3d.amni	502	
-s3d::ibuf	2	var ibuf gfx::Buffer;	gfx/scene3d.amni	503	
-s3d::mbuf	2	var mbuf gfx::Buffer;	gfx/scene3d.amni	504	
-s3d::jbuf	2	var jbuf gfx::Buffer;	gfx/scene3d.amni	505	
-s3d::jbuf_cap	2	var jbuf_cap int = 0;	gfx/scene3d.amni	506	
-s3d::instances	2	var instances InstSet[>..] = [];	gfx/scene3d.amni	507	
-s3d::inst_m	2	var inst_m gfx::mat4[>..] = [];	gfx/scene3d.amni	508	
-s3d::inst_c	2	var inst_c float4[>..] = [];	gfx/scene3d.amni	509	
-s3d::inst_ids	2	var inst_ids f32[>..] = [];	gfx/scene3d.amni	510	
-s3d::inst_t0	2	var inst_t0 f32[>..] = [];	gfx/scene3d.amni	511	
-s3d::inst_t1	2	var inst_t1 f32[>..] = [];	gfx/scene3d.amni	512	
-s3d::inst_t2	2	var inst_t2 f32[>..] = [];	gfx/scene3d.amni	513	
-s3d::inst_t3	2	var inst_t3 f32[>..] = [];	gfx/scene3d.amni	514	
-s3d::inst_dirty	2	var inst_dirty = true;	gfx/scene3d.amni	515	
-s3d::inst_all	2	var inst_all = false;	gfx/scene3d.amni	516	
-s3d::meshlets	2	var meshlets = false;	gfx/scene3d.amni	517	
-s3d::meshlet_px	2	var meshlet_px f32 = 1.0;	gfx/scene3d.amni	518	
-s3d::meshlet_cone	2	var meshlet_cone = true;	gfx/scene3d.amni	519	
-s3d::meshlet_cpu	2	var meshlet_cpu = false;	gfx/scene3d.amni	520	
-s3d::meshlet_min	2	var meshlet_min = 4000;	gfx/scene3d.amni	521	
-s3d::meshlet_thin	2	var meshlet_thin f32 = 1.0;	gfx/scene3d.amni	522	
-s3d::meshlet_budget	2	var meshlet_budget = 8000000;	gfx/scene3d.amni	523	
-s3d::meshlet_grow	2	var meshlet_grow = true;	gfx/scene3d.amni	524	
-s3d::meshlet_budget_max	2	var meshlet_budget_max = 250000000;	gfx/scene3d.amni	525	
-s3d::ml_first	2	var ml_first int[>..] = [];	gfx/scene3d.amni	526	
-s3d::ml_count	2	var ml_count int[>..] = [];	gfx/scene3d.amni	527	
-s3d::ml_tab	2	var ml_tab f32[>..] = [];	gfx/scene3d.amni	528	
-s3d::ml_rng	2	var ml_rng u32[>..] = [];	gfx/scene3d.amni	529	
-s3d::ml_idx	2	var ml_idx u32[>..] = [];	gfx/scene3d.amni	530	
-s3d::ml_draws	2	var ml_draws f32[>..] = [];	gfx/scene3d.amni	531	
-s3d::ml_bases	2	var ml_bases int[>..] = [];	gfx/scene3d.amni	532	
-s3d::ml_sel	2	var ml_sel u32[>..] = [];	gfx/scene3d.amni	533	
-s3d::ml_tab_buf	2	var ml_tab_buf gfx::Buffer;	gfx/scene3d.amni	534	
-s3d::ml_rng_buf	2	var ml_rng_buf gfx::Buffer;	gfx/scene3d.amni	535	
-s3d::ml_idx_buf	2	var ml_idx_buf gfx::Buffer;	gfx/scene3d.amni	536	
-s3d::ml_draw_buf	2	var ml_draw_buf gfx::Buffer;	gfx/scene3d.amni	537	
-s3d::ml_args_buf	2	var ml_args_buf gfx::Buffer;	gfx/scene3d.amni	538	
-s3d::ml_out_buf	2	var ml_out_buf gfx::Buffer;	gfx/scene3d.amni	539	
-s3d::ml_dirty	2	var ml_dirty = false;	gfx/scene3d.amni	540	
-s3d::ml_tick	2	var ml_tick = 0;	gfx/scene3d.amni	541	
-s3d::ml_seen	2	var ml_seen = 0;	gfx/scene3d.amni	542	
-s3d::ml_have	2	var ml_have = false;	gfx/scene3d.amni	543	
-s3d::ml_draw_cap	2	var ml_draw_cap = 0;	gfx/scene3d.amni	544	
-s3d::ml_out_cap	2	var ml_out_cap = 0;	gfx/scene3d.amni	545	
-s3d::pipe_ml_cull	2	var pipe_ml_cull gfx::ComputePipeline;	gfx/scene3d.amni	546	
-s3d::pipe_ml_fit	2	var pipe_ml_fit gfx::ComputePipeline;	gfx/scene3d.amni	547	
-s3d::MlU	1	struct MlU	gfx/scene3d.amni	548	
-s3d::MlFitU	1	struct MlFitU	gfx/scene3d.amni	549	
-s3d::instance_cull	2	var instance_cull = true;	gfx/scene3d.amni	550	
-s3d::xbuf	2	var xbuf gfx::Buffer;	gfx/scene3d.amni	551	
-s3d::xbuf_cap	2	var xbuf_cap int = 0;	gfx/scene3d.amni	552	
-s3d::idbuf	2	var idbuf gfx::Buffer;	gfx/scene3d.amni	553	
-s3d::idbuf_cap	2	var idbuf_cap int = 0;	gfx/scene3d.amni	554	
-s3d::fr	2	var fr float4[6] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 6];	gfx/scene3d.amni	555	
-s3d::caustics	2	var caustics Caustics = Caustics { .. };	gfx/scene3d.amni	556	
-s3d::clouds	2	var clouds Clouds = Clouds { on: false };	gfx/scene3d.amni	557	
-s3d::cloud_tex	2	var cloud_tex gfx::Texture;	gfx/scene3d.amni	558	
-s3d::cloud_shadow_tex	2	var cloud_shadow_tex gfx::Texture;	gfx/scene3d.amni	559	
-s3d::cloud_shadow_n	2	var cloud_shadow_n = 0;	gfx/scene3d.amni	560	
-s3d::cloud_res	2	var cloud_res f32 = 0.0;	gfx/scene3d.amni	561	
-s3d::cloud_cu	2	var cloud_cu float4;	gfx/scene3d.amni	562	
-s3d::cloud_cv	2	var cloud_cv float4;	gfx/scene3d.amni	563	
-s3d::pipe_clouds	2	var pipe_clouds gfx::Pipeline;	gfx/scene3d.amni	564	
-s3d::pipe_cloud_shadow	2	var pipe_cloud_shadow gfx::Pipeline;	gfx/scene3d.amni	565	
-s3d::wind	2	var wind Wind = Wind { dir: float3 { 1.0, 0.0, 0.0 }, strength: 0.0, speed: 1.0, time: 0.0 };	gfx/scene3d.amni	566	
-s3d::wind_prev	2	var wind_prev f32 = 0.0;	gfx/scene3d.amni	567	
-s3d::water_prev	2	var water_prev f32 = 0.0;	gfx/scene3d.amni	568	
-s3d::sea	2	var sea Sea = Sea { .. };	gfx/scene3d.amni	569	
-s3d::sea_on	2	var sea_on = false;	gfx/scene3d.amni	570	
-s3d::sea_level	2	var sea_level f32 = 0.0;	gfx/scene3d.amni	571	
-s3d::sea_lo	2	var sea_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	572	
-s3d::sea_hi	2	var sea_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	573	
-s3d::sea_waves	2	var sea_waves float4 = float4 { 0.0, 0.0, 0.0, 0.0 };	gfx/scene3d.amni	574	
-s3d::sea_absorb	2	var sea_absorb float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	575	
-s3d::sea_scatter	2	var sea_scatter float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	576	
-s3d::sea_wet	0	fn sea_wet() bool	gfx/scene3d.amni	577	
-s3d::wind_fresh	2	var wind_fresh = true;	gfx/scene3d.amni	578	
-s3d::wind_u	2	var wind_u float4 = float4 { 0.0, 0.0, 0.0, 1.0 };	gfx/scene3d.amni	579	
-s3d::pushers	2	var pushers float4[>..] = [];	gfx/scene3d.amni	580	
-s3d::prev_pushers	2	var prev_pushers float4[>..] = [];	gfx/scene3d.amni	581	
-s3d::push_u	2	var push_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	582	
-s3d::ppush_u	2	var ppush_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	583	
-s3d::uploaded_verts	2	var uploaded_verts int = -1;	gfx/scene3d.amni	584	
-s3d::uploaded_indices	2	var uploaded_indices int = -1;	gfx/scene3d.amni	585	
-s3d::uploaded_morphs	2	var uploaded_morphs int = -1;	gfx/scene3d.amni	586	
-s3d::vbuf_cap	2	var vbuf_cap = 0;	gfx/scene3d.amni	587	
-s3d::ibuf_cap	2	var ibuf_cap = 0;	gfx/scene3d.amni	588	
-s3d::verts_dirty_lo	2	var verts_dirty_lo = -1;	gfx/scene3d.amni	589	
-s3d::verts_dirty_hi	2	var verts_dirty_hi = 0;	gfx/scene3d.amni	590	
-s3d::joints	2	var joints gfx::mat4[>..] = [];	gfx/scene3d.amni	591	
-s3d::frame_u	2	var frame_u FrameU;	gfx/scene3d.amni	592	
-s3d::view_mat	2	var view_mat gfx::mat4;	gfx/scene3d.amni	593	
-s3d::proj_mat	2	var proj_mat gfx::mat4;	gfx/scene3d.amni	594	
-s3d::view_proj	2	var view_proj gfx::mat4;           // jittered when temporal is on (rasterisation)	gfx/scene3d.amni	595	
-s3d::view_proj_nj	2	var view_proj_nj gfx::mat4;        // without jitter	gfx/scene3d.amni	596	
-s3d::prev_view_proj	2	var prev_view_proj gfx::mat4;      // last frame, without jitter	gfx/scene3d.amni	597	
-s3d::prev_keys	2	var prev_keys int[>..] = [];	gfx/scene3d.amni	599	last frame's model matrix and joint base per (item, node), for motion vectors
-s3d::prev_models	2	var prev_models gfx::mat4[>..] = [];	gfx/scene3d.amni	600	
-s3d::prev_bases	2	var prev_bases int[>..] = [];	gfx/scene3d.amni	601	
-s3d::prev_joints	2	var prev_joints gfx::mat4[>..] = [];	gfx/scene3d.amni	602	
-s3d::cur_keys	2	var cur_keys int[>..] = [];	gfx/scene3d.amni	603	
-s3d::cur_models	2	var cur_models gfx::mat4[>..] = [];	gfx/scene3d.amni	604	
-s3d::cur_bases	2	var cur_bases int[>..] = [];	gfx/scene3d.amni	605	
-s3d::cur_wb	2	var cur_wb int[>..] = [];	gfx/scene3d.amni	606	
-s3d::prev_wb	2	var prev_wb int[>..] = [];	gfx/scene3d.amni	607	
-s3d::cur_w	2	var cur_w f32[>..] = [];	gfx/scene3d.amni	608	
-s3d::old_w	2	var old_w f32[>..] = [];	gfx/scene3d.amni	609	
-s3d::cascade_end	2	var cascade_end f32[>..] = [0.0, 0.0, 0.0];	gfx/scene3d.amni	610	
-s3d::cascade_vp	2	var cascade_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	611	
-s3d::cascade_live	2	var cascade_live = 3;	gfx/scene3d.amni	612	
-s3d::frames	2	var frames int = 0;	gfx/scene3d.amni	613	
-s3d::motion_fresh	2	var motion_fresh = true;            // no previous frame to measure motion against	gfx/scene3d.amni	614	
-s3d::f4	0	fn f4(x f32, y f32, z f32, w f32) float4	gfx/scene3d.amni	616	
-s3d::x4	0	fn x4(v float3, w f32) float4	gfx/scene3d.amni	617	
-s3d::none	0	fn none() gfx::Texture	gfx/scene3d.amni	618	
-s3d::add	0	fn add(asset int) int	gfx/scene3d.amni	622	
-s3d::place	0	fn place(item int, m gfx::mat4)	gfx/scene3d.amni	626	
-s3d::cloth_of	0	fn cloth_of(pi int) int	gfx/scene3d.amni	627	
-s3d::add_cloth	0	fn add_cloth(asset int) int	gfx/scene3d.amni	628	
-s3d::step_cloth	0	fn step_cloth(k int, dt real, w float3)	gfx/scene3d.amni	642	
-s3d::corner	0	fn corner(lo float3, hi float3, k int) float3	gfx/scene3d.amni	655	
-s3d::asset_box	0	fn asset_box(asset int) float3, float3	gfx/scene3d.amni	656	
-s3d::sway	0	fn sway(item int, amount f32)	gfx/scene3d.amni	677	
-s3d::inst_bound	0	fn inst_bound(set int, k int)	gfx/scene3d.amni	682	
-s3d::add_instances	0	fn add_instances(asset int, mats gfx::mat4[:]) int	gfx/scene3d.amni	689	
-s3d::set_instance	0	fn set_instance(set int, k int, m gfx::mat4)	gfx/scene3d.amni	698	
-s3d::clear_instances	0	fn clear_instances()	gfx/scene3d.amni	699	
-s3d::instance_drawn	0	fn instance_drawn(set int, lod int) int	gfx/scene3d.amni	700	
-s3d::instance_list	0	fn instance_list(set int, lod int) int[>..]	gfx/scene3d.amni	701	
-s3d::instance_triangles	0	fn instance_triangles(set int) int	gfx/scene3d.amni	706	
-s3d::handheld	0	fn handheld(c Camera, t f32, amount f32) Camera	gfx/scene3d.amni	712	
-s3d::animate	0	fn animate(item int, anim int, time f32)	gfx/scene3d.amni	725	
-s3d::crossfade	0	fn crossfade(item int, from int, from_time f32, to int, to_time f32, w f32)	gfx/scene3d.amni	726	
-s3d::bend	0	fn bend(item int, node int, q linalg::Quat)	gfx/scene3d.amni	727	
-s3d::track	0	fn track(item int, slot int, node int)	gfx/scene3d.amni	728	
-s3d::tracked	0	fn tracked(item int, slot int) gfx::mat4	gfx/scene3d.amni	729	
-s3d::pose	0	fn pose(ii int)	gfx/scene3d.amni	730	
-s3d::node_ov	2	var node_ov NodeOv[>..] = [];	gfx/scene3d.amni	741	
-s3d::weight_ov	2	var weight_ov WeightOv[>..] = [];	gfx/scene3d.amni	742	
-s3d::set_node	0	fn set_node(item int, node int, t float3, r linalg::Quat, sc float3)	gfx/scene3d.amni	743	
-s3d::set_weight	0	fn set_weight(item int, node int, k int, w f32)	gfx/scene3d.amni	747	
-s3d::clear_pose	0	fn clear_pose(item int)	gfx/scene3d.amni	752	
-s3d::add_probe	0	fn add_probe(pos float3, lo float3, hi float3, fade f32)	gfx/scene3d.amni	760	
-s3d::clear_probes	0	fn clear_probes()	gfx/scene3d.amni	765	
-s3d::add_decal	0	fn add_decal(d Decal) int	gfx/scene3d.amni	766	
-s3d::clear_decals	0	fn clear_decals()	gfx/scene3d.amni	767	
-s3d::clear_scene	0	fn clear_scene()	gfx/scene3d.amni	768	
-s3d::recapture	0	fn recapture()	gfx/scene3d.amni	769	
-s3d::probe_vol	0	fn probe_vol(p Probe) f32	gfx/scene3d.amni	770	
-s3d::add_light	0	fn add_light(pos float3, rgb float3, range f32)	gfx/scene3d.amni	771	
-s3d::studio_soft	0	fn studio_soft(bg float3, key f32)	gfx/scene3d.amni	772	
-s3d::add_rect	0	fn add_rect(pos float3, target float3, axis float3, width f32, height f32, rgb float3, range f32, shadows bool)	gfx/scene3d.amni	779	
-s3d::rect_axis	0	fn rect_axis(l Light) float3	gfx/scene3d.amni	780	
-s3d::add_spot	0	fn add_spot(pos float3, target float3, rgb float3, range f32, cone f32, shadows bool)	gfx/scene3d.amni	785	
-s3d::quad	0	fn quad(a float3, b float3, c float3, d float3, ca float4, cb float4, cc float4, cd float4, shape int)	gfx/scene3d.amni	786	
-s3d::glow_line	0	fn glow_line(a float3, b float3, w f32, rgb float3)	gfx/scene3d.amni	787	
-s3d::ground_mark	0	fn ground_mark(p float3, r f32, rgb float3, a f32, shape int)	gfx/scene3d.amni	799	
-s3d::quad_nadd	2	var quad_nadd = 0;	gfx/scene3d.amni	803	
-s3d::quad_upload	0	fn quad_upload()	gfx/scene3d.amni	804	
-s3d::quad_draw	0	fn quad_draw(mul bool)	gfx/scene3d.amni	817	
-s3d::hdr_target	0	fn hdr_target() gfx::Texture	gfx/scene3d.amni	829	
-s3d::motion_target	0	fn motion_target() gfx::Texture	gfx/scene3d.amni	831	Valid after a frame that wrote motion (motion_wanted()); a null handle before any.
-s3d::ao_target	0	fn ao_target() gfx::Texture	gfx/scene3d.amni	832	
-s3d::bent_target	0	fn bent_target() gfx::Texture	gfx/scene3d.amni	833	
-s3d::nd_target	0	fn nd_target() gfx::Texture	gfx/scene3d.amni	834	
-s3d::motion_wanted	0	fn motion_wanted() bool	gfx/scene3d.amni	835	
-s3d::resolved	0	fn resolved() gfx::Texture	gfx/scene3d.amni	837	The image bloom and grading read: the temporal result when it ran, else `hdr`.
-s3d::temporal_on	0	fn temporal_on() bool	gfx/scene3d.amni	838	
-s3d::surface_desc	0	fn surface_desc(cull i32, blend i32, depth_write bool) gfx::PipelineDesc	gfx/scene3d.amni	842	
-s3d::drop_targets	0	fn drop_targets()	gfx/scene3d.amni	846	
-s3d::make_targets	0	fn make_targets(w int, h int)	gfx/scene3d.amni	857	
-s3d::make_targets	0	fn make_targets(w int, h int, ow int, oh int)	gfx/scene3d.amni	861	w x h is the render size; ow x oh the size of the temporal result, bloom and the caller's target.
-s3d::make_motion	0	fn make_motion()	gfx/scene3d.amni	897	The motion target (one sample per pixel, 8 bytes a pixel) is made on the first frame that wants it.
-s3d::drop_motion	0	fn drop_motion()	gfx/scene3d.amni	902	
-s3d::make_ssr	0	fn make_ssr()	gfx/scene3d.amni	908	
-s3d::make_ssgi	0	fn make_ssgi()	gfx/scene3d.amni	922	
-s3d::drop_ssr	0	fn drop_ssr()	gfx/scene3d.amni	934	
-s3d::make_shadow_map	0	fn make_shadow_map(size int)	gfx/scene3d.amni	952	
-s3d::pixel_texture	0	fn pixel_texture(rgba byte[4], format i32) gfx::Texture	gfx/scene3d.amni	957	
-s3d::init	0	fn init(w int, h int) bool	gfx/scene3d.amni	964	Creates targets and pipelines; gfx must be open. Safe to call again after a resize.
-s3d::init	0	fn init(w int, h int, ow int, oh int) bool	gfx/scene3d.amni	968	Renders at w x h and writes ow x oh: with a larger output the temporal pass upscales (TSR). The caller's target must be ow x oh.
-s3d::forget	0	fn forget()	gfx/scene3d.amni	1065	Call after gltf::reset(): drops GPU copies of geometry and images so the next frame uploads the new pools.
-s3d::pool_upload	0	fn pool_upload(buf gfx::Buffer&, cap int&, have int, bytes const byte[:], usage int) bool	gfx/scene3d.amni	1101	
-s3d::touch_verts	0	fn touch_verts(first int, count int)	gfx/scene3d.amni	1112	
-s3d::upload_geometry	0	fn upload_geometry()	gfx/scene3d.amni	1116	
-s3d::cut_keep	2	var cut_keep = true;	gfx/scene3d.amni	1144	
-s3d::cut_of	0	fn cut_of(image int) f32	gfx/scene3d.amni	1145	
-s3d::cut_share	0	fn cut_share(px const byte[:], cut f32) real	gfx/scene3d.amni	1146	
-s3d::cut_fit	0	fn cut_fit(px byte[>..]&, cut f32, want real)	gfx/scene3d.amni	1147	
-s3d::cut_chain	0	fn cut_chain(t gfx::Texture, image int, srgb bool, cut f32, mips int)	gfx/scene3d.amni	1158	
-s3d::mip_count	0	fn mip_count(w int, h int) int	gfx/scene3d.amni	1167	
-s3d::chain_bytes	0	fn chain_bytes(kind int, w int, h int, levels int) int	gfx/scene3d.amni	1174	
-s3d::tex_path	0	fn tex_path(image int, srgb bool, out byte[>..]&)	gfx/scene3d.amni	1179	
-s3d::tex_bake	0	fn tex_bake(image int, srgb bool, path const byte[:], file byte[>..]&, mode int) bool	gfx/scene3d.amni	1196	
-s3d::tex_format	0	fn tex_format(kind int, srgb bool) i32	gfx/scene3d.amni	1231	
-s3d::ktx_texture	0	fn ktx_texture(file const byte[:], srgb bool) gfx::Texture	gfx/scene3d.amni	1234	
-s3d::stream_chain	0	fn stream_chain(s TexStream, n int) int	gfx/scene3d.amni	1254	
-s3d::stream_tail	0	fn stream_tail(w int, h int, levels int, blocks bool) int	gfx/scene3d.amni	1255	
-s3d::stream_fetch	0	fn stream_fetch(si int, a int, b int, out byte[>..]&) bool	gfx/scene3d.amni	1260	
-s3d::stream_build	0	fn stream_build(si int, top int)	gfx/scene3d.amni	1279	
-s3d::stream_open	0	fn stream_open(image int, srgb bool) bool	gfx/scene3d.amni	1327	
-s3d::stream_at	0	fn stream_at(image int, srgb bool) int	gfx/scene3d.amni	1362	
-s3d::image_texture	0	fn image_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1366	
-s3d::full_texture	0	fn full_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1393	
-s3d::uv_density	0	fn uv_density(prim int, set int) f32	gfx/scene3d.amni	1404	
-s3d::stream_reach	0	fn stream_reach(b Batch, pr gltf::Primitive) f32	gfx/scene3d.amni	1433	
-s3d::stream_wants	0	fn stream_wants()	gfx/scene3d.amni	1455	
-s3d::stream_update	0	fn stream_update()	gfx/scene3d.amni	1485	
-s3d::warm	0	fn warm(r gltf::TexRef, srgb bool)	gfx/scene3d.amni	1534	
-s3d::ext_fill	0	fn ext_fill(s int, layer int, src gfx::Texture)	gfx/scene3d.amni	1538	
-s3d::ext_make	0	fn ext_make(s int, cap int)	gfx/scene3d.amni	1546	
-s3d::ext_need	0	fn ext_need(r gltf::TexRef, s int)	gfx/scene3d.amni	1556	
-s3d::ext_finish	0	fn ext_finish()	gfx/scene3d.amni	1568	
-s3d::ext_layer	0	fn ext_layer(r gltf::TexRef, s int, none_is int) f32	gfx/scene3d.amni	1574	
-s3d::ext_set	0	fn ext_set(u ExtU&, i int, r gltf::TexRef, s int)	gfx/scene3d.amni	1578	
-s3d::ext_of	0	fn ext_of(m gltf::Material) ExtU	gfx/scene3d.amni	1582	
-s3d::warm_textures	0	fn warm_textures()	gfx/scene3d.amni	1597	Textures are created on first use; uploads must happen outside render passes, so every texture the batch will sample is created before the first pass.
-s3d::wrap_mode	0	fn wrap_mode(gl int) i32	gfx/scene3d.amni	1621	
-s3d::texture_sampler	0	fn texture_sampler(t gltf::Texture) gfx::Sampler	gfx/scene3d.amni	1623	
-s3d::bind_slot	0	fn bind_slot(slot int, r gltf::TexRef, srgb bool, fallback gfx::Texture)	gfx/scene3d.amni	1637	
-s3d::item_remap	2	var item_remap int[>..] = [];	gfx/scene3d.amni	1646	
-s3d::remap_new	0	fn remap_new(asset int) int	gfx/scene3d.amni	1647	
-s3d::item_mat	0	fn item_mat(ii int, prim int) int	gfx/scene3d.amni	1648	
-s3d::item_material	0	fn item_material(item int, k int) gltf::Material	gfx/scene3d.amni	1649	
-s3d::recolor	0	fn recolor(item int, k int, m gltf::Material)	gfx/scene3d.amni	1650	
-s3d::bmat	0	fn bmat(b const Batch&) gltf::Material	gfx/scene3d.amni	1651	
-s3d::material_of	0	fn material_of(prim int) gltf::Material	gfx/scene3d.amni	1652	
-s3d::cut_of	0	fn cut_of(m gltf::Material) CutU	gfx/scene3d.amni	1657	
-s3d::find_prev	0	fn find_prev(key int) int	gfx/scene3d.amni	1663	
-s3d::in_view	0	fn in_view(m gfx::mat4, lo float3, hi float3) bool	gfx/scene3d.amni	1669	false when the box lies wholly outside one clip plane (camera passes only; shadows keep it)
-s3d::atmosphere	0	fn atmosphere(to_sun float3, power f32, haze f32, clouds f32)	gfx/scene3d.amni	1687	
-s3d::Day	1	struct Day	gfx/scene3d.amni	1693	
-s3d::day_dir	2	var day_dir float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	1694	
-s3d::day_key	2	var day_key float3 = float3 { -1.0, 0.0, 0.0 };	gfx/scene3d.amni	1695	
-s3d::day_bakes	2	var day_bakes = 0;	gfx/scene3d.amni	1696	
-s3d::sun_at	0	fn sun_at(hour f32, day int, latitude f32, north f32) float3	gfx/scene3d.amni	1697	
-s3d::time_of_day	0	fn time_of_day(d Day) bool	gfx/scene3d.amni	1707	
-s3d::item_lights	0	fn item_lights(ii int)	gfx/scene3d.amni	1733	
-s3d::frustum	0	fn frustum(m gfx::mat4)	gfx/scene3d.amni	1755	
-s3d::gather_instances	0	fn gather_instances()	gfx/scene3d.amni	1763	
-s3d::gather	0	fn gather()	gfx/scene3d.amni	1847	
-s3d::meshlet_prepare	0	fn meshlet_prepare()	gfx/scene3d.amni	1925	
-s3d::meshlet_slot	0	fn meshlet_slot(pi int, m gfx::mat4, two bool, quiet bool) int	gfx/scene3d.amni	1953	
-s3d::ml_at	0	fn ml_at(d int, c int, r int) float3	gfx/scene3d.amni	1964	
-s3d::ml_far	0	fn ml_far(p float3, e float4) f32	gfx/scene3d.amni	1970	
-s3d::ml_keep	0	fn ml_keep(d int, c int, cam bool, u MlU) bool	gfx/scene3d.amni	1971	
-s3d::ml_plane	0	fn ml_plane(a float4, b float4, k f32) float4	gfx/scene3d.amni	1989	
-s3d::meshlet_select	0	fn meshlet_select()	gfx/scene3d.amni	1994	
-s3d::meshlet_stats	0	fn meshlet_stats() int, int, int	gfx/scene3d.amni	2070	
-s3d::forward	0	fn forward() float3	gfx/scene3d.amni	2082	
-s3d::mw	0	fn mw(pool f32[:], base int, j int, n int) f32	gfx/scene3d.amni	2084	
-s3d::draw_uniforms	0	fn draw_uniforms(b Batch, vp gfx::mat4) DrawU	gfx/scene3d.amni	2085	
-s3d::bind_geometry	0	fn bind_geometry()	gfx/scene3d.amni	2110	
-s3d::draw_prim	0	fn draw_prim(b Batch)	gfx/scene3d.amni	2119	
-s3d::halton	0	fn halton(i int, base int) f32	gfx/scene3d.amni	2133	Radical inverse of i in the given base: the Halton low-discrepancy sequence.
-s3d::setup_view	0	fn setup_view()	gfx/scene3d.amni	2145	
-s3d::setup_cascades	0	fn setup_cascades()	gfx/scene3d.amni	2182	Splits [near, shadow_far] between a logarithmic and a uniform spacing, fits a bounding sphere to each slice and aims a texel-snapped orthographic camera at it.
-s3d::fill_frame	0	fn fill_frame()	gfx/scene3d.amni	2249	
-s3d::image_avg	0	fn image_avg(image int) float3	gfx/scene3d.amni	2340	mean linear colour of an image, sampled on a sparse grid; the bounce albedo
-s3d::gi_takes	0	fn gi_takes(b Batch) bool	gfx/scene3d.amni	2362	
-s3d::gi_key	0	fn gi_key(b Batch) int	gfx/scene3d.amni	2363	
-s3d::gi_pos	0	fn gi_pos(prim int, model gfx::mat4, at int) float3	gfx/scene3d.amni	2364	
-s3d::gi_same	0	fn gi_same(a gfx::mat4, b gfx::mat4) bool	gfx/scene3d.amni	2369	
-s3d::gi_rebuild	0	fn gi_rebuild()	gfx/scene3d.amni	2370	
-s3d::gi_stats	0	fn gi_stats() int, int, real, real	gfx/scene3d.amni	2371	
-s3d::gi_read	0	fn gi_read(out f32[>..]&) bool	gfx/scene3d.amni	2372	
-s3d::gi_track	0	fn gi_track()	gfx/scene3d.amni	2373	
-s3d::gi_scene	0	fn gi_scene()	gfx/scene3d.amni	2409	
-s3d::gi_rot	0	fn gi_rot(k int) GiU	gfx/scene3d.amni	2460	
-s3d::gi_pass	0	fn gi_pass()	gfx/scene3d.amni	2474	
-s3d::signed_range	0	fn signed_range(l Light) f32	gfx/scene3d.amni	2514	
-s3d::light_upload	0	fn light_upload()	gfx/scene3d.amni	2515	
-s3d::VSM_LEVELS	2	let VSM_LEVELS = 12;	gfx/scene3d.amni	2576	
-s3d::VSM_PAGE	2	let VSM_PAGE = 128;	gfx/scene3d.amni	2577	
-s3d::VSM_GRID	2	let VSM_GRID = 64;	gfx/scene3d.amni	2578	
-s3d::VSM_HEAD	2	let VSM_HEAD = 24;	gfx/scene3d.amni	2579	
-s3d::vsm_face	2	var vsm_face int[24] = [0, 2, 6, 4, 1, 3, 7, 5, 0, 1, 5, 4, 2, 3, 7, 6, 0, 1, 3, 2, 4, 5, 7, 6];	gfx/scene3d.amni	2580	
-s3d::vsm_atlas	2	var vsm_atlas gfx::Texture;	gfx/scene3d.amni	2581	
-s3d::vsm_side	2	var vsm_side = 0;	gfx/scene3d.amni	2582	
-s3d::vsm_table	2	var vsm_table gfx::Buffer;	gfx/scene3d.amni	2583	
-s3d::pipe_vsm_clear	2	var pipe_vsm_clear gfx::Pipeline;	gfx/scene3d.amni	2584	
-s3d::vsm_tab	2	var vsm_tab i32[>..] = [];	gfx/scene3d.amni	2585	
-s3d::vsm_mark	2	var vsm_mark byte[>..] = [];	gfx/scene3d.amni	2586	
-s3d::vsm_at	2	var vsm_at int[>..] = [];	gfx/scene3d.amni	2587	
-s3d::vsm_key	2	var vsm_key int[>..] = [];	gfx/scene3d.amni	2588	
-s3d::vsm_hash	2	var vsm_hash int[>..] = [];	gfx/scene3d.amni	2589	
-s3d::vsm_seen	2	var vsm_seen int[>..] = [];	gfx/scene3d.amni	2590	
-s3d::vsm_org	2	var vsm_org int[>..] = [];	gfx/scene3d.amni	2591	
-s3d::vsm_r	2	var vsm_r real[>..] = [];	gfx/scene3d.amni	2592	
-s3d::vsm_pa	2	var vsm_pa real[>..] = [];	gfx/scene3d.amni	2593	
-s3d::vsm_pb	2	var vsm_pb real[>..] = [];	gfx/scene3d.amni	2594	
-s3d::vsm_bc	2	var vsm_bc real[>..] = [];	gfx/scene3d.amni	2595	
-s3d::vsm_sc	2	var vsm_sc real[>..] = [];	gfx/scene3d.amni	2596	
-s3d::vsm_bp	2	var vsm_bp real[>..] = [];	gfx/scene3d.amni	2597	
-s3d::vsm_sp	2	var vsm_sp real[>..] = [];	gfx/scene3d.amni	2598	
-s3d::vsm_cr	2	var vsm_cr real[>..] = [];	gfx/scene3d.amni	2599	
-s3d::vsm_ch	2	var vsm_ch int[>..] = [];	gfx/scene3d.amni	2600	
-s3d::vsm_cb	2	var vsm_cb int[>..] = [];	gfx/scene3d.amni	2601	
-s3d::vsm_todo	2	var vsm_todo int[>..] = [];	gfx/scene3d.amni	2602	
-s3d::vsm_t0	2	var vsm_t0 real = 0.0005;	gfx/scene3d.amni	2603	
-s3d::vsm_zc	2	var vsm_zc real = 0.0;	gfx/scene3d.amni	2604	
-s3d::vsm_dir	2	var vsm_dir float3;	gfx/scene3d.amni	2605	
-s3d::vsm_hand	2	var vsm_hand = 0;	gfx/scene3d.amni	2606	
-s3d::vsm_frame	2	var vsm_frame = 0;	gfx/scene3d.amni	2607	
-s3d::vsm_drawn	2	var vsm_drawn = 0;	gfx/scene3d.amni	2608	
-s3d::vsm_live	2	var vsm_live = 0;	gfx/scene3d.amni	2609	
-s3d::vsm_missed	2	var vsm_missed = 0;	gfx/scene3d.amni	2610	
-s3d::vsm_wide	2	var vsm_wide real = 0.0;	gfx/scene3d.amni	2611	
-s3d::vsm_blank	2	var vsm_blank = false;	gfx/scene3d.amni	2612	
-s3d::vsm_fresh	2	var vsm_fresh = true;	gfx/scene3d.amni	2613	
-s3d::inst_rev	2	var inst_rev = 0;	gfx/scene3d.amni	2614	
-s3d::vsm_planes	0	fn vsm_planes(c real[>..]&, o real[>..]&)	gfx/scene3d.amni	2615	
-s3d::vsm_cut	0	fn vsm_cut(pl real[>..]&)	gfx/scene3d.amni	2630	
-s3d::vsm_paint	0	fn vsm_paint(k int)	gfx/scene3d.amni	2646	
-s3d::vsm_faces	0	fn vsm_faces(c real[>..]&, pl real[>..]&, k int)	gfx/scene3d.amni	2677	
-s3d::vsm_mix	0	fn vsm_mix(h int, x int) int	gfx/scene3d.amni	2685	
-s3d::vsm_box	0	fn vsm_box(b Batch, o real[>..]&)	gfx/scene3d.amni	2686	
-s3d::vsm_batch_hash	0	fn vsm_batch_hash(b Batch) int	gfx/scene3d.amni	2695	
-s3d::vsm_reset	0	fn vsm_reset()	gfx/scene3d.amni	2708	
-s3d::vsm_setup	0	fn vsm_setup()	gfx/scene3d.amni	2714	
-s3d::vsm_level	0	fn vsm_level(d real, s real) int	gfx/scene3d.amni	2748	
-s3d::vsm_cell	0	fn vsm_cell(sl int) int, int, int, int	gfx/scene3d.amni	2749	
-s3d::vsm_hit	0	fn vsm_hit(c int, x0 real, y0 real, x1 real, y1 real) bool	gfx/scene3d.amni	2755	
-s3d::vsm_marks	0	fn vsm_marks()	gfx/scene3d.amni	2756	
-s3d::vsm_update	0	fn vsm_update()	gfx/scene3d.amni	2786	
-s3d::vsm_stats	0	fn vsm_stats() int, int, int	gfx/scene3d.amni	2849	
-s3d::vsm_test_blank	0	fn vsm_test_blank(on bool)	gfx/scene3d.amni	2850	
-s3d::gi_bind	0	fn gi_bind()	gfx/scene3d.amni	2851	
-s3d::shadow_pass	0	fn shadow_pass()	gfx/scene3d.amni	2865	
-s3d::shelter_pass	0	fn shelter_pass()	gfx/scene3d.amni	2898	
-s3d::local_pick	0	fn local_pick(k int, l Light) int	gfx/scene3d.amni	2923	
-s3d::local_zbits	0	fn local_zbits(v int) int	gfx/scene3d.amni	2936	
-s3d::local_units	0	fn local_units(i int) int	gfx/scene3d.amni	2937	
-s3d::local_layout	0	fn local_layout()	gfx/scene3d.amni	2938	
-s3d::local_hits	0	fn local_hits(b Batch, c int) bool	gfx/scene3d.amni	2985	
-s3d::local_shadow_pass	0	fn local_shadow_pass()	gfx/scene3d.amni	3000	
-s3d::local_stats	0	fn local_stats() int, int	gfx/scene3d.amni	3050	
-s3d::fullscreen	0	fn fullscreen(p gfx::Pipeline)	gfx/scene3d.amni	3051	
-s3d::sky_u	0	fn sky_u() SkyU	gfx/scene3d.amni	3053	
-s3d::ao_pass	0	fn ao_pass()	gfx/scene3d.amni	3061	Prepass: normal + depth (nd) for SSAO, and the motion target when it is wanted. Both are single-sample, so every pixel's motion and depth belong to the one surface under its (jittered) sample point.
-s3d::clouds_live	0	fn clouds_live() bool	gfx/scene3d.amni	3144	
-s3d::cloud_shadow_on	0	fn cloud_shadow_on() bool	gfx/scene3d.amni	3145	
-s3d::cloud_target	0	fn cloud_target() gfx::Texture	gfx/scene3d.amni	3146	
-s3d::cloud_shadow_target	0	fn cloud_shadow_target() gfx::Texture	gfx/scene3d.amni	3147	
-s3d::cloud_view	0	fn cloud_view(c float4, m gfx::mat4) float4	gfx/scene3d.amni	3148	
-s3d::cloud_pass	0	fn cloud_pass()	gfx/scene3d.amni	3149	
-s3d::contact_on	0	fn contact_on() bool	gfx/scene3d.amni	3191	
-s3d::contact_pass	0	fn contact_pass()	gfx/scene3d.amni	3192	
-s3d::ssr_pass	0	fn ssr_pass()	gfx/scene3d.amni	3209	
-s3d::ssgi_live	0	fn ssgi_live() bool	gfx/scene3d.amni	3240	
-s3d::ssgi_pass	0	fn ssgi_pass()	gfx/scene3d.amni	3241	
-s3d::ssr_capture	0	fn ssr_capture()	gfx/scene3d.amni	3282	
-s3d::cut_cover	0	fn cut_cover(m gltf::Material) bool	gfx/scene3d.amni	3292	
-s3d::lit_pipe	0	fn lit_pipe(m gltf::Material) gfx::Pipeline	gfx/scene3d.amni	3293	
-s3d::mip_scale	0	fn mip_scale() f32	gfx/scene3d.amni	3294	
-s3d::surface_of	0	fn surface_of(m gltf::Material) SurfaceU	gfx/scene3d.amni	3295	
-s3d::draw_lit	0	fn draw_lit(b Batch)	gfx/scene3d.amni	3319	
-s3d::sss_skin	0	fn sss_skin(m gltf::Material) bool	gfx/scene3d.amni	3348	
-s3d::sss_draws	0	fn sss_draws(b Batch) bool	gfx/scene3d.amni	3349	
-s3d::sss_dist	0	fn sss_dist(m gltf::Material) float4	gfx/scene3d.amni	3350	
-s3d::sss_find	0	fn sss_find(d float4) int	gfx/scene3d.amni	3351	
-s3d::sss_target	0	fn sss_target() gfx::Texture	gfx/scene3d.amni	3352	
-s3d::sss_plain	0	fn sss_plain() gfx::Texture	gfx/scene3d.amni	3353	
-s3d::sss_pass	0	fn sss_pass()	gfx/scene3d.amni	3354	
-s3d::trans_capture	0	fn trans_capture()	gfx/scene3d.amni	3416	
-s3d::color_pass	0	fn color_pass()	gfx/scene3d.amni	3431	
-s3d::lens_tiles	0	fn lens_tiles(src gfx::Texture, mode f32)	gfx/scene3d.amni	3502	
-s3d::lens_swap	0	fn lens_swap()	gfx/scene3d.amni	3519	
-s3d::sea_pass	0	fn sea_pass()	gfx/scene3d.amni	3520	
-s3d::fog_pass	0	fn fog_pass()	gfx/scene3d.amni	3542	
-s3d::lens_pass	0	fn lens_pass()	gfx/scene3d.amni	3584	
-s3d::temporal_draw	0	fn temporal_draw()	gfx/scene3d.amni	3618	
-s3d::temporal_draw	0	fn temporal_draw(cur gfx::Texture, prev gfx::Texture, into gfx::Texture, fresh bool) bool	gfx/scene3d.amni	3622	
-s3d::matte_pass	0	fn matte_pass()	gfx/scene3d.amni	3641	
-s3d::temporal_pass	0	fn temporal_pass()	gfx/scene3d.amni	3667	
-s3d::temporal_repeat	0	fn temporal_repeat(n int)	gfx/scene3d.amni	3676	Runs only the temporal pass n more times on the last frame's inputs (for timing).
-s3d::glow_pass	0	fn glow_pass()	gfx/scene3d.amni	3678	
-s3d::set_lut	0	fn set_lut(rgba const byte[:], n int) bool	gfx/scene3d.amni	3709	
-s3d::identity_lut	0	fn identity_lut(n int)	gfx/scene3d.amni	3717	
-s3d::lut_strip	0	fn lut_strip(rgba const byte[:], w int, h int) bool	gfx/scene3d.amni	3722	
-s3d::lut_cube	0	fn lut_cube(text const byte[:]) bool	gfx/scene3d.amni	3729	
-s3d::exposure_pass	0	fn exposure_pass()	gfx/scene3d.amni	3743	
-s3d::exposure_now	0	fn exposure_now() f32	gfx/scene3d.amni	3760	
-s3d::grade_pass	0	fn grade_pass(target gfx::Texture)	gfx/scene3d.amni	3765	
-s3d::probe_capture	0	fn probe_capture()	gfx/scene3d.amni	3779	Renders the scene into target (RGBA8, COLOR_TARGET, the output size given to init).
-s3d::render	0	fn render(target gfx::Texture)	gfx/scene3d.amni	3872	
-s3d::render_begin	0	fn render_begin() bool	gfx/scene3d.amni	3875	
-s3d::render_end	0	fn render_end(target gfx::Texture)	gfx/scene3d.amni	3903	
+s3d::CASCADES	2	let CASCADES = 3;	gfx/scene3d.amni	45	
+s3d::MAX_LIGHTS	2	let MAX_LIGHTS = 16;	gfx/scene3d.amni	46	
+s3d::MAX_FOG_VOLUMES	2	let MAX_FOG_VOLUMES = 8;	gfx/scene3d.amni	47	
+s3d::MAX_PROBES	2	let MAX_PROBES = 8;	gfx/scene3d.amni	48	
+s3d::GI_LIGHTS	2	let GI_LIGHTS = 16;	gfx/scene3d.amni	49	
+s3d::GLOW_LEVELS	2	let GLOW_LEVELS = 5;	gfx/scene3d.amni	50	
+s3d::MSAA	2	var MSAA = 4;	gfx/scene3d.amni	51	
+s3d::LOCAL_FACES	2	let LOCAL_FACES = 96;	gfx/scene3d.amni	52	
+s3d::HIZ_LEVELS	2	let HIZ_LEVELS = 7;	gfx/scene3d.amni	53	
+s3d::Camera	1	struct Camera	gfx/scene3d.amni	55	
+s3d::Sun	1	struct Sun	gfx/scene3d.amni	56	
+s3d::Light	1	struct Light	gfx/scene3d.amni	57	
+s3d::Sky	1	struct Sky	gfx/scene3d.amni	58	
+s3d::Look	1	struct Look	gfx/scene3d.amni	59	
+s3d::NodeOv	1	struct NodeOv	gfx/scene3d.amni	60	
+s3d::WeightOv	1	struct WeightOv	gfx/scene3d.amni	61	
+s3d::Item	1	struct Item	gfx/scene3d.amni	62	
+s3d::InstSet	1	struct InstSet	gfx/scene3d.amni	63	
+s3d::Caustics	1	struct Caustics	gfx/scene3d.amni	64	
+s3d::Sea	1	struct Sea	gfx/scene3d.amni	65	
+s3d::Wind	1	struct Wind	gfx/scene3d.amni	66	
+s3d::Clouds	1	struct Clouds	gfx/scene3d.amni	67	
+s3d::CloudU	1	struct CloudU	gfx/scene3d.amni	68	
+s3d::CloudShadowU	1	struct CloudShadowU	gfx/scene3d.amni	69	
+s3d::Batch	1	struct Batch	gfx/scene3d.amni	70	
+s3d::Impostor	1	struct Impostor	gfx/scene3d.amni	71	
+s3d::ImpU	1	struct ImpU	gfx/scene3d.amni	72	
+s3d::ImpDownU	1	struct ImpDownU	gfx/scene3d.amni	73	
+s3d::DrawU	1	struct DrawU	gfx/scene3d.amni	75	
+s3d::FrameU	1	struct FrameU	gfx/scene3d.amni	76	
+s3d::GiU	1	struct GiU	gfx/scene3d.amni	82	
+s3d::SurfaceU	1	struct SurfaceU	gfx/scene3d.amni	83	
+s3d::ExtU	1	struct ExtU	gfx/scene3d.amni	84	
+s3d::CutU	1	struct CutU	gfx/scene3d.amni	85	
+s3d::CutViewU	1	struct CutViewU	gfx/scene3d.amni	86	
+s3d::SkyU	1	struct SkyU	gfx/scene3d.amni	87	
+s3d::AoU	1	struct AoU	gfx/scene3d.amni	88	
+s3d::ContactU	1	struct ContactU	gfx/scene3d.amni	89	
+s3d::SssU	1	struct SssU	gfx/scene3d.amni	90	
+s3d::GtaoU	1	struct GtaoU	gfx/scene3d.amni	91	
+s3d::TileU	1	struct TileU	gfx/scene3d.amni	92	
+s3d::NearU	1	struct NearU	gfx/scene3d.amni	93	
+s3d::MblurU	1	struct MblurU	gfx/scene3d.amni	94	
+s3d::DofU	1	struct DofU	gfx/scene3d.amni	95	
+s3d::TexelU	1	struct TexelU	gfx/scene3d.amni	96	
+s3d::GlowU	1	struct GlowU	gfx/scene3d.amni	97	
+s3d::GradeU	1	struct GradeU	gfx/scene3d.amni	98	
+s3d::HistU	1	struct HistU	gfx/scene3d.amni	99	
+s3d::AdaptU	1	struct AdaptU	gfx/scene3d.amni	100	
+s3d::FogVolume	1	struct FogVolume	gfx/scene3d.amni	101	
+s3d::SeaU	1	struct SeaU	gfx/scene3d.amni	102	
+s3d::FogU	1	struct FogU	gfx/scene3d.amni	103	
+s3d::QuadG	1	struct QuadG	gfx/scene3d.amni	104	
+s3d::QuadViewU	1	struct QuadViewU	gfx/scene3d.amni	105	
+s3d::SsrU	1	struct SsrU	gfx/scene3d.amni	106	
+s3d::SsgiU	1	struct SsgiU	gfx/scene3d.amni	107	
+s3d::SsgiAU	1	struct SsgiAU	gfx/scene3d.amni	108	
+s3d::SsgiUpU	1	struct SsgiUpU	gfx/scene3d.amni	109	
+s3d::HizU	1	struct HizU	gfx/scene3d.amni	110	
+s3d::TemporalU	1	struct TemporalU	gfx/scene3d.amni	111	
+s3d::MatteU	1	struct MatteU	gfx/scene3d.amni	112	
+s3d::view	2	var view Camera = Camera { eye: float3 { 0.0, 1.5, 5.0 }, target: float3 { 0.0, 0.5, 0.0 }, up: float3 { 0.0, 1.0, 0.0 }, fov_y: 0.9, near: 0.1, far: 200.0 };	gfx/scene3d.amni	114	
+s3d::sun	2	var sun Sun = Sun { to_sun: float3 { 0.4, 0.8, 0.45 }, rgb: float3 { 3.0, 2.85, 2.6 }, shadows: true, shadow_far: 40.0, map_size: 2048 };	gfx/scene3d.amni	115	
+s3d::sky	2	var sky Sky = Sky { zenith: float3 { 0.25, 0.42, 0.75 }, horizon: float3 { 0.65, 0.72, 0.8 }, ground: float3 { 0.2, 0.18, 0.16 }, ambient: 1.0, draw: true };	gfx/scene3d.amni	116	
+s3d::look	2	var look Look = Look { exposure: 1.0, white: 6.0, bloom: 0.6, bloom_cut: 1.2, desaturate: 0.5, ssao: true, ao_radius: 0.5, ao_power: 1.5, ao_samples: 16 };	gfx/scene3d.amni	117	
+s3d::debug_view	2	var debug_view = 0;	gfx/scene3d.amni	120	Debug view for the colour pass: 0 shaded; 1 shading normal; 2 vertex normal; 3 tangent; 4 ambient term; 5 direct light; 6 occlusion; 7 base colour; 8 n.v.
+s3d::ao_mode	2	var ao_mode = 0;	gfx/scene3d.amni	121	
+s3d::gtao_steps	2	var gtao_steps = 8;	gfx/scene3d.amni	122	
+s3d::gtao_falloff	2	var gtao_falloff f32 = 0.1;	gfx/scene3d.amni	123	
+s3d::spec_occlusion	2	var spec_occlusion = true;	gfx/scene3d.amni	124	
+s3d::ssr_on	2	var ssr_on = false;	gfx/scene3d.amni	125	
+s3d::lite	2	var lite = false;	gfx/scene3d.amni	126	
+s3d::ssr_steps	2	var ssr_steps = 48;	gfx/scene3d.amni	127	
+s3d::ssr_thickness	2	var ssr_thickness f32 = 0.05;	gfx/scene3d.amni	128	
+s3d::ssr_max_dist	2	var ssr_max_dist f32 = 3.0;	gfx/scene3d.amni	129	
+s3d::ssr_rough	2	var ssr_rough f32 = 0.5;	gfx/scene3d.amni	130	
+s3d::ssr_edge	2	var ssr_edge f32 = 0.07;	gfx/scene3d.amni	131	
+s3d::ssr_hit	2	var ssr_hit gfx::Texture;	gfx/scene3d.amni	132	
+s3d::ssr_prev	2	var ssr_prev gfx::Texture;	gfx/scene3d.amni	133	
+s3d::hiz	2	var hiz gfx::Texture[>..] = [];	gfx/scene3d.amni	134	
+s3d::ssr_have	2	var ssr_have = false;	gfx/scene3d.amni	135	
+s3d::bent_ran	2	var bent_ran = false;	gfx/scene3d.amni	136	
+s3d::mt_ran	2	var mt_ran = false;	gfx/scene3d.amni	137	
+s3d::pipe_hiz	2	var pipe_hiz gfx::Pipeline;	gfx/scene3d.amni	138	
+s3d::pipe_ssr	2	var pipe_ssr gfx::Pipeline;	gfx/scene3d.amni	139	
+s3d::pipe_ssr_copy	2	var pipe_ssr_copy gfx::Pipeline;	gfx/scene3d.amni	140	
+s3d::ssgi_on	2	var ssgi_on = false;	gfx/scene3d.amni	141	
+s3d::ssgi_rays	2	var ssgi_rays = 4;	gfx/scene3d.amni	142	
+s3d::ssgi_steps	2	var ssgi_steps = 64;	gfx/scene3d.amni	143	
+s3d::ssgi_dist	2	var ssgi_dist f32 = 10.0;	gfx/scene3d.amni	144	
+s3d::ssgi_thickness	2	var ssgi_thickness f32 = 0.05;	gfx/scene3d.amni	145	
+s3d::ssgi_edge	2	var ssgi_edge f32 = 0.02;	gfx/scene3d.amni	146	
+s3d::ssgi_intensity	2	var ssgi_intensity f32 = 1.0;	gfx/scene3d.amni	147	
+s3d::ssgi_ao	2	var ssgi_ao f32 = 1.0;	gfx/scene3d.amni	148	
+s3d::ssgi_frames	2	var ssgi_frames f32 = 17.0;	gfx/scene3d.amni	149	
+s3d::ssgi_new	2	var ssgi_new gfx::Texture;	gfx/scene3d.amni	150	
+s3d::ssgi_hc	2	var ssgi_hc gfx::Texture[>..] = [];	gfx/scene3d.amni	151	
+s3d::ssgi_hz	2	var ssgi_hz gfx::Texture[>..] = [];	gfx/scene3d.amni	152	
+s3d::ssgi_buf	2	var ssgi_buf gfx::Buffer;	gfx/scene3d.amni	153	
+s3d::ssgi_cur	2	var ssgi_cur = 0;	gfx/scene3d.amni	154	
+s3d::ssgi_valid	2	var ssgi_valid = false;	gfx/scene3d.amni	155	
+s3d::pipe_ssgi_trace	2	var pipe_ssgi_trace gfx::Pipeline;	gfx/scene3d.amni	156	
+s3d::pipe_ssgi_accum	2	var pipe_ssgi_accum gfx::Pipeline;	gfx/scene3d.amni	157	
+s3d::pipe_ssgi_up	2	var pipe_ssgi_up gfx::ComputePipeline;	gfx/scene3d.amni	158	
+s3d::motion_blur	2	var motion_blur f32 = 0.0;	gfx/scene3d.amni	159	
+s3d::mb_samples	2	var mb_samples = 15;	gfx/scene3d.amni	160	
+s3d::mb_soft_z	2	var mb_soft_z f32 = 0.02;	gfx/scene3d.amni	161	
+s3d::lens_tile_px	2	var lens_tile_px = 20;	gfx/scene3d.amni	162	
+s3d::dof_aperture	2	var dof_aperture f32 = 0.0;	gfx/scene3d.amni	163	
+s3d::dof_focus	2	var dof_focus f32 = 10.0;	gfx/scene3d.amni	164	
+s3d::dof_max_px	2	var dof_max_px f32 = 24.0;	gfx/scene3d.amni	165	
+s3d::dof_samples	2	var dof_samples = 48;	gfx/scene3d.amni	166	
+s3d::dof_bokeh	2	var dof_bokeh f32 = 0.0;	gfx/scene3d.amni	167	
+s3d::dof_bokeh_cut	2	var dof_bokeh_cut f32 = 1.0;	gfx/scene3d.amni	168	
+s3d::dof_band	2	var dof_band f32 = 0.0;	gfx/scene3d.amni	169	
+s3d::dof_near	2	var dof_near f32 = 1.0;	gfx/scene3d.amni	170	
+s3d::lens_offset	2	var lens_offset float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	171	
+s3d::fx_dt	2	var fx_dt f32 = 0.0;	gfx/scene3d.amni	172	
+s3d::nd_ran	2	var nd_ran = false;	gfx/scene3d.amni	173	
+s3d::depth_wanted	2	var depth_wanted = false;	gfx/scene3d.amni	174	
+s3d::gi_on	2	var gi_on = false;	gfx/scene3d.amni	175	
+s3d::rt_shadows	2	var rt_shadows = false;	gfx/scene3d.amni	176	
+s3d::rt_reflect	2	var rt_reflect = false;	gfx/scene3d.amni	177	
+s3d::rt_rough	2	var rt_rough f32 = 0.3;	gfx/scene3d.amni	178	
+s3d::rt_reach	2	var rt_reach f32 = 1000.0;	gfx/scene3d.amni	179	
+s3d::gi_ao	2	var gi_ao = true;	gfx/scene3d.amni	180	
+s3d::gi_rt_visibility	2	var gi_rt_visibility = true;	gfx/scene3d.amni	181	
+s3d::gi_dims	2	var gi_dims = [16, 16, 16];	gfx/scene3d.amni	182	
+s3d::gi_rays	2	var gi_rays = 256;	gfx/scene3d.amni	183	
+s3d::gi_hysteresis	2	var gi_hysteresis f32 = 0.97;	gfx/scene3d.amni	184	
+s3d::gi_bias	2	var gi_bias f32 = 0.3;	gfx/scene3d.amni	185	
+s3d::gi_max_dist	2	var gi_max_dist f32 = 0.0;	gfx/scene3d.amni	186	
+s3d::gi_updates_per_frame	2	var gi_updates_per_frame = 1;	gfx/scene3d.amni	187	
+s3d::gi_interval	2	var gi_interval = 1;	gfx/scene3d.amni	188	
+s3d::shadow_reach	2	var shadow_reach f32 = 0.0;	gfx/scene3d.amni	189	
+s3d::gi_built	2	var gi_built = false;	gfx/scene3d.amni	190	
+s3d::gi_refit	2	var gi_refit = true;	gfx/scene3d.amni	191	
+s3d::gi_adaptive	2	var gi_adaptive = true;	gfx/scene3d.amni	192	
+s3d::gi_rebuilds	2	var gi_rebuilds = 0;	gfx/scene3d.amni	193	
+s3d::gi_refits	2	var gi_refits = 0;	gfx/scene3d.amni	194	
+s3d::gi_refit_ms	2	var gi_refit_ms = 0.0;	gfx/scene3d.amni	195	
+s3d::gi_build_ms	2	var gi_build_ms = 0.0;	gfx/scene3d.amni	196	
+s3d::gi_moved	2	var gi_moved = 0;	gfx/scene3d.amni	197	
+s3d::gi_stamp	2	var gi_stamp = 0;	gfx/scene3d.amni	198	
+s3d::gi_src	2	var gi_src = dictionary<int, int> {};	gfx/scene3d.amni	199	
+s3d::gi_src_first	2	var gi_src_first int[>..] = [];	gfx/scene3d.amni	200	
+s3d::gi_src_cnt	2	var gi_src_cnt int[>..] = [];	gfx/scene3d.amni	201	
+s3d::gi_src_prim	2	var gi_src_prim int[>..] = [];	gfx/scene3d.amni	202	
+s3d::gi_src_seen	2	var gi_src_seen int[>..] = [];	gfx/scene3d.amni	203	
+s3d::gi_src_live	2	var gi_src_live bool[>..] = [];	gfx/scene3d.amni	204	
+s3d::gi_src_model	2	var gi_src_model gfx::mat4[>..] = [];	gfx/scene3d.amni	205	
+s3d::gi_np	2	var gi_np = 0;	gfx/scene3d.amni	206	
+s3d::gi_nr	2	var gi_nr = 0;	gfx/scene3d.amni	207	
+s3d::gi_updates	2	var gi_updates = 0;	gfx/scene3d.amni	208	
+s3d::gi_lo	2	var gi_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	209	
+s3d::gi_box	2	var gi_box = false;	gfx/scene3d.amni	211	optional probe volume; off = the whole scene's bounds
+s3d::gi_box_lo	2	var gi_box_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	212	
+s3d::gi_box_hi	2	var gi_box_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	213	
+s3d::img_avg	2	var img_avg float4[>..] = [];	gfx/scene3d.amni	214	
+s3d::gi_step	2	var gi_step float3 = float3 { 1.0, 1.0, 1.0 };	gfx/scene3d.amni	215	
+s3d::gi_irr	2	var gi_irr gfx::Buffer;	gfx/scene3d.amni	216	
+s3d::gi_dist	2	var gi_dist gfx::Buffer;	gfx/scene3d.amni	217	
+s3d::gi_rays_buf	2	var gi_rays_buf gfx::Buffer;	gfx/scene3d.amni	218	
+s3d::gi_dummy	2	var gi_dummy gfx::Buffer;	gfx/scene3d.amni	219	
+s3d::gi_have	2	var gi_have = false;	gfx/scene3d.amni	220	
+s3d::pipe_gi_trace	2	var pipe_gi_trace gfx::ComputePipeline;	gfx/scene3d.amni	221	
+s3d::pipe_gi_update	2	var pipe_gi_update gfx::ComputePipeline;	gfx/scene3d.amni	222	
+s3d::multiscatter	2	var multiscatter = true;	gfx/scene3d.amni	224	Multiple-scattering energy compensation of the specular lobe (surface.frag ms_factor).
+s3d::furnace_scale	2	var furnace_scale f32 = 1.0;	gfx/scene3d.amni	226	Test hook for the furnace control: scales the direct light; 1.0 in normal use.
+s3d::furnace_mode	2	var furnace_mode = 0;	gfx/scene3d.amni	229	Test hook for the furnace controls that must fail, 0 in normal use: 1 gives dielectrics F0 = 1 in the specular lobe only, 2 weights diffuse by the older per-light 1 - F(v.h).
+s3d::test_rect_naive	2	var test_rect_naive = false;	gfx/scene3d.amni	230	
+s3d::rect_detail	2	var rect_detail = 3;	gfx/scene3d.amni	231	
+s3d::test_all_lights	2	var test_all_lights = false;	gfx/scene3d.amni	232	
+s3d::test_cluster_range	2	var test_cluster_range f32 = 1.0;	gfx/scene3d.amni	233	
+s3d::alpha_to_coverage	2	var alpha_to_coverage = false;	gfx/scene3d.amni	234	
+s3d::mip_bias	2	var mip_bias f32 = 0.0;	gfx/scene3d.amni	235	
+s3d::mip_bias_auto	2	var mip_bias_auto = true;	gfx/scene3d.amni	236	
+s3d::test_morph_still	2	var test_morph_still = false;	gfx/scene3d.amni	237	
+s3d::ClothIt	1	struct ClothIt	gfx/scene3d.amni	238	
+s3d::cloths	2	var cloths ClothIt[>..] = [];	gfx/scene3d.amni	239	
+s3d::temporal	2	var temporal = 0;	gfx/scene3d.amni	241	Temporal accumulation. 0 off (unless the output is upscaled), 1 on.
+s3d::temporal_blend	2	var temporal_blend f32 = 0.0625;     // weight of a new frame on a still pixel	gfx/scene3d.amni	242	
+s3d::temporal_motion	2	var temporal_motion f32 = 0.01;      // extra weight per output pixel of motion	gfx/scene3d.amni	243	
+s3d::temporal_max	2	var temporal_max f32 = 0.5;	gfx/scene3d.amni	244	
+s3d::temporal_gamma	2	var temporal_gamma f32 = 1.25;       // neighbourhood clip width in standard deviations (0 = no clip)	gfx/scene3d.amni	245	
+s3d::temporal_reset	2	var temporal_reset = false;          // drop the history on the next frame (camera cut)	gfx/scene3d.amni	246	
+s3d::temporal_depth_reject	2	var temporal_depth_reject f32 = 0.1;	gfx/scene3d.amni	251	Depth-based history rejection (shaders/temporal.frag): a pixel whose history shows a surface in front of it (nearer by more than this fraction of its depth) that is no longer anywhere in its 3x3 neighbourhood was hidden last frame, so its history is dropped. 0 turns it off (a test control).
+s3d::temporal_motion_scale	2	var temporal_motion_scale f32 = 1.0;	gfx/scene3d.amni	254	Test hook: scales the motion vectors the temporal pass reads; 1 in normal use, 0 is the "motion forced to zero" control of the ghost gate.
+s3d::jitter_phases	2	var jitter_phases = 16;	gfx/scene3d.amni	255	
+s3d::motion_vectors	2	var motion_vectors = false;	gfx/scene3d.amni	258	Write the motion target even when temporal is off (for a caller that reads motion_target()). With both off the target is neither allocated nor drawn.
+s3d::shadow_test_shift	2	var shadow_test_shift float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	263	Test hooks for gfx_smoke's must-fail shadow controls (leave at their defaults): the shadow map is drawn with each cascade shifted along light-space x by this many texels (x, y, z = cascades 0, 1, 2; sampling is unshifted), and every cascade's clear cycles the whole map (what a layer-only cycling rule did before S5).
+s3d::shadow_test_cycle_all	2	var shadow_test_cycle_all = false;	gfx/scene3d.amni	264	
+s3d::shadow_test_cycle_never	2	var shadow_test_cycle_never = false;	gfx/scene3d.amni	266	and never cycles at all (reported only: does the driver serialise frames anyway)
+s3d::lights	2	var lights Light[>..] = [];	gfx/scene3d.amni	267	
+s3d::fog_on	2	var fog_on = false;	gfx/scene3d.amni	268	
+s3d::fog_density	2	var fog_density f32 = 0.03;	gfx/scene3d.amni	269	
+s3d::fog_falloff	2	var fog_falloff f32 = 0.25;	gfx/scene3d.amni	270	
+s3d::fog_height	2	var fog_height f32 = 0.0;	gfx/scene3d.amni	271	
+s3d::fog_far	2	var fog_far f32 = 60.0;	gfx/scene3d.amni	272	
+s3d::fog_steps	2	var fog_steps = 32;	gfx/scene3d.amni	273	
+s3d::fog_g	2	var fog_g f32 = 0.6;	gfx/scene3d.amni	274	
+s3d::fog_ambient	2	var fog_ambient float3 = float3 { 0.05, 0.06, 0.07 };	gfx/scene3d.amni	275	
+s3d::fog_sun	2	var fog_sun f32 = 1.0;	gfx/scene3d.amni	276	
+s3d::fog_lights	2	var fog_lights f32 = 1.0;	gfx/scene3d.amni	277	
+s3d::fog_noise	2	var fog_noise f32 = 0.0;	gfx/scene3d.amni	278	
+s3d::fog_noise_size	2	var fog_noise_size f32 = 20.0;	gfx/scene3d.amni	279	
+s3d::fog_wind	2	var fog_wind float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	280	
+s3d::fog_volumes	2	var fog_volumes FogVolume[>..] = [];	gfx/scene3d.amni	281	
+s3d::pipe_fog	2	var pipe_fog gfx::Pipeline;	gfx/scene3d.amni	282	
+s3d::pipe_sea	2	var pipe_sea gfx::Pipeline;	gfx/scene3d.amni	283	
+s3d::quads	2	var quads QuadG[>..] = [];	gfx/scene3d.amni	284	
+s3d::quad_buf	2	var quad_buf gfx::Buffer;	gfx/scene3d.amni	285	
+s3d::quad_cap	2	var quad_cap = 0;	gfx/scene3d.amni	286	
+s3d::pipe_quad_add	2	var pipe_quad_add gfx::Pipeline;	gfx/scene3d.amni	287	
+s3d::pipe_quad_mul	2	var pipe_quad_mul gfx::Pipeline;	gfx/scene3d.amni	288	
+s3d::items	2	var items Item[>..] = [];	gfx/scene3d.amni	289	
+s3d::batch	2	var batch Batch[>..] = [];	gfx/scene3d.amni	290	
+s3d::ready	2	var ready bool = false;	gfx/scene3d.amni	293	---- GPU state
+s3d::width	2	var width int = 0;	gfx/scene3d.amni	294	
+s3d::height	2	var height int = 0;	gfx/scene3d.amni	295	
+s3d::pipe_lit	2	var pipe_lit gfx::Pipeline;	gfx/scene3d.amni	296	
+s3d::pipe_lit_two	2	var pipe_lit_two gfx::Pipeline;     // double sided	gfx/scene3d.amni	297	
+s3d::pipe_cut	2	var pipe_cut gfx::Pipeline;	gfx/scene3d.amni	298	
+s3d::pipe_cut_two	2	var pipe_cut_two gfx::Pipeline;	gfx/scene3d.amni	299	
+s3d::pipe_full	2	var pipe_full gfx::Pipeline;	gfx/scene3d.amni	300	
+s3d::pipe_full_two	2	var pipe_full_two gfx::Pipeline;	gfx/scene3d.amni	301	
+s3d::pipe_blend	2	var pipe_blend gfx::Pipeline;	gfx/scene3d.amni	302	
+s3d::pipe_blend_back	2	var pipe_blend_back gfx::Pipeline;	gfx/scene3d.amni	303	
+s3d::pipe_trans_copy	2	var pipe_trans_copy gfx::Pipeline;	gfx/scene3d.amni	304	
+s3d::sss_on	2	var sss_on = false;	gfx/scene3d.amni	305	
+s3d::sss_taps	2	var sss_taps = 64;	gfx/scene3d.amni	306	
+s3d::sss_lod	2	var sss_lod f32 = 5.0;	gfx/scene3d.amni	307	
+s3d::sss_depth	2	var sss_depth = true;	gfx/scene3d.amni	308	
+s3d::sss_ran	2	var sss_ran = false;	gfx/scene3d.amni	309	
+s3d::sss_live	2	var sss_live = false;	gfx/scene3d.amni	310	
+s3d::sss_mode	2	var sss_mode = 0;	gfx/scene3d.amni	311	
+s3d::sss_np	2	var sss_np = 0;	gfx/scene3d.amni	312	
+s3d::sss_built	2	var sss_built = 0;	gfx/scene3d.amni	313	
+s3d::sss_w	2	var sss_w = 0;	gfx/scene3d.amni	314	
+s3d::sss_h	2	var sss_h = 0;	gfx/scene3d.amni	315	
+s3d::sss_levels	2	var sss_levels = 1;	gfx/scene3d.amni	316	
+s3d::sss_ps	2	var sss_ps f32 = 0.0;	gfx/scene3d.amni	317	
+s3d::sss_u	2	var sss_u SssU;	gfx/scene3d.amni	318	
+s3d::sss_irr	2	var sss_irr gfx::Texture;	gfx/scene3d.amni	319	
+s3d::sss_set	2	var sss_set gfx::Texture;	gfx/scene3d.amni	320	
+s3d::sss_out	2	var sss_out gfx::Texture;	gfx/scene3d.amni	321	
+s3d::pipe_sss	2	var pipe_sss gfx::Pipeline;	gfx/scene3d.amni	322	
+s3d::pipe_sss_two	2	var pipe_sss_two gfx::Pipeline;	gfx/scene3d.amni	323	
+s3d::pipe_sss_set	2	var pipe_sss_set gfx::Pipeline;	gfx/scene3d.amni	324	
+s3d::pipe_sss_blur	2	var pipe_sss_blur gfx::Pipeline;	gfx/scene3d.amni	325	
+s3d::Probe	1	struct Probe	gfx/scene3d.amni	326	
+s3d::Decal	1	struct Decal	gfx/scene3d.amni	327	
+s3d::decals	2	var decals Decal[>..] = [];	gfx/scene3d.amni	328	
+s3d::ProbeCopyU	1	struct ProbeCopyU	gfx/scene3d.amni	329	
+s3d::probes	2	var probes Probe[>..] = [];	gfx/scene3d.amni	330	
+s3d::probe_res	2	var probe_res = 256;	gfx/scene3d.amni	331	
+s3d::probe_near	2	var probe_near f32 = 0.05;	gfx/scene3d.amni	332	
+s3d::probe_intensity	2	var probe_intensity f32 = 1.0;	gfx/scene3d.amni	333	
+s3d::probe_parallax	2	var probe_parallax = true;	gfx/scene3d.amni	334	
+s3d::probe_bounces	2	var probe_bounces = 3;	gfx/scene3d.amni	335	
+s3d::cap_np	2	var cap_np = 0;	gfx/scene3d.amni	336	
+s3d::probes_dirty	2	var probes_dirty = false;	gfx/scene3d.amni	337	
+s3d::probe_gen	2	var probe_gen = -1;	gfx/scene3d.amni	338	
+s3d::capturing	2	var capturing = false;	gfx/scene3d.amni	339	
+s3d::pipe_probe_copy	2	var pipe_probe_copy gfx::Pipeline;	gfx/scene3d.amni	340	
+s3d::pipe_shadow	2	var pipe_shadow gfx::Pipeline;	gfx/scene3d.amni	341	
+s3d::pipe_normals	2	var pipe_normals gfx::Pipeline;	gfx/scene3d.amni	342	
+s3d::pipe_normals_two	2	var pipe_normals_two gfx::Pipeline;	gfx/scene3d.amni	343	
+s3d::pipe_sky	2	var pipe_sky gfx::Pipeline;	gfx/scene3d.amni	344	
+s3d::pipe_sky_motion	2	var pipe_sky_motion gfx::Pipeline;	gfx/scene3d.amni	345	
+s3d::pipe_ao	2	var pipe_ao gfx::Pipeline;	gfx/scene3d.amni	346	
+s3d::pipe_ao_blur	2	var pipe_ao_blur gfx::Pipeline;	gfx/scene3d.amni	347	
+s3d::pipe_gtao	2	var pipe_gtao gfx::Pipeline;	gfx/scene3d.amni	348	
+s3d::pipe_contact	2	var pipe_contact gfx::Pipeline;	gfx/scene3d.amni	349	
+s3d::contact_tex	2	var contact_tex gfx::Texture;	gfx/scene3d.amni	350	
+s3d::contact_steps	2	var contact_steps = 12;	gfx/scene3d.amni	351	
+s3d::contact_thick	2	var contact_thick f32 = 0.02;	gfx/scene3d.amni	352	
+s3d::pipe_lens_tile	2	var pipe_lens_tile gfx::Pipeline;	gfx/scene3d.amni	353	
+s3d::pipe_lens_near	2	var pipe_lens_near gfx::Pipeline;	gfx/scene3d.amni	354	
+s3d::pipe_mblur	2	var pipe_mblur gfx::Pipeline;	gfx/scene3d.amni	355	
+s3d::pipe_dof	2	var pipe_dof gfx::Pipeline;	gfx/scene3d.amni	356	
+s3d::pipe_dof_pack	2	var pipe_dof_pack gfx::Pipeline;	gfx/scene3d.amni	357	
+s3d::fx	2	var fx gfx::Texture;	gfx/scene3d.amni	358	
+s3d::tile_a	2	var tile_a gfx::Texture;	gfx/scene3d.amni	359	
+s3d::tile_b	2	var tile_b gfx::Texture;	gfx/scene3d.amni	360	
+s3d::pipe_gtao_blur	2	var pipe_gtao_blur gfx::Pipeline;	gfx/scene3d.amni	361	
+s3d::pipe_bright	2	var pipe_bright gfx::Pipeline;	gfx/scene3d.amni	362	
+s3d::pipe_down	2	var pipe_down gfx::Pipeline;	gfx/scene3d.amni	363	
+s3d::pipe_up	2	var pipe_up gfx::Pipeline;	gfx/scene3d.amni	364	
+s3d::pipe_grade	2	var pipe_grade gfx::Pipeline;	gfx/scene3d.amni	365	
+s3d::pipe_temporal	2	var pipe_temporal gfx::Pipeline;	gfx/scene3d.amni	366	
+s3d::pipe_matte	2	var pipe_matte gfx::Pipeline;	gfx/scene3d.amni	367	
+s3d::pipe_hist	2	var pipe_hist gfx::ComputePipeline;	gfx/scene3d.amni	368	
+s3d::pipe_adapt	2	var pipe_adapt gfx::ComputePipeline;	gfx/scene3d.amni	369	
+s3d::hist_buf	2	var hist_buf gfx::Buffer;	gfx/scene3d.amni	370	
+s3d::expo_buf	2	var expo_buf gfx::Buffer;	gfx/scene3d.amni	371	
+s3d::expo_fresh	2	var expo_fresh = true;	gfx/scene3d.amni	372	
+s3d::exposure_dt	2	var exposure_dt f32 = 0.0166667;	gfx/scene3d.amni	373	
+s3d::lut_tex	2	var lut_tex gfx::Texture;	gfx/scene3d.amni	374	
+s3d::lut_n	2	var lut_n = 0;	gfx/scene3d.amni	375	
+s3d::ae_log_min	2	var ae_log_min f32 = -10.0;	gfx/scene3d.amni	376	
+s3d::ae_log_max	2	var ae_log_max f32 = 10.0;	gfx/scene3d.amni	377	
+s3d::color_ms	2	var color_ms gfx::Texture;	gfx/scene3d.amni	378	
+s3d::depth_ms	2	var depth_ms gfx::Texture;	gfx/scene3d.amni	379	
+s3d::hdr	2	var hdr gfx::Texture;	gfx/scene3d.amni	380	
+s3d::motion_tex	2	var motion_tex gfx::Texture;	gfx/scene3d.amni	381	
+s3d::history	2	var history gfx::Texture[>..] = [];	gfx/scene3d.amni	382	
+s3d::hist_cur	2	var hist_cur = 0;	gfx/scene3d.amni	383	
+s3d::hist_valid	2	var hist_valid = false;	gfx/scene3d.amni	384	
+s3d::see_through	2	var see_through = false;	gfx/scene3d.amni	385	
+s3d::matte_layer	2	var matte_layer gfx::Texture;	gfx/scene3d.amni	386	
+s3d::matte_cur	2	var matte_cur gfx::Texture;	gfx/scene3d.amni	387	
+s3d::matte_hist	2	var matte_hist gfx::Texture[>..] = [];	gfx/scene3d.amni	388	
+s3d::matte_at	2	var matte_at = 0;	gfx/scene3d.amni	389	
+s3d::matte_valid	2	var matte_valid = false;	gfx/scene3d.amni	390	
+s3d::matte_live	2	var matte_live = false;	gfx/scene3d.amni	391	
+s3d::out_width	2	var out_width int = 0;	gfx/scene3d.amni	392	
+s3d::out_height	2	var out_height int = 0;	gfx/scene3d.amni	393	
+s3d::jitter	2	var jitter float2 = float2 { 0.0, 0.0 };	gfx/scene3d.amni	394	
+s3d::temporal_used	2	var temporal_used = false;	gfx/scene3d.amni	395	
+s3d::nd	2	var nd gfx::Texture;	gfx/scene3d.amni	396	
+s3d::nd_depth	2	var nd_depth gfx::Texture;	gfx/scene3d.amni	397	
+s3d::ao_raw	2	var ao_raw gfx::Texture;	gfx/scene3d.amni	398	
+s3d::lin_depth	2	var lin_depth gfx::Texture;	gfx/scene3d.amni	399	
+s3d::bent_raw	2	var bent_raw gfx::Texture;	gfx/scene3d.amni	400	
+s3d::bent	2	var bent gfx::Texture;	gfx/scene3d.amni	401	
+s3d::ao	2	var ao gfx::Texture;	gfx/scene3d.amni	402	
+s3d::shadow_map	2	var shadow_map gfx::Texture;	gfx/scene3d.amni	403	
+s3d::local_map	2	var local_map gfx::Texture;	gfx/scene3d.amni	404	
+s3d::local_size	2	var local_size = 0;	gfx/scene3d.amni	405	
+s3d::local_shadow_size	2	var local_shadow_size = 1024;	gfx/scene3d.amni	406	
+s3d::local_atlas	2	var local_atlas = 4096;	gfx/scene3d.amni	407	
+s3d::local_auto	2	var local_auto = true;	gfx/scene3d.amni	408	
+s3d::local_res	2	var local_res f32 = 1.0;	gfx/scene3d.amni	409	
+s3d::local_min	2	var local_min = 128;	gfx/scene3d.amni	410	
+s3d::local_cache	2	var local_cache = true;	gfx/scene3d.amni	411	
+s3d::local_drawn	2	var local_drawn = 0;	gfx/scene3d.amni	412	
+s3d::local_fresh	2	var local_fresh = true;	gfx/scene3d.amni	413	
+s3d::local_used	2	var local_used = 0;	gfx/scene3d.amni	414	
+s3d::local_vp	2	var local_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	415	
+s3d::local_rc	2	var local_rc float4[96];	gfx/scene3d.amni	416	
+s3d::local_ts	2	var local_ts int[>..] = [];	gfx/scene3d.amni	417	
+s3d::local_id	2	var local_id int[>..] = [];	gfx/scene3d.amni	418	
+s3d::local_lk	2	var local_lk int[>..] = [];	gfx/scene3d.amni	419	
+s3d::local_lf	2	var local_lf int[>..] = [];	gfx/scene3d.amni	420	
+s3d::local_ls	2	var local_ls int[>..] = [];	gfx/scene3d.amni	421	
+s3d::local_ord	2	var local_ord int[>..] = [];	gfx/scene3d.amni	422	
+s3d::local_todo	2	var local_todo int[>..] = [];	gfx/scene3d.amni	423	
+s3d::local_bc	2	var local_bc real[>..] = [];	gfx/scene3d.amni	424	
+s3d::local_last	2	var local_last int[16] = [0; 16];	gfx/scene3d.amni	425	
+s3d::local_key	2	var local_key int[96] = [-1; 96];	gfx/scene3d.amni	426	
+s3d::shadow_size	2	var shadow_size int = 0;	gfx/scene3d.amni	427	
+s3d::glow	2	var glow gfx::Texture[>..] = [];	gfx/scene3d.amni	428	
+s3d::white	2	var white gfx::Texture;	gfx/scene3d.amni	429	
+s3d::flat_normal	2	var flat_normal gfx::Texture;	gfx/scene3d.amni	430	
+s3d::smp_linear	2	var smp_linear gfx::Sampler;	gfx/scene3d.amni	431	
+s3d::smp_point	2	var smp_point gfx::Sampler;	gfx/scene3d.amni	432	
+s3d::smp_shadow	2	var smp_shadow gfx::Sampler;	gfx/scene3d.amni	433	
+s3d::smp_cache	2	var smp_cache gfx::Sampler[>..] = [];	gfx/scene3d.amni	434	
+s3d::spec_aa	2	var spec_aa = true;	gfx/scene3d.amni	435	
+s3d::wet	2	var wet f32 = 0.0;	gfx/scene3d.amni	436	
+s3d::ripples	2	var ripples f32 = 0.0;	gfx/scene3d.amni	437	
+s3d::puddles	2	var puddles f32 = 0.0;	gfx/scene3d.amni	438	
+s3d::puddle_size	2	var puddle_size f32 = 1.7;	gfx/scene3d.amni	439	
+s3d::world_time	2	var world_time f32 = 0.0;	gfx/scene3d.amni	440	
+s3d::snow	2	var snow f32 = 0.0;	gfx/scene3d.amni	441	
+s3d::shelter	2	var shelter = true;	gfx/scene3d.amni	442	
+s3d::shelter_res	2	var shelter_res = 512;	gfx/scene3d.amni	443	
+s3d::shelter_size	2	var shelter_size = 0;	gfx/scene3d.amni	444	
+s3d::shelter_map	2	var shelter_map gfx::Texture;	gfx/scene3d.amni	445	
+s3d::shelter_depth	2	var shelter_depth gfx::Texture;	gfx/scene3d.amni	446	
+s3d::pipe_shelter	2	var pipe_shelter gfx::Pipeline;	gfx/scene3d.amni	447	
+s3d::light_data	2	var light_data float4[>..] = [];	gfx/scene3d.amni	448	
+s3d::light_xr	2	var light_xr float4[>..] = [];	gfx/scene3d.amni	449	
+s3d::cluster_words	2	var cluster_words u32[>..] = [];	gfx/scene3d.amni	450	
+s3d::light_buf	2	var light_buf gfx::Buffer;	gfx/scene3d.amni	451	
+s3d::cluster_buf	2	var cluster_buf gfx::Buffer;	gfx/scene3d.amni	452	
+s3d::light_cap	2	var light_cap = 0;	gfx/scene3d.amni	453	
+s3d::CAST_REC	2	let CAST_REC = 4096;	gfx/scene3d.amni	454	
+s3d::cast_want	2	var cast_want = 0;	gfx/scene3d.amni	455	
+s3d::cast_at	2	var cast_at = 0;	gfx/scene3d.amni	456	
+s3d::cast_room	2	var cast_room = 0;	gfx/scene3d.amni	457	
+s3d::cast_frame	2	var cast_frame = -9;	gfx/scene3d.amni	458	
+s3d::cast_gen	2	var cast_gen = 0;	gfx/scene3d.amni	459	
+s3d::cast_live	0	fn cast_live() f32	gfx/scene3d.amni	460	
+s3d::cluster_cap	2	var cluster_cap = 0;	gfx/scene3d.amni	461	
+s3d::ext_size	2	var ext_size = 1024;	gfx/scene3d.amni	462	
+s3d::ext_arr	2	var ext_arr gfx::Texture[2] = [gfx::Texture { 0 }, gfx::Texture { 0 }];	gfx/scene3d.amni	463	
+s3d::ext_cap	2	var ext_cap int[2] = [0, 0];	gfx/scene3d.amni	464	
+s3d::ext_cnt	2	var ext_cnt int[2] = [0, 0];	gfx/scene3d.amni	465	
+s3d::ext_dirty	2	var ext_dirty bool[2] = [false, false];	gfx/scene3d.amni	466	
+s3d::ext_map	2	var ext_map int[>..] = [];	gfx/scene3d.amni	467	
+s3d::ext_src	2	var ext_src int[>..] = [];	gfx/scene3d.amni	468	
+s3d::ext_zero	2	var ext_zero ExtU;	gfx/scene3d.amni	469	
+s3d::ext_pushed	2	var ext_pushed = false;	gfx/scene3d.amni	470	
+s3d::smp_ext	2	var smp_ext gfx::Sampler;	gfx/scene3d.amni	471	
+s3d::pipe_ext_copy	2	var pipe_ext_copy gfx::Pipeline;	gfx/scene3d.amni	472	
+s3d::trans_tex	2	var trans_tex gfx::Texture;	gfx/scene3d.amni	473	
+s3d::trans_w	2	var trans_w = 0;	gfx/scene3d.amni	474	
+s3d::trans_h	2	var trans_h = 0;	gfx/scene3d.amni	475	
+s3d::smp_trans	2	var smp_trans gfx::Sampler;	gfx/scene3d.amni	476	
+s3d::tex_srgb	2	var tex_srgb gfx::Texture[>..] = [];	gfx/scene3d.amni	477	
+s3d::tex_linear	2	var tex_linear gfx::Texture[>..] = [];	gfx/scene3d.amni	478	
+s3d::tex_compress	2	var tex_compress = false;	gfx/scene3d.amni	479	
+s3d::tex_gpu_bc	2	var tex_gpu_bc = true;	gfx/scene3d.amni	480	
+s3d::tex_cache	2	var tex_cache byte[>..] = [];	gfx/scene3d.amni	481	
+s3d::tex_encoded	2	var tex_encoded = 0;	gfx/scene3d.amni	482	
+s3d::tex_cached	2	var tex_cached = 0;	gfx/scene3d.amni	483	
+s3d::tex_mem	2	var tex_mem = 0;	gfx/scene3d.amni	484	
+s3d::tex_ns	2	var tex_ns = 0;	gfx/scene3d.amni	485	
+s3d::tex_stream	2	var tex_stream = false;	gfx/scene3d.amni	486	
+s3d::tex_budget	2	var tex_budget = 0;	gfx/scene3d.amni	487	
+s3d::tex_upload_cap	2	var tex_upload_cap = 4194304;	gfx/scene3d.amni	488	
+s3d::tex_hold	2	var tex_hold = 30;	gfx/scene3d.amni	489	
+s3d::tex_wait	2	var tex_wait = false;	gfx/scene3d.amni	490	
+s3d::tex_stream_bias	2	var tex_stream_bias = 0;	gfx/scene3d.amni	491	
+s3d::tex_streamed	2	var tex_streamed = 0;	gfx/scene3d.amni	492	
+s3d::tex_steps	2	var tex_steps = 0;	gfx/scene3d.amni	493	
+s3d::tex_pending	2	var tex_pending = 0;	gfx/scene3d.amni	494	
+s3d::tex_starved	2	var tex_starved = 0;	gfx/scene3d.amni	495	
+s3d::tex_read	2	var tex_read = 0;	gfx/scene3d.amni	496	
+s3d::tex_stream_ns	2	var tex_stream_ns = 0;	gfx/scene3d.amni	497	
+s3d::TexStream	1	struct TexStream	gfx/scene3d.amni	498	
+s3d::streams	2	var streams TexStream[>..] = [];	gfx/scene3d.amni	499	
+s3d::stream_pool	2	var stream_pool byte[>..] = [];	gfx/scene3d.amni	500	
+s3d::stream_lv	2	var stream_lv int[>..] = [];	gfx/scene3d.amni	501	
+s3d::stream_mem	2	var stream_mem = 0;	gfx/scene3d.amni	502	
+s3d::uv_dens	2	var uv_dens f32[>..] = [];	gfx/scene3d.amni	503	
+s3d::texture_bytes	0	fn texture_bytes() int	gfx/scene3d.amni	504	
+s3d::set_texture_cache	0	fn set_texture_cache(dir const byte[:])	gfx/scene3d.amni	505	
+s3d::vbuf	2	var vbuf gfx::Buffer;	gfx/scene3d.amni	506	
+s3d::ibuf	2	var ibuf gfx::Buffer;	gfx/scene3d.amni	507	
+s3d::mbuf	2	var mbuf gfx::Buffer;	gfx/scene3d.amni	508	
+s3d::jbuf	2	var jbuf gfx::Buffer;	gfx/scene3d.amni	509	
+s3d::jbuf_cap	2	var jbuf_cap int = 0;	gfx/scene3d.amni	510	
+s3d::instances	2	var instances InstSet[>..] = [];	gfx/scene3d.amni	511	
+s3d::inst_m	2	var inst_m gfx::mat4[>..] = [];	gfx/scene3d.amni	512	
+s3d::inst_c	2	var inst_c float4[>..] = [];	gfx/scene3d.amni	513	
+s3d::inst_ids	2	var inst_ids f32[>..] = [];	gfx/scene3d.amni	514	
+s3d::inst_t0	2	var inst_t0 f32[>..] = [];	gfx/scene3d.amni	515	
+s3d::inst_t1	2	var inst_t1 f32[>..] = [];	gfx/scene3d.amni	516	
+s3d::inst_t2	2	var inst_t2 f32[>..] = [];	gfx/scene3d.amni	517	
+s3d::inst_t3	2	var inst_t3 f32[>..] = [];	gfx/scene3d.amni	518	
+s3d::inst_t4	2	var inst_t4 f32[>..] = [];	gfx/scene3d.amni	519	
+s3d::inst_t5	2	var inst_t5 f32[>..] = [];	gfx/scene3d.amni	520	
+s3d::imps	2	var imps Impostor[>..] = [];	gfx/scene3d.amni	521	
+s3d::pipe_imp	2	var pipe_imp gfx::Pipeline;	gfx/scene3d.amni	522	
+s3d::pipe_imp_depth	2	var pipe_imp_depth gfx::Pipeline;	gfx/scene3d.amni	523	
+s3d::pipe_imp_nd	2	var pipe_imp_nd gfx::Pipeline;	gfx/scene3d.amni	524	
+s3d::pipe_imp_bake	2	var pipe_imp_bake gfx::Pipeline;	gfx/scene3d.amni	525	
+s3d::pipe_imp_bake_two	2	var pipe_imp_bake_two gfx::Pipeline;	gfx/scene3d.amni	526	
+s3d::pipe_imp_down	2	var pipe_imp_down gfx::Pipeline;	gfx/scene3d.amni	527	
+s3d::imp_kind	2	var imp_kind = -1;	gfx/scene3d.amni	528	
+s3d::imp_back	2	var imp_back gfx::Pipeline;	gfx/scene3d.amni	529	
+s3d::pipe_fade	2	var pipe_fade gfx::Pipeline[>..] = [];	gfx/scene3d.amni	530	
+s3d::last_vp	2	var last_vp gfx::mat4 = gfx::mat4_identity;	gfx/scene3d.amni	531	
+s3d::inst_dirty	2	var inst_dirty = true;	gfx/scene3d.amni	532	
+s3d::inst_all	2	var inst_all = false;	gfx/scene3d.amni	533	
+s3d::meshlets	2	var meshlets = false;	gfx/scene3d.amni	534	
+s3d::meshlet_px	2	var meshlet_px f32 = 1.0;	gfx/scene3d.amni	535	
+s3d::meshlet_cone	2	var meshlet_cone = true;	gfx/scene3d.amni	536	
+s3d::meshlet_cpu	2	var meshlet_cpu = false;	gfx/scene3d.amni	537	
+s3d::meshlet_min	2	var meshlet_min = 4000;	gfx/scene3d.amni	538	
+s3d::meshlet_thin	2	var meshlet_thin f32 = 1.0;	gfx/scene3d.amni	539	
+s3d::meshlet_budget	2	var meshlet_budget = 8000000;	gfx/scene3d.amni	540	
+s3d::meshlet_grow	2	var meshlet_grow = true;	gfx/scene3d.amni	541	
+s3d::meshlet_budget_max	2	var meshlet_budget_max = 250000000;	gfx/scene3d.amni	542	
+s3d::ml_first	2	var ml_first int[>..] = [];	gfx/scene3d.amni	543	
+s3d::ml_count	2	var ml_count int[>..] = [];	gfx/scene3d.amni	544	
+s3d::ml_tab	2	var ml_tab f32[>..] = [];	gfx/scene3d.amni	545	
+s3d::ml_rng	2	var ml_rng u32[>..] = [];	gfx/scene3d.amni	546	
+s3d::ml_idx	2	var ml_idx u32[>..] = [];	gfx/scene3d.amni	547	
+s3d::ml_draws	2	var ml_draws f32[>..] = [];	gfx/scene3d.amni	548	
+s3d::ml_bases	2	var ml_bases int[>..] = [];	gfx/scene3d.amni	549	
+s3d::ml_sel	2	var ml_sel u32[>..] = [];	gfx/scene3d.amni	550	
+s3d::ml_tab_buf	2	var ml_tab_buf gfx::Buffer;	gfx/scene3d.amni	551	
+s3d::ml_rng_buf	2	var ml_rng_buf gfx::Buffer;	gfx/scene3d.amni	552	
+s3d::ml_idx_buf	2	var ml_idx_buf gfx::Buffer;	gfx/scene3d.amni	553	
+s3d::ml_draw_buf	2	var ml_draw_buf gfx::Buffer;	gfx/scene3d.amni	554	
+s3d::ml_args_buf	2	var ml_args_buf gfx::Buffer;	gfx/scene3d.amni	555	
+s3d::ml_out_buf	2	var ml_out_buf gfx::Buffer;	gfx/scene3d.amni	556	
+s3d::ml_dirty	2	var ml_dirty = false;	gfx/scene3d.amni	557	
+s3d::ml_tick	2	var ml_tick = 0;	gfx/scene3d.amni	558	
+s3d::ml_seen	2	var ml_seen = 0;	gfx/scene3d.amni	559	
+s3d::ml_have	2	var ml_have = false;	gfx/scene3d.amni	560	
+s3d::ml_draw_cap	2	var ml_draw_cap = 0;	gfx/scene3d.amni	561	
+s3d::ml_out_cap	2	var ml_out_cap = 0;	gfx/scene3d.amni	562	
+s3d::pipe_ml_cull	2	var pipe_ml_cull gfx::ComputePipeline;	gfx/scene3d.amni	563	
+s3d::pipe_ml_fit	2	var pipe_ml_fit gfx::ComputePipeline;	gfx/scene3d.amni	564	
+s3d::MlU	1	struct MlU	gfx/scene3d.amni	565	
+s3d::MlFitU	1	struct MlFitU	gfx/scene3d.amni	566	
+s3d::instance_cull	2	var instance_cull = true;	gfx/scene3d.amni	567	
+s3d::xbuf	2	var xbuf gfx::Buffer;	gfx/scene3d.amni	568	
+s3d::xbuf_cap	2	var xbuf_cap int = 0;	gfx/scene3d.amni	569	
+s3d::idbuf	2	var idbuf gfx::Buffer;	gfx/scene3d.amni	570	
+s3d::idbuf_cap	2	var idbuf_cap int = 0;	gfx/scene3d.amni	571	
+s3d::fr	2	var fr float4[6] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 6];	gfx/scene3d.amni	572	
+s3d::caustics	2	var caustics Caustics = Caustics { .. };	gfx/scene3d.amni	573	
+s3d::clouds	2	var clouds Clouds = Clouds { on: false };	gfx/scene3d.amni	574	
+s3d::cloud_tex	2	var cloud_tex gfx::Texture;	gfx/scene3d.amni	575	
+s3d::cloud_shadow_tex	2	var cloud_shadow_tex gfx::Texture;	gfx/scene3d.amni	576	
+s3d::cloud_shadow_n	2	var cloud_shadow_n = 0;	gfx/scene3d.amni	577	
+s3d::cloud_res	2	var cloud_res f32 = 0.0;	gfx/scene3d.amni	578	
+s3d::cloud_cu	2	var cloud_cu float4;	gfx/scene3d.amni	579	
+s3d::cloud_cv	2	var cloud_cv float4;	gfx/scene3d.amni	580	
+s3d::pipe_clouds	2	var pipe_clouds gfx::Pipeline;	gfx/scene3d.amni	581	
+s3d::pipe_cloud_shadow	2	var pipe_cloud_shadow gfx::Pipeline;	gfx/scene3d.amni	582	
+s3d::wind	2	var wind Wind = Wind { dir: float3 { 1.0, 0.0, 0.0 }, strength: 0.0, speed: 1.0, time: 0.0 };	gfx/scene3d.amni	583	
+s3d::wind_prev	2	var wind_prev f32 = 0.0;	gfx/scene3d.amni	584	
+s3d::water_prev	2	var water_prev f32 = 0.0;	gfx/scene3d.amni	585	
+s3d::sea	2	var sea Sea = Sea { .. };	gfx/scene3d.amni	586	
+s3d::sea_on	2	var sea_on = false;	gfx/scene3d.amni	587	
+s3d::sea_level	2	var sea_level f32 = 0.0;	gfx/scene3d.amni	588	
+s3d::sea_lo	2	var sea_lo float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	589	
+s3d::sea_hi	2	var sea_hi float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	590	
+s3d::sea_waves	2	var sea_waves float4 = float4 { 0.0, 0.0, 0.0, 0.0 };	gfx/scene3d.amni	591	
+s3d::sea_absorb	2	var sea_absorb float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	592	
+s3d::sea_scatter	2	var sea_scatter float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	593	
+s3d::sea_wet	0	fn sea_wet() bool	gfx/scene3d.amni	594	
+s3d::wind_fresh	2	var wind_fresh = true;	gfx/scene3d.amni	595	
+s3d::wind_u	2	var wind_u float4 = float4 { 0.0, 0.0, 0.0, 1.0 };	gfx/scene3d.amni	596	
+s3d::pushers	2	var pushers float4[>..] = [];	gfx/scene3d.amni	597	
+s3d::prev_pushers	2	var prev_pushers float4[>..] = [];	gfx/scene3d.amni	598	
+s3d::push_u	2	var push_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	599	
+s3d::ppush_u	2	var ppush_u float4[4] = [float4 { 0.0, 0.0, 0.0, 0.0 }; 4];	gfx/scene3d.amni	600	
+s3d::uploaded_verts	2	var uploaded_verts int = -1;	gfx/scene3d.amni	601	
+s3d::uploaded_indices	2	var uploaded_indices int = -1;	gfx/scene3d.amni	602	
+s3d::uploaded_morphs	2	var uploaded_morphs int = -1;	gfx/scene3d.amni	603	
+s3d::vbuf_cap	2	var vbuf_cap = 0;	gfx/scene3d.amni	604	
+s3d::ibuf_cap	2	var ibuf_cap = 0;	gfx/scene3d.amni	605	
+s3d::verts_dirty_lo	2	var verts_dirty_lo = -1;	gfx/scene3d.amni	606	
+s3d::verts_dirty_hi	2	var verts_dirty_hi = 0;	gfx/scene3d.amni	607	
+s3d::joints	2	var joints gfx::mat4[>..] = [];	gfx/scene3d.amni	608	
+s3d::frame_u	2	var frame_u FrameU;	gfx/scene3d.amni	609	
+s3d::view_mat	2	var view_mat gfx::mat4;	gfx/scene3d.amni	610	
+s3d::proj_mat	2	var proj_mat gfx::mat4;	gfx/scene3d.amni	611	
+s3d::view_proj	2	var view_proj gfx::mat4;           // jittered when temporal is on (rasterisation)	gfx/scene3d.amni	612	
+s3d::view_proj_nj	2	var view_proj_nj gfx::mat4;        // without jitter	gfx/scene3d.amni	613	
+s3d::prev_view_proj	2	var prev_view_proj gfx::mat4;      // last frame, without jitter	gfx/scene3d.amni	614	
+s3d::prev_keys	2	var prev_keys int[>..] = [];	gfx/scene3d.amni	616	last frame's model matrix and joint base per (item, node), for motion vectors
+s3d::prev_models	2	var prev_models gfx::mat4[>..] = [];	gfx/scene3d.amni	617	
+s3d::prev_bases	2	var prev_bases int[>..] = [];	gfx/scene3d.amni	618	
+s3d::prev_joints	2	var prev_joints gfx::mat4[>..] = [];	gfx/scene3d.amni	619	
+s3d::cur_keys	2	var cur_keys int[>..] = [];	gfx/scene3d.amni	620	
+s3d::cur_models	2	var cur_models gfx::mat4[>..] = [];	gfx/scene3d.amni	621	
+s3d::cur_bases	2	var cur_bases int[>..] = [];	gfx/scene3d.amni	622	
+s3d::cur_wb	2	var cur_wb int[>..] = [];	gfx/scene3d.amni	623	
+s3d::prev_wb	2	var prev_wb int[>..] = [];	gfx/scene3d.amni	624	
+s3d::cur_w	2	var cur_w f32[>..] = [];	gfx/scene3d.amni	625	
+s3d::old_w	2	var old_w f32[>..] = [];	gfx/scene3d.amni	626	
+s3d::cascade_end	2	var cascade_end f32[>..] = [0.0, 0.0, 0.0];	gfx/scene3d.amni	627	
+s3d::cascade_vp	2	var cascade_vp gfx::mat4[>..] = [];	gfx/scene3d.amni	628	
+s3d::cascade_live	2	var cascade_live = 3;	gfx/scene3d.amni	629	
+s3d::frames	2	var frames int = 0;	gfx/scene3d.amni	630	
+s3d::motion_fresh	2	var motion_fresh = true;            // no previous frame to measure motion against	gfx/scene3d.amni	631	
+s3d::f4	0	fn f4(x f32, y f32, z f32, w f32) float4	gfx/scene3d.amni	633	
+s3d::x4	0	fn x4(v float3, w f32) float4	gfx/scene3d.amni	634	
+s3d::none	0	fn none() gfx::Texture	gfx/scene3d.amni	635	
+s3d::add	0	fn add(asset int) int	gfx/scene3d.amni	639	
+s3d::place	0	fn place(item int, m gfx::mat4)	gfx/scene3d.amni	643	
+s3d::cloth_of	0	fn cloth_of(pi int) int	gfx/scene3d.amni	644	
+s3d::add_cloth	0	fn add_cloth(asset int) int	gfx/scene3d.amni	645	
+s3d::step_cloth	0	fn step_cloth(k int, dt real, w float3)	gfx/scene3d.amni	659	
+s3d::corner	0	fn corner(lo float3, hi float3, k int) float3	gfx/scene3d.amni	672	
+s3d::asset_box	0	fn asset_box(asset int) float3, float3	gfx/scene3d.amni	673	
+s3d::sway	0	fn sway(item int, amount f32)	gfx/scene3d.amni	694	
+s3d::inst_bound	0	fn inst_bound(set int, k int)	gfx/scene3d.amni	699	
+s3d::add_instances	0	fn add_instances(asset int, mats gfx::mat4[:]) int	gfx/scene3d.amni	706	
+s3d::set_instance	0	fn set_instance(set int, k int, m gfx::mat4)	gfx/scene3d.amni	715	
+s3d::clear_instances	0	fn clear_instances()	gfx/scene3d.amni	716	
+s3d::instance_drawn	0	fn instance_drawn(set int, lod int) int	gfx/scene3d.amni	717	
+s3d::instance_list	0	fn instance_list(set int, lod int) int[>..]	gfx/scene3d.amni	718	
+s3d::instance_triangles	0	fn instance_triangles(set int) int	gfx/scene3d.amni	723	
+s3d::handheld	0	fn handheld(c Camera, t f32, amount f32) Camera	gfx/scene3d.amni	729	
+s3d::animate	0	fn animate(item int, anim int, time f32)	gfx/scene3d.amni	742	
+s3d::crossfade	0	fn crossfade(item int, from int, from_time f32, to int, to_time f32, w f32)	gfx/scene3d.amni	743	
+s3d::bend	0	fn bend(item int, node int, q linalg::Quat)	gfx/scene3d.amni	744	
+s3d::track	0	fn track(item int, slot int, node int)	gfx/scene3d.amni	745	
+s3d::tracked	0	fn tracked(item int, slot int) gfx::mat4	gfx/scene3d.amni	746	
+s3d::pose	0	fn pose(ii int)	gfx/scene3d.amni	747	
+s3d::node_ov	2	var node_ov NodeOv[>..] = [];	gfx/scene3d.amni	758	
+s3d::weight_ov	2	var weight_ov WeightOv[>..] = [];	gfx/scene3d.amni	759	
+s3d::set_node	0	fn set_node(item int, node int, t float3, r linalg::Quat, sc float3)	gfx/scene3d.amni	760	
+s3d::set_weight	0	fn set_weight(item int, node int, k int, w f32)	gfx/scene3d.amni	764	
+s3d::clear_pose	0	fn clear_pose(item int)	gfx/scene3d.amni	769	
+s3d::add_probe	0	fn add_probe(pos float3, lo float3, hi float3, fade f32)	gfx/scene3d.amni	777	
+s3d::clear_probes	0	fn clear_probes()	gfx/scene3d.amni	782	
+s3d::add_decal	0	fn add_decal(d Decal) int	gfx/scene3d.amni	783	
+s3d::clear_decals	0	fn clear_decals()	gfx/scene3d.amni	784	
+s3d::clear_scene	0	fn clear_scene()	gfx/scene3d.amni	785	
+s3d::recapture	0	fn recapture()	gfx/scene3d.amni	786	
+s3d::probe_vol	0	fn probe_vol(p Probe) f32	gfx/scene3d.amni	787	
+s3d::add_light	0	fn add_light(pos float3, rgb float3, range f32)	gfx/scene3d.amni	788	
+s3d::studio_soft	0	fn studio_soft(bg float3, key f32)	gfx/scene3d.amni	789	
+s3d::add_rect	0	fn add_rect(pos float3, target float3, axis float3, width f32, height f32, rgb float3, range f32, shadows bool)	gfx/scene3d.amni	796	
+s3d::rect_axis	0	fn rect_axis(l Light) float3	gfx/scene3d.amni	797	
+s3d::add_spot	0	fn add_spot(pos float3, target float3, rgb float3, range f32, cone f32, shadows bool)	gfx/scene3d.amni	802	
+s3d::quad	0	fn quad(a float3, b float3, c float3, d float3, ca float4, cb float4, cc float4, cd float4, shape int)	gfx/scene3d.amni	803	
+s3d::glow_line	0	fn glow_line(a float3, b float3, w f32, rgb float3)	gfx/scene3d.amni	804	
+s3d::ground_mark	0	fn ground_mark(p float3, r f32, rgb float3, a f32, shape int)	gfx/scene3d.amni	816	
+s3d::quad_nadd	2	var quad_nadd = 0;	gfx/scene3d.amni	820	
+s3d::quad_upload	0	fn quad_upload()	gfx/scene3d.amni	821	
+s3d::quad_draw	0	fn quad_draw(mul bool)	gfx/scene3d.amni	834	
+s3d::hdr_target	0	fn hdr_target() gfx::Texture	gfx/scene3d.amni	846	
+s3d::motion_target	0	fn motion_target() gfx::Texture	gfx/scene3d.amni	848	Valid after a frame that wrote motion (motion_wanted()); a null handle before any.
+s3d::ao_target	0	fn ao_target() gfx::Texture	gfx/scene3d.amni	849	
+s3d::bent_target	0	fn bent_target() gfx::Texture	gfx/scene3d.amni	850	
+s3d::nd_target	0	fn nd_target() gfx::Texture	gfx/scene3d.amni	851	
+s3d::motion_wanted	0	fn motion_wanted() bool	gfx/scene3d.amni	852	
+s3d::resolved	0	fn resolved() gfx::Texture	gfx/scene3d.amni	854	The image bloom and grading read: the temporal result when it ran, else `hdr`.
+s3d::temporal_on	0	fn temporal_on() bool	gfx/scene3d.amni	855	
+s3d::surface_desc	0	fn surface_desc(cull i32, blend i32, depth_write bool) gfx::PipelineDesc	gfx/scene3d.amni	859	
+s3d::drop_targets	0	fn drop_targets()	gfx/scene3d.amni	863	
+s3d::make_targets	0	fn make_targets(w int, h int)	gfx/scene3d.amni	874	
+s3d::make_targets	0	fn make_targets(w int, h int, ow int, oh int)	gfx/scene3d.amni	878	w x h is the render size; ow x oh the size of the temporal result, bloom and the caller's target.
+s3d::make_motion	0	fn make_motion()	gfx/scene3d.amni	914	The motion target (one sample per pixel, 8 bytes a pixel) is made on the first frame that wants it.
+s3d::drop_motion	0	fn drop_motion()	gfx/scene3d.amni	919	
+s3d::make_ssr	0	fn make_ssr()	gfx/scene3d.amni	925	
+s3d::make_ssgi	0	fn make_ssgi()	gfx/scene3d.amni	939	
+s3d::drop_ssr	0	fn drop_ssr()	gfx/scene3d.amni	951	
+s3d::make_shadow_map	0	fn make_shadow_map(size int)	gfx/scene3d.amni	969	
+s3d::pixel_texture	0	fn pixel_texture(rgba byte[4], format i32) gfx::Texture	gfx/scene3d.amni	974	
+s3d::init	0	fn init(w int, h int) bool	gfx/scene3d.amni	981	Creates targets and pipelines; gfx must be open. Safe to call again after a resize.
+s3d::init	0	fn init(w int, h int, ow int, oh int) bool	gfx/scene3d.amni	985	Renders at w x h and writes ow x oh: with a larger output the temporal pass upscales (TSR). The caller's target must be ow x oh.
+s3d::forget	0	fn forget()	gfx/scene3d.amni	1082	Call after gltf::reset(): drops GPU copies of geometry and images so the next frame uploads the new pools.
+s3d::pool_upload	0	fn pool_upload(buf gfx::Buffer&, cap int&, have int, bytes const byte[:], usage int) bool	gfx/scene3d.amni	1118	
+s3d::touch_verts	0	fn touch_verts(first int, count int)	gfx/scene3d.amni	1129	
+s3d::upload_geometry	0	fn upload_geometry()	gfx/scene3d.amni	1133	
+s3d::cut_keep	2	var cut_keep = true;	gfx/scene3d.amni	1161	
+s3d::cut_of	0	fn cut_of(image int) f32	gfx/scene3d.amni	1162	
+s3d::cut_share	0	fn cut_share(px const byte[:], cut f32) real	gfx/scene3d.amni	1163	
+s3d::cut_fit	0	fn cut_fit(px byte[>..]&, cut f32, want real)	gfx/scene3d.amni	1164	
+s3d::cut_chain	0	fn cut_chain(t gfx::Texture, image int, srgb bool, cut f32, mips int)	gfx/scene3d.amni	1175	
+s3d::mip_count	0	fn mip_count(w int, h int) int	gfx/scene3d.amni	1184	
+s3d::chain_bytes	0	fn chain_bytes(kind int, w int, h int, levels int) int	gfx/scene3d.amni	1191	
+s3d::tex_path	0	fn tex_path(image int, srgb bool, out byte[>..]&)	gfx/scene3d.amni	1196	
+s3d::tex_bake	0	fn tex_bake(image int, srgb bool, path const byte[:], file byte[>..]&, mode int) bool	gfx/scene3d.amni	1213	
+s3d::tex_format	0	fn tex_format(kind int, srgb bool) i32	gfx/scene3d.amni	1248	
+s3d::ktx_texture	0	fn ktx_texture(file const byte[:], srgb bool) gfx::Texture	gfx/scene3d.amni	1251	
+s3d::stream_chain	0	fn stream_chain(s TexStream, n int) int	gfx/scene3d.amni	1271	
+s3d::stream_tail	0	fn stream_tail(w int, h int, levels int, blocks bool) int	gfx/scene3d.amni	1272	
+s3d::stream_fetch	0	fn stream_fetch(si int, a int, b int, out byte[>..]&) bool	gfx/scene3d.amni	1277	
+s3d::stream_build	0	fn stream_build(si int, top int)	gfx/scene3d.amni	1296	
+s3d::stream_open	0	fn stream_open(image int, srgb bool) bool	gfx/scene3d.amni	1344	
+s3d::stream_at	0	fn stream_at(image int, srgb bool) int	gfx/scene3d.amni	1379	
+s3d::image_texture	0	fn image_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1383	
+s3d::full_texture	0	fn full_texture(image int, srgb bool) gfx::Texture	gfx/scene3d.amni	1410	
+s3d::uv_density	0	fn uv_density(prim int, set int) f32	gfx/scene3d.amni	1421	
+s3d::stream_reach	0	fn stream_reach(b Batch, pr gltf::Primitive) f32	gfx/scene3d.amni	1450	
+s3d::stream_wants	0	fn stream_wants()	gfx/scene3d.amni	1472	
+s3d::stream_update	0	fn stream_update()	gfx/scene3d.amni	1502	
+s3d::warm	0	fn warm(r gltf::TexRef, srgb bool)	gfx/scene3d.amni	1551	
+s3d::ext_fill	0	fn ext_fill(s int, layer int, src gfx::Texture)	gfx/scene3d.amni	1555	
+s3d::ext_make	0	fn ext_make(s int, cap int)	gfx/scene3d.amni	1563	
+s3d::ext_need	0	fn ext_need(r gltf::TexRef, s int)	gfx/scene3d.amni	1573	
+s3d::ext_finish	0	fn ext_finish()	gfx/scene3d.amni	1585	
+s3d::ext_layer	0	fn ext_layer(r gltf::TexRef, s int, none_is int) f32	gfx/scene3d.amni	1591	
+s3d::ext_set	0	fn ext_set(u ExtU&, i int, r gltf::TexRef, s int)	gfx/scene3d.amni	1595	
+s3d::ext_of	0	fn ext_of(m gltf::Material) ExtU	gfx/scene3d.amni	1599	
+s3d::warm_textures	0	fn warm_textures()	gfx/scene3d.amni	1614	Textures are created on first use; uploads must happen outside render passes, so every texture the batch will sample is created before the first pass.
+s3d::wrap_mode	0	fn wrap_mode(gl int) i32	gfx/scene3d.amni	1638	
+s3d::texture_sampler	0	fn texture_sampler(t gltf::Texture) gfx::Sampler	gfx/scene3d.amni	1640	
+s3d::bind_slot	0	fn bind_slot(slot int, r gltf::TexRef, srgb bool, fallback gfx::Texture)	gfx/scene3d.amni	1654	
+s3d::item_remap	2	var item_remap int[>..] = [];	gfx/scene3d.amni	1663	
+s3d::remap_new	0	fn remap_new(asset int) int	gfx/scene3d.amni	1664	
+s3d::item_mat	0	fn item_mat(ii int, prim int) int	gfx/scene3d.amni	1665	
+s3d::item_material	0	fn item_material(item int, k int) gltf::Material	gfx/scene3d.amni	1666	
+s3d::recolor	0	fn recolor(item int, k int, m gltf::Material)	gfx/scene3d.amni	1667	
+s3d::bmat	0	fn bmat(b const Batch&) gltf::Material	gfx/scene3d.amni	1668	
+s3d::material_of	0	fn material_of(prim int) gltf::Material	gfx/scene3d.amni	1669	
+s3d::cut_of	0	fn cut_of(m gltf::Material) CutU	gfx/scene3d.amni	1674	
+s3d::find_prev	0	fn find_prev(key int) int	gfx/scene3d.amni	1680	
+s3d::in_view	0	fn in_view(m gfx::mat4, lo float3, hi float3) bool	gfx/scene3d.amni	1686	false when the box lies wholly outside one clip plane (camera passes only; shadows keep it)
+s3d::atmosphere	0	fn atmosphere(to_sun float3, power f32, haze f32, clouds f32)	gfx/scene3d.amni	1704	
+s3d::Day	1	struct Day	gfx/scene3d.amni	1710	
+s3d::day_dir	2	var day_dir float3 = float3 { 0.0, 0.0, 0.0 };	gfx/scene3d.amni	1711	
+s3d::day_key	2	var day_key float3 = float3 { -1.0, 0.0, 0.0 };	gfx/scene3d.amni	1712	
+s3d::day_bakes	2	var day_bakes = 0;	gfx/scene3d.amni	1713	
+s3d::sun_at	0	fn sun_at(hour f32, day int, latitude f32, north f32) float3	gfx/scene3d.amni	1714	
+s3d::time_of_day	0	fn time_of_day(d Day) bool	gfx/scene3d.amni	1724	
+s3d::item_lights	0	fn item_lights(ii int)	gfx/scene3d.amni	1750	
+s3d::frustum	0	fn frustum(m gfx::mat4)	gfx/scene3d.amni	1772	
+s3d::gather_instances	0	fn gather_instances()	gfx/scene3d.amni	1780	
+s3d::gather	0	fn gather()	gfx/scene3d.amni	1855	
+s3d::meshlet_prepare	0	fn meshlet_prepare()	gfx/scene3d.amni	1933	
+s3d::meshlet_slot	0	fn meshlet_slot(pi int, m gfx::mat4, two bool, quiet bool) int	gfx/scene3d.amni	1961	
+s3d::ml_at	0	fn ml_at(d int, c int, r int) float3	gfx/scene3d.amni	1972	
+s3d::ml_far	0	fn ml_far(p float3, e float4) f32	gfx/scene3d.amni	1978	
+s3d::ml_keep	0	fn ml_keep(d int, c int, cam bool, u MlU) bool	gfx/scene3d.amni	1979	
+s3d::ml_plane	0	fn ml_plane(a float4, b float4, k f32) float4	gfx/scene3d.amni	1997	
+s3d::meshlet_select	0	fn meshlet_select()	gfx/scene3d.amni	2002	
+s3d::meshlet_stats	0	fn meshlet_stats() int, int, int	gfx/scene3d.amni	2078	
+s3d::forward	0	fn forward() float3	gfx/scene3d.amni	2090	
+s3d::mw	0	fn mw(pool f32[:], base int, j int, n int) f32	gfx/scene3d.amni	2092	
+s3d::draw_uniforms	0	fn draw_uniforms(b Batch, vp gfx::mat4) DrawU	gfx/scene3d.amni	2093	
+s3d::bind_geometry	0	fn bind_geometry()	gfx/scene3d.amni	2119	
+s3d::draw_prim	0	fn draw_prim(b Batch)	gfx/scene3d.amni	2128	
+s3d::asset_batches	0	fn asset_batches(asset int, si int, l int, d f32, vis bool) Batch[>..]	gfx/scene3d.amni	2139	
+s3d::imp_pipes	0	fn imp_pipes()	gfx/scene3d.amni	2153	
+s3d::impostor	0	fn impostor(asset int) int	gfx/scene3d.amni	2170	
+s3d::impostor	0	fn impostor(asset int, n int, tile int) int	gfx/scene3d.amni	2171	
+s3d::impostor_release	0	fn impostor_release(h int)	gfx/scene3d.amni	2214	
+s3d::imp_draw	0	fn imp_draw(b Batch)	gfx/scene3d.amni	2215	
+s3d::halton	0	fn halton(i int, base int) f32	gfx/scene3d.amni	2237	Radical inverse of i in the given base: the Halton low-discrepancy sequence.
+s3d::setup_view	0	fn setup_view()	gfx/scene3d.amni	2249	
+s3d::setup_cascades	0	fn setup_cascades()	gfx/scene3d.amni	2286	Splits [near, shadow_far] between a logarithmic and a uniform spacing, fits a bounding sphere to each slice and aims a texel-snapped orthographic camera at it.
+s3d::fill_frame	0	fn fill_frame()	gfx/scene3d.amni	2353	
+s3d::image_avg	0	fn image_avg(image int) float3	gfx/scene3d.amni	2444	mean linear colour of an image, sampled on a sparse grid; the bounce albedo
+s3d::gi_takes	0	fn gi_takes(b Batch) bool	gfx/scene3d.amni	2466	
+s3d::gi_key	0	fn gi_key(b Batch) int	gfx/scene3d.amni	2467	
+s3d::gi_pos	0	fn gi_pos(prim int, model gfx::mat4, at int) float3	gfx/scene3d.amni	2468	
+s3d::gi_same	0	fn gi_same(a gfx::mat4, b gfx::mat4) bool	gfx/scene3d.amni	2473	
+s3d::gi_rebuild	0	fn gi_rebuild()	gfx/scene3d.amni	2474	
+s3d::gi_stats	0	fn gi_stats() int, int, real, real	gfx/scene3d.amni	2475	
+s3d::gi_read	0	fn gi_read(out f32[>..]&) bool	gfx/scene3d.amni	2476	
+s3d::gi_track	0	fn gi_track()	gfx/scene3d.amni	2477	
+s3d::gi_scene	0	fn gi_scene()	gfx/scene3d.amni	2513	
+s3d::gi_rot	0	fn gi_rot(k int) GiU	gfx/scene3d.amni	2564	
+s3d::gi_pass	0	fn gi_pass()	gfx/scene3d.amni	2578	
+s3d::signed_range	0	fn signed_range(l Light) f32	gfx/scene3d.amni	2618	
+s3d::light_upload	0	fn light_upload()	gfx/scene3d.amni	2619	
+s3d::VSM_LEVELS	2	let VSM_LEVELS = 12;	gfx/scene3d.amni	2680	
+s3d::VSM_PAGE	2	let VSM_PAGE = 128;	gfx/scene3d.amni	2681	
+s3d::VSM_GRID	2	let VSM_GRID = 64;	gfx/scene3d.amni	2682	
+s3d::VSM_HEAD	2	let VSM_HEAD = 24;	gfx/scene3d.amni	2683	
+s3d::vsm_face	2	var vsm_face int[24] = [0, 2, 6, 4, 1, 3, 7, 5, 0, 1, 5, 4, 2, 3, 7, 6, 0, 1, 3, 2, 4, 5, 7, 6];	gfx/scene3d.amni	2684	
+s3d::vsm_atlas	2	var vsm_atlas gfx::Texture;	gfx/scene3d.amni	2685	
+s3d::vsm_side	2	var vsm_side = 0;	gfx/scene3d.amni	2686	
+s3d::vsm_table	2	var vsm_table gfx::Buffer;	gfx/scene3d.amni	2687	
+s3d::pipe_vsm_clear	2	var pipe_vsm_clear gfx::Pipeline;	gfx/scene3d.amni	2688	
+s3d::vsm_tab	2	var vsm_tab i32[>..] = [];	gfx/scene3d.amni	2689	
+s3d::vsm_mark	2	var vsm_mark byte[>..] = [];	gfx/scene3d.amni	2690	
+s3d::vsm_at	2	var vsm_at int[>..] = [];	gfx/scene3d.amni	2691	
+s3d::vsm_key	2	var vsm_key int[>..] = [];	gfx/scene3d.amni	2692	
+s3d::vsm_hash	2	var vsm_hash int[>..] = [];	gfx/scene3d.amni	2693	
+s3d::vsm_seen	2	var vsm_seen int[>..] = [];	gfx/scene3d.amni	2694	
+s3d::vsm_org	2	var vsm_org int[>..] = [];	gfx/scene3d.amni	2695	
+s3d::vsm_r	2	var vsm_r real[>..] = [];	gfx/scene3d.amni	2696	
+s3d::vsm_pa	2	var vsm_pa real[>..] = [];	gfx/scene3d.amni	2697	
+s3d::vsm_pb	2	var vsm_pb real[>..] = [];	gfx/scene3d.amni	2698	
+s3d::vsm_bc	2	var vsm_bc real[>..] = [];	gfx/scene3d.amni	2699	
+s3d::vsm_sc	2	var vsm_sc real[>..] = [];	gfx/scene3d.amni	2700	
+s3d::vsm_bp	2	var vsm_bp real[>..] = [];	gfx/scene3d.amni	2701	
+s3d::vsm_sp	2	var vsm_sp real[>..] = [];	gfx/scene3d.amni	2702	
+s3d::vsm_cr	2	var vsm_cr real[>..] = [];	gfx/scene3d.amni	2703	
+s3d::vsm_ch	2	var vsm_ch int[>..] = [];	gfx/scene3d.amni	2704	
+s3d::vsm_cb	2	var vsm_cb int[>..] = [];	gfx/scene3d.amni	2705	
+s3d::vsm_todo	2	var vsm_todo int[>..] = [];	gfx/scene3d.amni	2706	
+s3d::vsm_t0	2	var vsm_t0 real = 0.0005;	gfx/scene3d.amni	2707	
+s3d::vsm_zc	2	var vsm_zc real = 0.0;	gfx/scene3d.amni	2708	
+s3d::vsm_dir	2	var vsm_dir float3;	gfx/scene3d.amni	2709	
+s3d::vsm_hand	2	var vsm_hand = 0;	gfx/scene3d.amni	2710	
+s3d::vsm_frame	2	var vsm_frame = 0;	gfx/scene3d.amni	2711	
+s3d::vsm_drawn	2	var vsm_drawn = 0;	gfx/scene3d.amni	2712	
+s3d::vsm_live	2	var vsm_live = 0;	gfx/scene3d.amni	2713	
+s3d::vsm_missed	2	var vsm_missed = 0;	gfx/scene3d.amni	2714	
+s3d::vsm_wide	2	var vsm_wide real = 0.0;	gfx/scene3d.amni	2715	
+s3d::vsm_blank	2	var vsm_blank = false;	gfx/scene3d.amni	2716	
+s3d::vsm_fresh	2	var vsm_fresh = true;	gfx/scene3d.amni	2717	
+s3d::inst_rev	2	var inst_rev = 0;	gfx/scene3d.amni	2718	
+s3d::vsm_planes	0	fn vsm_planes(c real[>..]&, o real[>..]&)	gfx/scene3d.amni	2719	
+s3d::vsm_cut	0	fn vsm_cut(pl real[>..]&)	gfx/scene3d.amni	2734	
+s3d::vsm_paint	0	fn vsm_paint(k int)	gfx/scene3d.amni	2750	
+s3d::vsm_faces	0	fn vsm_faces(c real[>..]&, pl real[>..]&, k int)	gfx/scene3d.amni	2781	
+s3d::vsm_mix	0	fn vsm_mix(h int, x int) int	gfx/scene3d.amni	2789	
+s3d::vsm_box	0	fn vsm_box(b Batch, o real[>..]&)	gfx/scene3d.amni	2790	
+s3d::vsm_batch_hash	0	fn vsm_batch_hash(b Batch) int	gfx/scene3d.amni	2799	
+s3d::vsm_reset	0	fn vsm_reset()	gfx/scene3d.amni	2812	
+s3d::vsm_setup	0	fn vsm_setup()	gfx/scene3d.amni	2818	
+s3d::vsm_level	0	fn vsm_level(d real, s real) int	gfx/scene3d.amni	2852	
+s3d::vsm_cell	0	fn vsm_cell(sl int) int, int, int, int	gfx/scene3d.amni	2853	
+s3d::vsm_hit	0	fn vsm_hit(c int, x0 real, y0 real, x1 real, y1 real) bool	gfx/scene3d.amni	2859	
+s3d::vsm_marks	0	fn vsm_marks()	gfx/scene3d.amni	2860	
+s3d::vsm_update	0	fn vsm_update()	gfx/scene3d.amni	2890	
+s3d::vsm_stats	0	fn vsm_stats() int, int, int	gfx/scene3d.amni	2955	
+s3d::vsm_test_blank	0	fn vsm_test_blank(on bool)	gfx/scene3d.amni	2956	
+s3d::gi_bind	0	fn gi_bind()	gfx/scene3d.amni	2957	
+s3d::shadow_pass	0	fn shadow_pass()	gfx/scene3d.amni	2971	
+s3d::shelter_pass	0	fn shelter_pass()	gfx/scene3d.amni	3006	
+s3d::local_pick	0	fn local_pick(k int, l Light) int	gfx/scene3d.amni	3032	
+s3d::local_zbits	0	fn local_zbits(v int) int	gfx/scene3d.amni	3045	
+s3d::local_units	0	fn local_units(i int) int	gfx/scene3d.amni	3046	
+s3d::local_layout	0	fn local_layout()	gfx/scene3d.amni	3047	
+s3d::local_hits	0	fn local_hits(b Batch, c int) bool	gfx/scene3d.amni	3094	
+s3d::local_shadow_pass	0	fn local_shadow_pass()	gfx/scene3d.amni	3109	
+s3d::local_stats	0	fn local_stats() int, int	gfx/scene3d.amni	3161	
+s3d::fullscreen	0	fn fullscreen(p gfx::Pipeline)	gfx/scene3d.amni	3162	
+s3d::sky_u	0	fn sky_u() SkyU	gfx/scene3d.amni	3164	
+s3d::ao_pass	0	fn ao_pass()	gfx/scene3d.amni	3172	Prepass: normal + depth (nd) for SSAO, and the motion target when it is wanted. Both are single-sample, so every pixel's motion and depth belong to the one surface under its (jittered) sample point.
+s3d::clouds_live	0	fn clouds_live() bool	gfx/scene3d.amni	3257	
+s3d::cloud_shadow_on	0	fn cloud_shadow_on() bool	gfx/scene3d.amni	3258	
+s3d::cloud_target	0	fn cloud_target() gfx::Texture	gfx/scene3d.amni	3259	
+s3d::cloud_shadow_target	0	fn cloud_shadow_target() gfx::Texture	gfx/scene3d.amni	3260	
+s3d::cloud_view	0	fn cloud_view(c float4, m gfx::mat4) float4	gfx/scene3d.amni	3261	
+s3d::cloud_pass	0	fn cloud_pass()	gfx/scene3d.amni	3262	
+s3d::contact_on	0	fn contact_on() bool	gfx/scene3d.amni	3304	
+s3d::contact_pass	0	fn contact_pass()	gfx/scene3d.amni	3305	
+s3d::ssr_pass	0	fn ssr_pass()	gfx/scene3d.amni	3322	
+s3d::ssgi_live	0	fn ssgi_live() bool	gfx/scene3d.amni	3353	
+s3d::ssgi_pass	0	fn ssgi_pass()	gfx/scene3d.amni	3354	
+s3d::ssr_capture	0	fn ssr_capture()	gfx/scene3d.amni	3395	
+s3d::cut_cover	0	fn cut_cover(m gltf::Material) bool	gfx/scene3d.amni	3405	
+s3d::lit_pipe	0	fn lit_pipe(m gltf::Material) gfx::Pipeline	gfx/scene3d.amni	3406	
+s3d::mip_scale	0	fn mip_scale() f32	gfx/scene3d.amni	3407	
+s3d::surface_of	0	fn surface_of(m gltf::Material) SurfaceU	gfx/scene3d.amni	3408	
+s3d::draw_lit	0	fn draw_lit(b Batch)	gfx/scene3d.amni	3432	
+s3d::sss_skin	0	fn sss_skin(m gltf::Material) bool	gfx/scene3d.amni	3462	
+s3d::sss_draws	0	fn sss_draws(b Batch) bool	gfx/scene3d.amni	3463	
+s3d::sss_dist	0	fn sss_dist(m gltf::Material) float4	gfx/scene3d.amni	3464	
+s3d::sss_find	0	fn sss_find(d float4) int	gfx/scene3d.amni	3465	
+s3d::sss_target	0	fn sss_target() gfx::Texture	gfx/scene3d.amni	3466	
+s3d::sss_plain	0	fn sss_plain() gfx::Texture	gfx/scene3d.amni	3467	
+s3d::sss_pass	0	fn sss_pass()	gfx/scene3d.amni	3468	
+s3d::trans_capture	0	fn trans_capture()	gfx/scene3d.amni	3530	
+s3d::color_pass	0	fn color_pass()	gfx/scene3d.amni	3545	
+s3d::lens_tiles	0	fn lens_tiles(src gfx::Texture, mode f32)	gfx/scene3d.amni	3619	
+s3d::lens_swap	0	fn lens_swap()	gfx/scene3d.amni	3636	
+s3d::sea_pass	0	fn sea_pass()	gfx/scene3d.amni	3637	
+s3d::fog_pass	0	fn fog_pass()	gfx/scene3d.amni	3659	
+s3d::lens_pass	0	fn lens_pass()	gfx/scene3d.amni	3701	
+s3d::temporal_draw	0	fn temporal_draw()	gfx/scene3d.amni	3735	
+s3d::temporal_draw	0	fn temporal_draw(cur gfx::Texture, prev gfx::Texture, into gfx::Texture, fresh bool) bool	gfx/scene3d.amni	3739	
+s3d::matte_pass	0	fn matte_pass()	gfx/scene3d.amni	3758	
+s3d::temporal_pass	0	fn temporal_pass()	gfx/scene3d.amni	3784	
+s3d::temporal_repeat	0	fn temporal_repeat(n int)	gfx/scene3d.amni	3793	Runs only the temporal pass n more times on the last frame's inputs (for timing).
+s3d::glow_pass	0	fn glow_pass()	gfx/scene3d.amni	3795	
+s3d::set_lut	0	fn set_lut(rgba const byte[:], n int) bool	gfx/scene3d.amni	3826	
+s3d::identity_lut	0	fn identity_lut(n int)	gfx/scene3d.amni	3834	
+s3d::lut_strip	0	fn lut_strip(rgba const byte[:], w int, h int) bool	gfx/scene3d.amni	3839	
+s3d::lut_cube	0	fn lut_cube(text const byte[:]) bool	gfx/scene3d.amni	3846	
+s3d::exposure_pass	0	fn exposure_pass()	gfx/scene3d.amni	3860	
+s3d::exposure_now	0	fn exposure_now() f32	gfx/scene3d.amni	3877	
+s3d::grade_pass	0	fn grade_pass(target gfx::Texture)	gfx/scene3d.amni	3882	
+s3d::probe_capture	0	fn probe_capture()	gfx/scene3d.amni	3896	Renders the scene into target (RGBA8, COLOR_TARGET, the output size given to init).
+s3d::render	0	fn render(target gfx::Texture)	gfx/scene3d.amni	3989	
+s3d::render_begin	0	fn render_begin() bool	gfx/scene3d.amni	3992	
+s3d::render_end	0	fn render_end(target gfx::Texture)	gfx/scene3d.amni	4020	
 TextVtx	1	struct TextVtx	gfx/sdf_font.amni	20	
 SdfStroke	1	struct SdfStroke	gfx/sdf_font.amni	22	
 SDF_ATLAS_W	2	let SDF_ATLAS_W = 1024;	gfx/sdf_font.amni	28	
@@ -7456,104 +7481,106 @@ gl::delete	0	extern delete(h i32)	webgl.he	90
 gl::drawing_w	0	extern drawing_w() i32	webgl.he	91	
 gl::drawing_h	0	extern drawing_h() i32	webgl.he	92	
 web::Rect	1	struct Rect { x f64, y f64, w f64, h f64 }	web.he	2	
-web::log	0	extern log(s const u8[:])	web.he	21	
-web::warn	0	extern warn(s const u8[:])	web.he	22	
-web::error	0	extern error(s const u8[:])	web.he	23	
-web::now	0	extern now() f64	web.he	24	
-web::epoch_ms	0	extern epoch_ms() f64	web.he	25	
-web::frames	0	extern frames(on bool)	web.he	26	
-web::timer	0	extern timer(ms f64, tag i32) i32	web.he	27	
-web::clear_timer	0	extern clear_timer(id i32)	web.he	28	
-web::win_w	0	extern win_w() f64	web.he	29	
-web::win_h	0	extern win_h() f64	web.he	30	
-web::dpr	0	extern dpr() f64	web.he	31	
-web::device_memory	0	extern device_memory() f64	web.he	32	
-web::user_agent	0	extern user_agent(out u8[>..]&)	web.he	33	
-web::secure	0	extern secure() bool	web.he	34	
-web::has_webgpu	0	extern has_webgpu() bool	web.he	35	
-web::prefers_dark	0	extern prefers_dark() bool	web.he	36	
-web::reduced_motion	0	extern reduced_motion() bool	web.he	37	
-web::location	0	extern location(part const u8[:], out u8[>..]&)	web.he	38	
-web::param	0	extern param(name const u8[:], out u8[>..]&) bool	web.he	39	
-web::set_url	0	extern set_url(url const u8[:], replace bool)	web.he	40	
-web::navigate	0	extern navigate(url const u8[:])	web.he	41	
-web::open	0	extern open(url const u8[:])	web.he	42	
-web::title	0	extern title(s const u8[:])	web.he	43	
-web::clipboard	0	extern clipboard(s const u8[:])	web.he	44	
-web::el	0	extern el(id const u8[:]) i32	web.he	45	
-web::query	0	extern query(root i32, sel const u8[:]) i32	web.he	46	
-web::query_all	0	extern query_all(root i32, sel const u8[:]) i32	web.he	47	
-web::list_at	0	extern list_at(i i32) i32	web.he	48	
-web::create	0	extern create(tag const u8[:]) i32	web.he	49	
-web::create_svg	0	extern create_svg(tag const u8[:]) i32	web.he	50	
-web::append	0	extern append(parent i32, child i32)	web.he	51	
-web::insert_before	0	extern insert_before(parent i32, child i32, before i32)	web.he	52	
-web::remove	0	extern remove(h i32)	web.he	53	
-web::release	0	extern release(h i32)	web.he	54	
-web::clear	0	extern clear(h i32)	web.he	55	
-web::parent	0	extern parent(h i32) i32	web.he	56	
-web::closest	0	extern closest(h i32, sel const u8[:]) i32	web.he	57	
-web::child	0	extern child(h i32, i i32) i32	web.he	58	
-web::child_count	0	extern child_count(h i32) i32	web.he	59	
-web::contains	0	extern contains(a i32, b i32) bool	web.he	60	
-web::same	0	extern same(a i32, b i32) bool	web.he	61	
-web::text	0	extern text(h i32, s const u8[:])	web.he	62	
-web::html	0	extern html(h i32, s const u8[:])	web.he	63	
-web::append_html	0	extern append_html(h i32, s const u8[:])	web.he	64	
-web::get_text	0	extern get_text(h i32, out u8[>..]&)	web.he	65	
-web::attr	0	extern attr(h i32, name const u8[:], value const u8[:])	web.he	66	
-web::del_attr	0	extern del_attr(h i32, name const u8[:])	web.he	67	
-web::get_attr	0	extern get_attr(h i32, name const u8[:], out u8[>..]&) bool	web.he	68	
-web::style	0	extern style(h i32, prop const u8[:], value const u8[:])	web.he	69	
-web::cls	0	extern cls(h i32, name const u8[:], on bool)	web.he	70	
-web::has_cls	0	extern has_cls(h i32, name const u8[:]) bool	web.he	71	
-web::prop	0	extern prop(h i32, name const u8[:], value const u8[:])	web.he	72	
-web::prop_num	0	extern prop_num(h i32, name const u8[:], v f64)	web.he	73	
-web::prop_bool	0	extern prop_bool(h i32, name const u8[:], v bool)	web.he	74	
-web::get_prop	0	extern get_prop(h i32, name const u8[:], out u8[>..]&) bool	web.he	75	
-web::get_num	0	extern get_num(h i32, name const u8[:]) f64	web.he	76	
-web::get_bool	0	extern get_bool(h i32, name const u8[:]) bool	web.he	77	
-web::call	0	extern call(h i32, method const u8[:])	web.he	78	
-web::scroll_into	0	extern scroll_into(h i32, smooth bool, center bool)	web.he	79	
-web::rect	0	extern rect(h i32, r Rect&)	web.he	80	
-web::put_pixels	0	extern put_pixels(canvas i32, w i32, h i32, rgba const u8[:])	web.he	81	
-web::listen	0	extern listen(h i32, kind const u8[:], tag i32, flags i32)	web.he	82	
-web::capture_pointer	0	extern capture_pointer(h i32, id i32)	web.he	83	
-web::ev_type	0	extern ev_type(out u8[>..]&)	web.he	84	
-web::ev_target	0	extern ev_target() i32	web.he	85	
-web::ev_x	0	extern ev_x() f64	web.he	86	
-web::ev_y	0	extern ev_y() f64	web.he	87	
-web::ev_dx	0	extern ev_dx() f64	web.he	88	
-web::ev_dy	0	extern ev_dy() f64	web.he	89	
-web::ev_button	0	extern ev_button() i32	web.he	90	
-web::ev_buttons	0	extern ev_buttons() i32	web.he	91	
-web::ev_pointer	0	extern ev_pointer() i32	web.he	92	
-web::ev_mods	0	extern ev_mods() i32	web.he	93	
-web::ev_key	0	extern ev_key(out u8[>..]&)	web.he	94	
-web::ev_value	0	extern ev_value(out u8[>..]&)	web.he	95	
-web::ev_checked	0	extern ev_checked() bool	web.he	96	
-web::ev_touches	0	extern ev_touches() i32	web.he	97	
-web::ev_touch_x	0	extern ev_touch_x(i i32) f64	web.he	98	
-web::ev_touch_y	0	extern ev_touch_y(i i32) f64	web.he	99	
-web::ev_num	0	extern ev_num(name const u8[:]) f64	web.he	100	
-web::ev_str	0	extern ev_str(name const u8[:], out u8[>..]&) bool	web.he	101	
-web::ev_prevent	0	extern ev_prevent()	web.he	102	
-web::ev_stop	0	extern ev_stop()	web.he	103	
-web::ev_id	0	extern ev_id() i32	web.he	104	
-web::ev_status	0	extern ev_status() i32	web.he	105	
-web::ev_loaded	0	extern ev_loaded() f64	web.he	106	
-web::ev_total	0	extern ev_total() f64	web.he	107	
-web::ev_json	0	extern ev_json(out u8[>..]&)	web.he	108	
-web::store_get	0	extern store_get(key const u8[:], out u8[>..]&) bool	web.he	109	
-web::store_set	0	extern store_set(key const u8[:], value const u8[:])	web.he	110	
-web::store_del	0	extern store_del(key const u8[:])	web.he	111	
-web::fetch	0	extern fetch(url const u8[:], tag i32) i32	web.he	112	
-web::request	0	extern request(url const u8[:], method const u8[:], headers_json const u8[:], body const u8[:], tag i32, timeout_ms f64) i32	web.he	113	
-web::fetch_take	0	extern fetch_take(id i32, out u8[>..]&) bool	web.he	114	
-web::fetch_free	0	extern fetch_free(id i32)	web.he	115	
-web::js_global	0	extern js_global(path const u8[:]) i32	web.he	116	
-web::js_get	0	extern js_get(h i32, path const u8[:]) i32	web.he	117	
-web::js_import	0	extern js_import(url const u8[:], tag i32) i32	web.he	118	
-web::js_call	0	extern js_call(h i32, method const u8[:], args_json const u8[:], tag i32) i32	web.he	119	
-web::js_result	0	extern js_result(id i32, out u8[>..]&) bool	web.he	120	
-web::js_handle	0	extern js_handle(id i32) i32	web.he	121	
+web::log	0	extern log(s const u8[:])	web.he	22	
+web::warn	0	extern warn(s const u8[:])	web.he	23	
+web::error	0	extern error(s const u8[:])	web.he	24	
+web::now	0	extern now() f64	web.he	25	
+web::epoch_ms	0	extern epoch_ms() f64	web.he	26	
+web::frames	0	extern frames(on bool)	web.he	27	
+web::timer	0	extern timer(ms f64, tag i32) i32	web.he	28	
+web::clear_timer	0	extern clear_timer(id i32)	web.he	29	
+web::win_w	0	extern win_w() f64	web.he	30	
+web::win_h	0	extern win_h() f64	web.he	31	
+web::dpr	0	extern dpr() f64	web.he	32	
+web::device_memory	0	extern device_memory() f64	web.he	33	
+web::user_agent	0	extern user_agent(out u8[>..]&)	web.he	34	
+web::secure	0	extern secure() bool	web.he	35	
+web::has_webgpu	0	extern has_webgpu() bool	web.he	36	
+web::prefers_dark	0	extern prefers_dark() bool	web.he	37	
+web::reduced_motion	0	extern reduced_motion() bool	web.he	38	
+web::location	0	extern location(part const u8[:], out u8[>..]&)	web.he	39	
+web::param	0	extern param(name const u8[:], out u8[>..]&) bool	web.he	40	
+web::set_url	0	extern set_url(url const u8[:], replace bool)	web.he	41	
+web::navigate	0	extern navigate(url const u8[:])	web.he	42	
+web::open	0	extern open(url const u8[:])	web.he	43	
+web::title	0	extern title(s const u8[:])	web.he	44	
+web::clipboard	0	extern clipboard(s const u8[:])	web.he	45	
+web::el	0	extern el(id const u8[:]) i32	web.he	46	
+web::query	0	extern query(root i32, sel const u8[:]) i32	web.he	47	
+web::query_all	0	extern query_all(root i32, sel const u8[:]) i32	web.he	48	
+web::list_at	0	extern list_at(i i32) i32	web.he	49	
+web::create	0	extern create(tag const u8[:]) i32	web.he	50	
+web::create_svg	0	extern create_svg(tag const u8[:]) i32	web.he	51	
+web::append	0	extern append(parent i32, child i32)	web.he	52	
+web::insert_before	0	extern insert_before(parent i32, child i32, before i32)	web.he	53	
+web::remove	0	extern remove(h i32)	web.he	54	
+web::release	0	extern release(h i32)	web.he	55	
+web::clear	0	extern clear(h i32)	web.he	56	
+web::parent	0	extern parent(h i32) i32	web.he	57	
+web::closest	0	extern closest(h i32, sel const u8[:]) i32	web.he	58	
+web::child	0	extern child(h i32, i i32) i32	web.he	59	
+web::child_count	0	extern child_count(h i32) i32	web.he	60	
+web::contains	0	extern contains(a i32, b i32) bool	web.he	61	
+web::same	0	extern same(a i32, b i32) bool	web.he	62	
+web::text	0	extern text(h i32, s const u8[:])	web.he	63	
+web::html	0	extern html(h i32, s const u8[:])	web.he	64	
+web::append_html	0	extern append_html(h i32, s const u8[:])	web.he	65	
+web::get_text	0	extern get_text(h i32, out u8[>..]&)	web.he	66	
+web::attr	0	extern attr(h i32, name const u8[:], value const u8[:])	web.he	67	
+web::del_attr	0	extern del_attr(h i32, name const u8[:])	web.he	68	
+web::get_attr	0	extern get_attr(h i32, name const u8[:], out u8[>..]&) bool	web.he	69	
+web::style	0	extern style(h i32, prop const u8[:], value const u8[:])	web.he	70	
+web::cls	0	extern cls(h i32, name const u8[:], on bool)	web.he	71	
+web::has_cls	0	extern has_cls(h i32, name const u8[:]) bool	web.he	72	
+web::prop	0	extern prop(h i32, name const u8[:], value const u8[:])	web.he	73	
+web::prop_num	0	extern prop_num(h i32, name const u8[:], v f64)	web.he	74	
+web::prop_bool	0	extern prop_bool(h i32, name const u8[:], v bool)	web.he	75	
+web::get_prop	0	extern get_prop(h i32, name const u8[:], out u8[>..]&) bool	web.he	76	
+web::get_num	0	extern get_num(h i32, name const u8[:]) f64	web.he	77	
+web::get_bool	0	extern get_bool(h i32, name const u8[:]) bool	web.he	78	
+web::call	0	extern call(h i32, method const u8[:])	web.he	79	
+web::scroll_into	0	extern scroll_into(h i32, smooth bool, center bool)	web.he	80	
+web::rect	0	extern rect(h i32, r Rect&)	web.he	81	
+web::put_pixels	0	extern put_pixels(canvas i32, w i32, h i32, rgba const u8[:])	web.he	82	
+web::listen	0	extern listen(h i32, kind const u8[:], tag i32, flags i32)	web.he	83	
+web::capture_pointer	0	extern capture_pointer(h i32, id i32)	web.he	84	
+web::ev_type	0	extern ev_type(out u8[>..]&)	web.he	85	
+web::ev_target	0	extern ev_target() i32	web.he	86	
+web::ev_x	0	extern ev_x() f64	web.he	87	
+web::ev_y	0	extern ev_y() f64	web.he	88	
+web::ev_dx	0	extern ev_dx() f64	web.he	89	
+web::ev_dy	0	extern ev_dy() f64	web.he	90	
+web::ev_button	0	extern ev_button() i32	web.he	91	
+web::ev_buttons	0	extern ev_buttons() i32	web.he	92	
+web::ev_pointer	0	extern ev_pointer() i32	web.he	93	
+web::ev_mods	0	extern ev_mods() i32	web.he	94	
+web::ev_key	0	extern ev_key(out u8[>..]&)	web.he	95	
+web::ev_value	0	extern ev_value(out u8[>..]&)	web.he	96	
+web::ev_checked	0	extern ev_checked() bool	web.he	97	
+web::ev_touches	0	extern ev_touches() i32	web.he	98	
+web::ev_touch_x	0	extern ev_touch_x(i i32) f64	web.he	99	
+web::ev_touch_y	0	extern ev_touch_y(i i32) f64	web.he	100	
+web::ev_num	0	extern ev_num(name const u8[:]) f64	web.he	101	
+web::ev_str	0	extern ev_str(name const u8[:], out u8[>..]&) bool	web.he	102	
+web::ev_prevent	0	extern ev_prevent()	web.he	103	
+web::ev_stop	0	extern ev_stop()	web.he	104	
+web::ev_id	0	extern ev_id() i32	web.he	105	
+web::ev_status	0	extern ev_status() i32	web.he	106	
+web::ev_loaded	0	extern ev_loaded() f64	web.he	107	
+web::ev_total	0	extern ev_total() f64	web.he	108	
+web::ev_json	0	extern ev_json(out u8[>..]&)	web.he	109	
+web::store_get	0	extern store_get(key const u8[:], out u8[>..]&) bool	web.he	110	
+web::store_set	0	extern store_set(key const u8[:], value const u8[:])	web.he	111	
+web::store_del	0	extern store_del(key const u8[:])	web.he	112	
+web::fetch	0	extern fetch(url const u8[:], tag i32) i32	web.he	113	
+web::request	0	extern request(url const u8[:], method const u8[:], headers_json const u8[:], body const u8[:], tag i32, timeout_ms f64) i32	web.he	114	
+web::fetch_take	0	extern fetch_take(id i32, out u8[>..]&) bool	web.he	115	
+web::fetch_free	0	extern fetch_free(id i32)	web.he	116	
+web::stream	0	extern stream(url const u8[:], method const u8[:], headers_json const u8[:], body const u8[:], tag i32) i32	web.he	117	
+web::fetch_abort	0	extern fetch_abort(id i32)	web.he	118	
+web::js_global	0	extern js_global(path const u8[:]) i32	web.he	119	
+web::js_get	0	extern js_get(h i32, path const u8[:]) i32	web.he	120	
+web::js_import	0	extern js_import(url const u8[:], tag i32) i32	web.he	121	
+web::js_call	0	extern js_call(h i32, method const u8[:], args_json const u8[:], tag i32) i32	web.he	122	
+web::js_result	0	extern js_result(id i32, out u8[>..]&) bool	web.he	123	
+web::js_handle	0	extern js_handle(id i32) i32	web.he	124	

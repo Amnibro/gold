@@ -15,6 +15,7 @@ Run `gold` with no arguments to print this list in short form. Options use the f
 | `gold compact` | Pack data tables into fewer tokens, or write them back out in full. No model call. |
 | `gold squeeze` | Rewrite the Gold as shorter plain English and keep it only if it still passes. |
 | `gold lint` | List lines that read as code instead of English. |
+| `gold sync` | Rebuild a product with the newest Helium, repair what the new compiler rejects, and commit only if its tests pass. |
 
 ## Build and run
 
@@ -126,6 +127,19 @@ gold find pack,pack words to look up
 
 Shows which functions a sentence would retrieve. Use it to check that a paragraph points Gold at the code you meant.
 
+## Keep a product current
+
+### gold sync
+
+```
+gold sync [dir] [push] [nopull] [force]
+gold sync all [push]
+```
+
+Rebuilds a product (described by its `helium.sync` file) with the newest Helium, repairs what the new compiler rejects, and runs its tests. It commits to the product's sync branch only if the tests pass.
+
+`gold sync all` does the same for every product synced before. Those products are listed in `~/.config/gold/sync.list`.
+
 ## Environment variables
 
 Environment variables change which models Gold uses and where it finds its tools.
@@ -139,6 +153,7 @@ Environment variables change which models Gold uses and where it finds its tools
 | `GOLD_MODEL_PORT` | `opus` | The model used by `gold port`. |
 | `GOLD_MODEL_FALLBACK` | `sonnet` | The model that takes over after the local model's repair rounds. |
 | `GOLD_TRIES` | `4` | How many repair rounds to try. The limit extends up to 10 while each round changes the errors. |
+| `GOLD_SYNC_TRIES` | unset | An integer that sets the number of repair rounds for `gold sync`. |
 | `GOLD_K` | `70` | An integer setting read at startup. |
 
 ### Local model

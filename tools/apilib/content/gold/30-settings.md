@@ -4,7 +4,7 @@ Gold reads these environment variables.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `GOLD_HELIUM` | `~/ai/amni-lang/helium` | Which Helium checkout to check against. |
+| `GOLD_HELIUM` | `~/ai/amni-lang/helium` | Which Helium checkout to check against. `gold sync` also uses it. |
 | `GOLD_HC` | `build/hc` in `GOLD_HELIUM` | The Helium compiler to use. |
 | `GOLD_HC_LIB` | `hc/lib` in `GOLD_HELIUM` | The Helium library folder to use. |
 | `GOLD_ROOT` | The resource folder, if it has a `packs` folder; otherwise `~/ai/amni-lang/gold` | Where Gold's files are found. |
@@ -17,7 +17,9 @@ Gold reads these environment variables.
 | `GOLD_LOCAL_WAIT` | `120` | Seconds to wait for the GPU before using the local model. |
 | `GOLD_LOCAL_ROUNDS` | `2` | How many repair rounds the local model gets. |
 | `GOLD_TRIES` | `4` | Repair rounds. This extends up to 10 while each round changes the errors. |
+| `GOLD_SYNC_TRIES` | Not set | How many repair rounds `gold sync` gets. |
 | `GOLD_K` | `70` | How many product functions the model sees per build. |
 | `GOLD_CACHE` | `~/.cache/gold` | The cache folder. |
 | `GOLD_VERBOSE` | Off | Print each step. Set it to any non-empty value to turn it on. |
 | `GOLD_LINT` | Off | Set it to `warn` to build lines that still read as code instead of stopping. |
+| `GOLD_DUMP` | Off | A debugging aid. When it is set, Gold prints each block's source and Helium to standard error and then stops without building. |

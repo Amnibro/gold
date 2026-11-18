@@ -2699,3 +2699,30 @@ gfx/scene3d.amni	var matte_valid = false;	See-Through Matte	int	Flag that marks 
 gfx/scene3d.amni	var matte_live = false;	See-Through Matte	int	Flag that records whether the matte pass is active for the current frame.
 gfx/scene3d.amni	fn temporal_draw(cur gfx::Texture, prev gfx::Texture, into gfx::Texture, fresh bool) bool	Temporal Upscaling	int	Runs one temporal accumulation pass blending the current image with history into a target, returning false if the pass could not begin.
 gfx/scene3d.amni	fn matte_pass()	See-Through Matte	int	Renders the matte mask from motion data and the current layer, accumulating it temporally when enabled, then marks the matte live.
+gfx/impostor.amni	fn view_dir(i int, j int, n int) float3	Impostor Views	pub	Returns a unit view direction for grid cell (i, j) of an n-by-n octahedral-style hemisphere grid.
+gfx/impostor.amni	fn basis(d float3) float3, float3	Camera Bases	pub	Returns the right and up unit vectors of a camera basis perpendicular to the given view direction.
+gfx/impostor.amni	fn bake_proj(d float3, c float3, r f32) gfx::mat4	Camera Bases	pub	Returns an orthographic projection matrix for baking a sprite from direction d, framing a bounding sphere of center c and radius r.
+gfx/scene3d.amni	struct Impostor	Instancing	int	Describes a baked impostor billboard set for an asset, with its textures, bounds and ray-march settings.
+gfx/scene3d.amni	struct ImpU	Instancing	int	Uniform block passed to impostor shaders, holding view-projection matrices, instance data and ray-march parameters.
+gfx/scene3d.amni	struct ImpDownU	Instancing	int	Uniform block for the impostor downsample pass, holding a single parameter vector.
+gfx/scene3d.amni	var inst_t4 f32[>..] = [];	Instancing	int	Internal per-instance float data array, one of several texture channels used when uploading instance sets.
+gfx/scene3d.amni	var inst_t5 f32[>..] = [];	Instancing	int	Internal per-instance float data array, one of several texture channels used when uploading instance sets.
+gfx/scene3d.amni	var imps Impostor[>..] = [];	Instancing	int	Internal list of registered impostors for the scene.
+gfx/scene3d.amni	var pipe_imp gfx::Pipeline;	Instancing	int	Internal pipeline that draws impostors in the color pass.
+gfx/scene3d.amni	var pipe_imp_depth gfx::Pipeline;	Instancing	int	Internal pipeline that draws impostors into the depth pass.
+gfx/scene3d.amni	var pipe_imp_nd gfx::Pipeline;	Instancing	int	Internal pipeline that draws impostors into the normal and depth prepass.
+gfx/scene3d.amni	var pipe_imp_bake gfx::Pipeline;	Instancing	int	Internal pipeline that bakes impostor views from the source asset.
+gfx/scene3d.amni	var pipe_imp_bake_two gfx::Pipeline;	Instancing	int	Internal pipeline that bakes impostor views for double-sided surfaces.
+gfx/scene3d.amni	var pipe_imp_down gfx::Pipeline;	Instancing	int	Internal pipeline that downsamples baked impostor textures.
+gfx/scene3d.amni	var imp_kind = -1;	Instancing	int	Internal tracker for the impostor pipeline variant currently in use, with -1 meaning none.
+gfx/scene3d.amni	var imp_back gfx::Pipeline;	Instancing	int	Internal pipeline for drawing impostors with back-face handling.
+gfx/scene3d.amni	var pipe_fade gfx::Pipeline[>..] = [];	Instancing	int	Internal list of pipelines for drawing surfaces that fade, such as level-of-detail transitions.
+gfx/scene3d.amni	var last_vp gfx::mat4 = gfx::mat4_identity;	View Matrices	int	Internal copy of the most recent view-projection matrix, starting as identity.
+gfx/scene3d.amni	fn asset_batches(asset int, si int, l int, d f32, vis bool) Batch[>..]	Impostors	int	Builds the list of draw batches for every static, non-skinned mesh node of an asset, used when baking impostors.
+gfx/scene3d.amni	fn imp_pipes()	Impostors	int	Creates the render pipelines used to bake and draw impostors, doing nothing once they already exist.
+gfx/scene3d.amni	fn impostor(asset int) int	Impostors	pub	Bakes an impostor of an asset with default settings of 12 views per side and 176-pixel tiles, returning its handle.
+gfx/scene3d.amni	fn impostor(asset int, n int, tile int) int	Impostors	pub	Bakes a view-angle atlas impostor of an asset using n by n views of the given tile size, returning its handle or -1 on failure.
+gfx/scene3d.amni	fn impostor_release(h int)	Impostors	pub	Releases the textures of an impostor and detaches it from any instances that were using it.
+gfx/scene3d.amni	fn imp_draw(b Batch)	Impostors	int	Draws the impostor billboards for an instanced batch using the current impostor pass kind, skipping batches without instances or impostor.
+web.he	extern stream(url const u8[:], method const u8[:], headers_json const u8[:], body const u8[:], tag i32) i32	Network Requests	pub	Starts a streaming HTTP request and returns an id; response data arrives as chunk events tagged with the given tag.
+web.he	extern fetch_abort(id i32)	Network Requests	pub	Aborts an in-flight fetch or stream identified by its id.
